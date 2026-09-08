@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1788842011|2544102';
+const CACHE_VERSION = '1788842035|2618759';
 /** @type {string} */
 const CACHE_PREFIX = 'Crônicas da Prom-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
