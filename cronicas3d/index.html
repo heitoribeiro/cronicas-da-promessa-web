@@ -4,14 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#17120f" />
-  <title>Cronicas3D Web Beta</title>
+  <title>Cronicas3D Web Beta 0.2</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
   <style>
-    :root{--bg:#17120f;--card:#241c17;--card2:#2d231c;--text:#f6eadb;--muted:#bfae9e;--gold:#d9a441;--red:#8f1d22;--line:#4a392d}
-    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#17120f,#211812);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
-    main{max-width:900px;margin:auto;padding:18px 16px 40px}.hero{padding:18px 4px 12px}.eyebrow{color:var(--gold);font-weight:800;letter-spacing:.08em;font-size:.82rem;text-transform:uppercase}.hero h1{margin:.35rem 0 .45rem;font-size:clamp(2rem,8vw,3.4rem);line-height:1}.hero p{margin:0;color:var(--muted);font-size:1.02rem;line-height:1.5}
-    .card{background:rgba(36,28,23,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px;box-shadow:0 12px 32px rgba(0,0,0,.22)} h2{font-size:1.15rem;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-    .preset{background:var(--card2);border:1px solid #594536;border-radius:14px;padding:14px}.preset b{display:block;color:#ffe1a5;margin-bottom:4px}.preset span{color:var(--muted);font-size:.93rem}.steps{counter-reset:s}.step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}.step:last-child{border-bottom:0}.n{flex:0 0 30px;height:30px;border-radius:50%;background:var(--red);display:grid;place-items:center;font-weight:800}.step p{margin:3px 0;color:#e7d8c9;line-height:1.42}
-    .btn{display:flex;justify-content:center;align-items:center;text-decoration:none;border-radius:14px;padding:15px 16px;font-weight:800;margin-top:12px;min-height:52px}.primary{background:linear-gradient(135deg,#a3282d,#7d171c);color:white;border:1px solid #c24045}.secondary{background:#34271f;color:#ffe4b2;border:1px solid #6f523a}.note{font-size:.88rem;color:var(--muted);line-height:1.45;margin:10px 0 0}.status{display:inline-flex;gap:8px;align-items:center;padding:7px 10px;border-radius:999px;background:#22311f;color:#bfe2ad;border:1px solid #405b3a;font-size:.82rem;font-weight:700}.dot{width:8px;height:8px;border-radius:50%;background:#8ed36e}.foot{margin-top:18px;text-align:center;color:#8f7d6d;font-size:.82rem}
+    :root{--bg:#17120f;--card:#241c17;--card2:#2d231c;--text:#f6eadb;--muted:#bfae9e;--gold:#d9a441;--red:#8f1d22;--line:#4a392d;--green:#6ba55a}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#17120f,#211812);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}main{max-width:980px;margin:auto;padding:18px 16px 42px}.hero{padding:18px 4px 12px}.eyebrow{color:var(--gold);font-weight:800;letter-spacing:.08em;font-size:.82rem;text-transform:uppercase}.hero h1{margin:.35rem 0 .45rem;font-size:clamp(2rem,8vw,3.5rem);line-height:1}.hero p{margin:0;color:var(--muted);font-size:1rem;line-height:1.5}.card{background:rgba(36,28,23,.97);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px;box-shadow:0 12px 32px rgba(0,0,0,.22)}h2{font-size:1.15rem;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:760px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}}.preset{background:var(--card2);border:1px solid #594536;border-radius:14px;padding:14px}.preset b{display:block;color:#ffe1a5;margin-bottom:4px}.preset span{color:var(--muted);font-size:.92rem;line-height:1.4}.btn{display:flex;justify-content:center;align-items:center;text-decoration:none;border-radius:14px;padding:14px 16px;font-weight:800;min-height:52px;border:0;cursor:pointer;font-size:1rem}.primary{background:linear-gradient(135deg,#a3282d,#7d171c);color:white;border:1px solid #c24045}.secondary{background:#34271f;color:#ffe4b2;border:1px solid #6f523a}.success{background:#294426;color:#dff5d5;border:1px solid #537a49}.note{font-size:.88rem;color:var(--muted);line-height:1.45;margin:10px 0 0}.status{display:inline-flex;gap:8px;align-items:center;padding:7px 10px;border-radius:999px;background:#22311f;color:#bfe2ad;border:1px solid #405b3a;font-size:.82rem;font-weight:700}.dot{width:8px;height:8px;border-radius:50%;background:#8ed36e}.drop{border:1px dashed #8d6b50;border-radius:16px;min-height:190px;display:grid;place-items:center;text-align:center;background:#1b1511;padding:16px;position:relative;overflow:hidden}.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}.drop img{max-width:100%;max-height:290px;border-radius:12px;display:none}.drop .hint{color:var(--muted);line-height:1.45}.drop .hint strong{color:#ffe4b2}.filemeta{font-size:.85rem;color:#c9b8a8;margin-top:10px}.actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}@media(min-width:620px){.actions{grid-template-columns:1fr 1fr}}model-viewer{width:100%;height:420px;background:radial-gradient(circle at 50% 30%,#4a3a2e,#17120f 70%);border-radius:16px;border:1px solid #594536} .empty3d{height:300px;display:grid;place-items:center;text-align:center;color:var(--muted);border:1px dashed #765b47;border-radius:16px;background:#1b1511;padding:22px}.checklist{margin:0;padding-left:1.2rem;color:#eadbcb;line-height:1.65}.badge{display:inline-block;margin:.15rem .25rem .15rem 0;padding:5px 8px;border-radius:999px;background:#33271f;border:1px solid #604936;color:#f5dca8;font-size:.78rem}.foot{margin-top:18px;text-align:center;color:#8f7d6d;font-size:.82rem}.hidden{display:none!important}
   </style>
 </head>
 <body>
@@ -19,38 +16,76 @@
   <section class="hero">
     <div class="eyebrow">Crônicas da Promessa • Ferramentas</div>
     <h1>Cronicas3D</h1>
-    <p>Interface Web experimental para transformar imagens de objetos do jogo em modelos 3D e preparar exportação em <strong>.GLB</strong>.</p>
+    <p>Fluxo móvel para preparar uma imagem, gerar o objeto com TRELLIS.2, visualizar o <strong>.GLB</strong> e aplicar um preset de otimização para Godot.</p>
   </section>
 
   <section class="card">
-    <div class="status"><span class="dot"></span> Beta Web 0.1 • GitHub Pages</div>
-    <h2 style="margin-top:14px">Gerar objeto 3D</h2>
-    <div class="steps">
-      <div class="step"><div class="n">1</div><p>Prepare uma imagem do objeto com fundo limpo ou transparente. Para as tendas, prefira uma vista frontal/3⁄4 semelhante à câmera do mapa.</p></div>
-      <div class="step"><div class="n">2</div><p>Abra o TRELLIS.2, envie a imagem e gere o modelo. No celular, mantenha a aba aberta durante o processamento.</p></div>
-      <div class="step"><div class="n">3</div><p>Quando o modelo estiver pronto, use a opção de extração/exportação para <strong>GLB</strong>.</p></div>
-      <div class="step"><div class="n">4</div><p>Envie o arquivo .glb aqui no ChatGPT para eu analisar escala, materiais, polígonos e adaptação ao Godot.</p></div>
+    <div class="status"><span class="dot"></span> Beta Web 0.2 • GitHub Pages</div>
+    <h2 style="margin-top:14px">1. Imagem de entrada</h2>
+    <div class="drop" id="imageDrop">
+      <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" />
+      <div class="hint" id="imageHint"><strong>Toque para selecionar a imagem</strong><br>PNG, JPG ou WEBP<br><small>Prefira fundo limpo/transparente e vista 3/4.</small></div>
+      <img id="imagePreview" alt="Prévia da imagem selecionada" />
     </div>
-    <a class="btn primary" href="https://huggingface.co/spaces/microsoft/TRELLIS.2" target="_blank" rel="noopener noreferrer">Abrir TRELLIS.2</a>
-  </section>
-
-  <section class="card">
-    <h2>Presets recomendados para o jogo</h2>
-    <div class="grid">
-      <div class="preset"><b>Tendas / Construções</b><span>Textura 2048. Gerar com detalhe alto; depois otimizar a malha para uso no jogo.</span></div>
-      <div class="preset"><b>Árvores / Rochas</b><span>Textura 1024 ou 2048. Priorizar silhueta e leitura visual em câmera distante.</span></div>
-      <div class="preset"><b>Objetos pequenos</b><span>Textura 1024. Meta de poucos polígonos após otimização.</span></div>
-      <div class="preset"><b>Modelo mestre</b><span>Guardar uma versão de maior qualidade e derivar uma versão leve para Godot/Web.</span></div>
+    <div class="filemeta" id="imageMeta">Nenhuma imagem selecionada.</div>
+    <div class="actions">
+      <a class="btn primary" href="https://huggingface.co/spaces/microsoft/TRELLIS.2" target="_blank" rel="noopener noreferrer">Gerar no TRELLIS.2</a>
+      <button class="btn secondary" id="clearImage" type="button">Limpar imagem</button>
     </div>
+    <p class="note">O GitHub Pages não possui GPU. Por isso, a geração pesada continua sendo feita no TRELLIS.2; o Cronicas3D organiza o fluxo e recebe o GLB depois.</p>
   </section>
 
   <section class="card">
-    <h2>Próxima versão</h2>
-    <p class="note">A Beta 0.2 será preparada para receber upload diretamente nesta página, visualizador 3D integrado e presets “Otimizar para Godot”. A geração continuará dependendo de um backend com GPU; GitHub Pages hospeda a interface, mas não executa TRELLIS.2 sozinho.</p>
-    <a class="btn secondary" href="https://github.com/heitoribeiro/cronicas-da-promessa-web/tree/main/cronicas3d" target="_blank" rel="noopener noreferrer">Ver código no GitHub</a>
+    <h2>2. Preset para Crônicas da Promessa</h2>
+    <div class="grid three">
+      <div class="preset" data-preset="construction"><b>Tenda / Construção</b><span>Textura 2048, silhueta detalhada, alvo intermediário 100k–250k faces.</span></div>
+      <div class="preset" data-preset="nature"><b>Árvore / Rocha</b><span>Textura 1024–2048, foco na silhueta, alvo 20k–80k faces.</span></div>
+      <div class="preset" data-preset="prop"><b>Objeto pequeno</b><span>Textura 1024, poucas peças, alvo 5k–30k faces.</span></div>
+    </div>
+    <p class="note" id="presetText">Preset atual: <strong>Tenda / Construção</strong>.</p>
   </section>
 
-  <div class="foot">Cronicas3D Web Beta • ferramenta auxiliar do projeto Crônicas da Promessa</div>
+  <section class="card">
+    <h2>3. Visualizar arquivo GLB</h2>
+    <div class="drop" id="glbDrop" style="min-height:120px">
+      <input id="glbInput" type="file" accept=".glb,model/gltf-binary" />
+      <div class="hint" id="glbHint"><strong>Toque para abrir um arquivo .GLB</strong><br>O modelo fica apenas no seu navegador.</div>
+    </div>
+    <div class="filemeta" id="glbMeta">Nenhum GLB carregado.</div>
+    <div id="viewerEmpty" class="empty3d">Depois de carregar um .GLB, ele aparecerá aqui com rotação, zoom e inspeção 3D.</div>
+    <model-viewer id="viewer" class="hidden" camera-controls touch-action="pan-y" auto-rotate shadow-intensity="1" exposure="1" environment-image="neutral" alt="Visualizador 3D"></model-viewer>
+  </section>
+
+  <section class="card">
+    <h2>4. Otimizar para Godot</h2>
+    <div class="grid two">
+      <div class="preset"><b>Checklist automático do preset</b><ul class="checklist" id="optChecklist"><li>Textura recomendada: 2048</li><li>Meta de faces: 100k–250k</li><li>Aplicar escala antes da exportação</li><li>Pivô na base do objeto</li><li>GLB com materiais/texturas embutidos</li></ul></div>
+      <div class="preset"><b>Saída para o jogo</b><span class="badge">.GLB</span><span class="badge">Y para cima</span><span class="badge">metros</span><span class="badge">pivô na base</span><p class="note">A Beta 0.2 ainda não remalha o arquivo dentro do navegador. O botão abaixo gera um relatório de preparação para você usar na exportação/retopologia.</p><button id="reportBtn" class="btn success" style="width:100%;margin-top:10px">Gerar relatório Godot</button></div>
+    </div>
+    <pre id="report" class="preset hidden" style="white-space:pre-wrap;margin-top:12px;color:#d8c7b6"></pre>
+  </section>
+
+  <section class="card">
+    <h2>Fluxo recomendado</h2>
+    <p class="note">Imagem → TRELLIS.2 → Exportar GLB → abrir o GLB aqui → conferir visualmente → aplicar as recomendações do preset → enviar o GLB no ChatGPT para integração ao mapa.</p>
+    <a class="btn secondary" href="https://github.com/heitoribeiro/cronicas-da-promessa-web/tree/main/cronicas3d" target="_blank" rel="noopener noreferrer" style="margin-top:12px">Ver código no GitHub</a>
+  </section>
+
+  <div class="foot">Cronicas3D Web Beta 0.2 • ferramenta auxiliar do projeto Crônicas da Promessa</div>
 </main>
+<script>
+  const imageInput=document.getElementById('imageInput'), imagePreview=document.getElementById('imagePreview'), imageHint=document.getElementById('imageHint'), imageMeta=document.getElementById('imageMeta');
+  let imageUrl=null, glbUrl=null, currentPreset='construction';
+  imageInput.addEventListener('change',()=>{const f=imageInput.files?.[0]; if(!f)return; if(imageUrl)URL.revokeObjectURL(imageUrl); imageUrl=URL.createObjectURL(f); imagePreview.src=imageUrl; imagePreview.style.display='block'; imageHint.style.display='none'; imageMeta.textContent=`${f.name} • ${(f.size/1024/1024).toFixed(2)} MB • ${f.type||'imagem'}`;});
+  document.getElementById('clearImage').addEventListener('click',()=>{imageInput.value=''; if(imageUrl)URL.revokeObjectURL(imageUrl); imageUrl=null; imagePreview.removeAttribute('src'); imagePreview.style.display='none'; imageHint.style.display='block'; imageMeta.textContent='Nenhuma imagem selecionada.';});
+
+  const presets={construction:{name:'Tenda / Construção',tex:'2048',faces:'100k–250k'},nature:{name:'Árvore / Rocha',tex:'1024–2048',faces:'20k–80k'},prop:{name:'Objeto pequeno',tex:'1024',faces:'5k–30k'}};
+  document.querySelectorAll('[data-preset]').forEach(el=>el.addEventListener('click',()=>{currentPreset=el.dataset.preset; const p=presets[currentPreset]; document.getElementById('presetText').innerHTML=`Preset atual: <strong>${p.name}</strong>.`; document.getElementById('optChecklist').innerHTML=`<li>Textura recomendada: ${p.tex}</li><li>Meta de faces: ${p.faces}</li><li>Aplicar escala antes da exportação</li><li>Pivô na base do objeto</li><li>GLB com materiais/texturas embutidos</li>`;}));
+
+  const glbInput=document.getElementById('glbInput'), glbMeta=document.getElementById('glbMeta'), viewer=document.getElementById('viewer'), viewerEmpty=document.getElementById('viewerEmpty'), glbHint=document.getElementById('glbHint');
+  glbInput.addEventListener('change',()=>{const f=glbInput.files?.[0]; if(!f)return; if(!f.name.toLowerCase().endsWith('.glb')){glbMeta.textContent='Arquivo inválido. Selecione um .GLB.';return;} if(glbUrl)URL.revokeObjectURL(glbUrl); glbUrl=URL.createObjectURL(f); viewer.src=glbUrl; viewer.classList.remove('hidden'); viewerEmpty.classList.add('hidden'); glbHint.innerHTML='<strong>GLB carregado</strong><br>Toque novamente para trocar o arquivo.'; glbMeta.textContent=`${f.name} • ${(f.size/1024/1024).toFixed(2)} MB`;});
+
+  document.getElementById('reportBtn').addEventListener('click',()=>{const p=presets[currentPreset], r=document.getElementById('report'); const glb=glbInput.files?.[0]; r.textContent=`CRONICAS3D • RELATÓRIO GODOT\nPreset: ${p.name}\nArquivo: ${glb?glb.name:'nenhum GLB carregado'}\nTextura recomendada: ${p.tex}\nMeta de faces: ${p.faces}\nFormato final: GLB\nEscala: metros\nEixo vertical: Y\nPivô: base/centro do objeto\nMateriais: embutidos no GLB\nUso: Crônicas da Promessa / Godot Web e Android`; r.classList.remove('hidden');});
+</script>
 </body>
 </html>
