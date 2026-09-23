@@ -107,3 +107,43 @@
  .dialogue{padding:0 10px 74px}.dialogue-card{padding:13px 14px}.dialogue-name{font-size:15px}.dialogue-text{font-size:13px}
  .npc b{font-size:9px}.zone-label{opacity:.72}
 }
+
+/* Web Alpha 0.5 — assets vetoriais guiados pela bíblia visual */
+.world:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;opacity:.16;background-image:
+ radial-gradient(circle at 20% 25%,#fff7d6 0 1px,transparent 1.5px),
+ radial-gradient(circle at 70% 65%,#4c3822 0 1px,transparent 1.5px);
+ background-size:37px 31px,53px 47px;mix-blend-mode:soft-light}
+.scenic-asset{position:absolute;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 13px 9px #3724155c);z-index:9}
+.standard-tent-asset{width:330px;height:auto;z-index:13}
+.family-tent-asset{width:215px;height:auto;z-index:10}
+.family-small{width:168px}
+.council-tent-asset{filter:sepia(.14) saturate(.92) drop-shadow(0 13px 9px #3724155c)}
+.workshop-asset{width:265px;height:auto;z-index:12}
+.warehouse-asset{width:190px;height:auto;z-index:10}
+.warehouse-small{width:155px}
+.well-asset{width:145px;height:auto;z-index:14}
+.campfire-asset{width:118px;height:auto;z-index:15;animation:fireGlow 1.5s ease-in-out infinite alternate}
+.tower-asset{width:106px;height:auto;z-index:8;transform:none}
+.tower-nw{left:62px;top:18px}.tower-ne{right:62px;top:18px}.tower-sw{left:62px;bottom:43px}.tower-se{right:62px;bottom:43px}
+@keyframes fireGlow{from{filter:drop-shadow(0 8px 8px #37241555) drop-shadow(0 0 5px #e8792b88)}to{filter:drop-shadow(0 8px 8px #37241555) drop-shadow(0 0 17px #ffad42cc)}}
+.player-art{width:72px;height:102px;border:0;background:transparent;box-shadow:none;border-radius:0;z-index:35;transform:translate(-50%,-78%);transform-origin:50% 100%;filter:drop-shadow(0 9px 5px #30201366)}
+.player-art:before{display:none}.player-art:after{content:"";position:absolute;left:14px;bottom:0;width:44px;height:12px;border-radius:50%;background:#3525183b;z-index:-1}
+.player-art img{display:block;width:100%;height:100%;object-fit:contain;transform-origin:50% 100%}
+.player-art.walking img{animation:walkBob .34s ease-in-out infinite alternate}
+@keyframes walkBob{from{transform:translateY(0) rotate(-1deg)}to{transform:translateY(-4px) rotate(1deg)}}
+.npc{animation:npcIdle 2.2s ease-in-out infinite alternate}.npc:nth-of-type(even){animation-delay:-.9s}
+@keyframes npcIdle{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+.zone-label{z-index:22;background:linear-gradient(#3b2819e8,#25170ee8);border-color:#c79b536e;text-shadow:0 1px 2px #0008}
+.standard-zone{left:812px;top:74px}.council-zone{left:315px;top:205px}.family-zone{left:1210px;top:184px}.corral-zone{left:272px;top:650px}.workshop-zone{left:1260px;top:640px}
+.hud,.objective,.inventory-mini{box-shadow:0 8px 24px #24170d38}
+.dialogue-card{background:
+ linear-gradient(135deg,#342117f5,#1b110bf7),
+ repeating-linear-gradient(0deg,transparent 0 21px,#d3a55a0c 22px);
+ border-color:#d0a35a;box-shadow:0 18px 55px #000b,inset 0 0 24px #8b57201c}
+.dialogue-name{letter-spacing:.2px}
+@media(max-width:700px){
+ .standard-tent-asset{width:300px}.family-tent-asset{width:200px}.family-small{width:155px}
+ .workshop-asset{width:245px}.warehouse-asset{width:178px}.warehouse-small{width:145px}
+ .campfire-asset{width:108px}.well-asset{width:132px}
+ .player-art{width:66px;height:94px}
+}
