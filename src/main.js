@@ -60,7 +60,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.4</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.5</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -82,7 +82,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.4 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.5 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -142,6 +142,7 @@ function dialogue(title, text, button='Continuar') {
 function game() {
   if (!state.profile) return createCharacter();
   normalizeState();
+  const playerAsset = state.profile.sex === 'Feminino' ? './assets/art/characters/player_female.svg' : './assets/art/characters/player_male.svg';
 
   app.innerHTML = `
     <main class="game">
@@ -152,27 +153,30 @@ function game() {
 
         <div class="palisade pal-n"></div><div class="palisade pal-w"></div><div class="palisade pal-e"></div>
         <div class="palisade pal-s1"></div><div class="palisade pal-s2"></div>
-        <div class="watchtower tower-nw"></div><div class="watchtower tower-ne"></div>
-        <div class="watchtower tower-sw"></div><div class="watchtower tower-se"></div>
+        <img class="scenic-asset tower-asset tower-nw" src="./assets/art/judah/watchtower.svg" alt="">
+        <img class="scenic-asset tower-asset tower-ne" src="./assets/art/judah/watchtower.svg" alt="">
+        <img class="scenic-asset tower-asset tower-sw" src="./assets/art/judah/watchtower.svg" alt="">
+        <img class="scenic-asset tower-asset tower-se" src="./assets/art/judah/watchtower.svg" alt="">
         <div class="gate"><span></span><span></span></div>
 
         <div class="path main-v"></div><div class="path main-h"></div><div class="court"></div>
 
-        <div class="art-tent standard-art" style="left:760px;top:105px"><i class="standard-flag"></i></div>
-        <div class="art-tent council-art" style="left:300px;top:245px"></div>
-        <div class="art-tent family-art" style="left:1160px;top:225px"></div>
-        <div class="art-tent family-art small" style="left:1370px;top:315px"></div>
-        <div class="art-tent family-art small" style="left:1220px;top:390px"></div>
+        <img class="scenic-asset standard-tent-asset" style="left:730px;top:75px" src="./assets/art/judah/judah_standard_tent.svg" alt="Tenda do Estandarte">
+        <img class="scenic-asset family-tent-asset council-tent-asset" style="left:265px;top:215px" src="./assets/art/judah/family_tent.svg" alt="Tenda do Conselho">
+        <img class="scenic-asset family-tent-asset" style="left:1125px;top:190px" src="./assets/art/judah/family_tent.svg" alt="Tenda familiar">
+        <img class="scenic-asset family-tent-asset family-small" style="left:1340px;top:292px" src="./assets/art/judah/family_tent.svg" alt="">
+        <img class="scenic-asset family-tent-asset family-small" style="left:1188px;top:370px" src="./assets/art/judah/family_tent.svg" alt="">
 
-        <div class="warehouse" style="left:300px;top:470px"></div><div class="warehouse" style="left:460px;top:490px"></div>
-        <div class="workshop" style="left:1230px;top:700px"><span></span></div>
+        <img class="scenic-asset warehouse-asset" style="left:260px;top:438px" src="./assets/art/judah/warehouse.svg" alt="Armazém">
+        <img class="scenic-asset warehouse-asset warehouse-small" style="left:445px;top:480px" src="./assets/art/judah/warehouse.svg" alt="Armazém">
+        <img class="scenic-asset workshop-asset" style="left:1190px;top:650px" src="./assets/art/judah/workshop.svg" alt="Oficina">
         <div class="corral" style="left:245px;top:690px">
           <i class="animal sheep a1"></i><i class="animal sheep a2"></i><i class="animal goat a3"></i><i class="trough"></i>
         </div>
 
-        <div class="fire" style="left:875px;top:555px"></div>
+        <img class="scenic-asset campfire-asset" style="left:842px;top:520px" src="./assets/art/judah/campfire.svg" alt="Fogueira central">
         <div class="bench" style="left:760px;top:540px"></div><div class="bench" style="left:1005px;top:640px"></div>
-        <div class="well" style="left:855px;top:790px"><span class="well-roof"></span></div>
+        <img class="scenic-asset well-asset" style="left:820px;top:744px" src="./assets/art/judah/well.svg" alt="Poço de Judá">
 
         <div class="acacia" style="left:110px;top:180px"></div><div class="acacia small" style="left:1550px;top:180px"></div>
         <div class="acacia" style="left:90px;top:870px"></div><div class="acacia small" style="left:1540px;top:865px"></div>
@@ -193,7 +197,7 @@ function game() {
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
         <div class="zone-label corral-zone">Currais</div><div class="zone-label workshop-zone">Oficinas</div>
 
-        <div class="player" id="player"></div>
+        <div class="player player-art" id="player"><img src="${playerAsset}" alt="Personagem"></div>
       </div>
 
       <div class="hud">
@@ -213,7 +217,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.4</div>
+      <div class="badge">Web Alpha 0.5</div>
     </main>`;
 
   const world = $('#world');
@@ -235,7 +239,12 @@ function game() {
   const ambientInteractions = [
     { id:'miria', x:1260,y:430,r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora','As famílias chegaram cedo hoje. Um acampamento cresce quando cada pessoa cuida um pouco do outro.') },
     { id:'hanan', x:530,y:545,r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro','O cheiro do pão traz gente para perto. Volte mais tarde e talvez eu precise de algumas ervas.') },
-    { id:'guard', x:830,y:1020,r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá','A entrada está tranquila. O estandarte no alto indica o coração do nosso setor.') }
+    { id:'guard', x:830,y:1020,r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá','A entrada está tranquila. O estandarte no alto indica o coração do nosso setor.') },
+    { id:'standard', x:900,y:205,r:150, action:'Observar Tenda do Estandarte', run:()=>dialogue('Tenda do Estandarte','O vermelho e o dourado destacam o setor de Judá. O estandarte do leão marca o ponto de liderança da tribo.') },
+    { id:'workshop', x:1325,y:735,r:150, action:'Examinar oficina', run:()=>dialogue('Oficina de Judá','Madeira, metal, couro e ferramentas ocupam cada bancada. O trabalho de Eliabe mantém o acampamento em movimento.') },
+    { id:'warehouse', x:380,y:505,r:145, action:'Examinar armazém', run:()=>dialogue('Armazéns','Mantimentos, tecidos, jarros e peças de reposição são organizados para atender as famílias do setor.') },
+    { id:'corral-look', x:420,y:820,r:165, action:'Observar rebanho', run:()=>dialogue('Currais','Ovelhas e cabras descansam entre cercas, cochos e recipientes de água. O rebanho sustenta parte importante da vida cotidiana.') },
+    { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') }
   ];
 
   function refreshHud() {
@@ -305,8 +314,13 @@ function game() {
     player.style.left = state.x + 'px';
     player.style.top = state.y + 'px';
 
-    const zoom = isTouch() ? (innerWidth > innerHeight ? 0.78 : 0.62) : 0.9;
-    world.style.transform = `translate(${innerWidth / 2}px,${innerHeight / 2}px) scale(${zoom}) translate(${-state.x}px,${-state.y}px)`;
+    const baseZoom = isTouch() ? (innerWidth > innerHeight ? 0.78 : 0.62) : 0.9;
+    const zoom = Math.min(1.15, Math.max(baseZoom, innerWidth / 1800, innerHeight / 1200));
+    const viewW = innerWidth / zoom;
+    const viewH = innerHeight / zoom;
+    const cameraX = viewW >= 1800 ? 900 : Math.max(viewW / 2, Math.min(1800 - viewW / 2, state.x));
+    const cameraY = viewH >= 1200 ? 600 : Math.max(viewH / 2, Math.min(1200 - viewH / 2, state.y));
+    world.style.transform = `translate(${innerWidth / 2}px,${innerHeight / 2}px) scale(${zoom}) translate(${-cameraX}px,${-cameraY}px)`;
 
     activeInteraction = getActiveInteraction();
     prompt.classList.toggle('hidden', !activeInteraction);
@@ -355,6 +369,7 @@ function game() {
     if (keys.has('d')||keys.has('arrowright')) dx++;
     if (keys.has('w')||keys.has('arrowup')) dy--;
     if (keys.has('s')||keys.has('arrowdown')) dy++;
+    player.classList.toggle('walking', Boolean(dx || dy));
     if (dx||dy) {
       const length = Math.hypot(dx,dy);
       state.x = Math.max(70,Math.min(1690,state.x+(dx/length)*4.2*dt));
