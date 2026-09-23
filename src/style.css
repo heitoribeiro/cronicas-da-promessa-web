@@ -147,3 +147,51 @@
  .campfire-asset{width:108px}.well-asset{width:132px}
  .player-art{width:66px;height:94px}
 }
+
+/* Web Alpha 0.6 — NPCs ilustrados, ambientação e profundidade */
+.npc{width:72px;height:100px;z-index:34;filter:drop-shadow(0 8px 5px #2f1f1560);transform:translate(-50%,-74%);transform-origin:50% 100%;animation:npcArtIdle 2.4s ease-in-out infinite alternate}
+.npc img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.npc b{top:88px;font-size:11px;z-index:3;opacity:.92}
+.npc-child{width:62px;height:86px;transform-origin:50% 100%}
+.npc-child b{top:76px}
+@keyframes npcArtIdle{from{transform:translate(-50%,-74%) translateY(0)}to{transform:translate(-50%,-74%) translateY(-3px)}}
+.npc:nth-of-type(even){animation-delay:-1.1s}
+.rug{position:absolute;z-index:5;border:4px solid #9d642f;box-shadow:0 8px 12px #3b27174a,inset 0 0 0 5px #d2a757}
+.rug:before{content:"";position:absolute;inset:6px;border:2px solid #e8c46a;background:repeating-linear-gradient(90deg,#8d2525 0 18px,#a8312d 18px 36px)}
+.rug-standard{width:130px;height:55px;transform:perspective(120px) rotateX(55deg)}
+.rug-family{width:88px;height:42px;transform:perspective(100px) rotateX(58deg);filter:saturate(.8)}
+.clay-cluster{position:absolute;z-index:11;width:95px;height:52px}
+.clay-cluster i{position:absolute;bottom:0;width:28px;height:39px;border-radius:38% 38% 48% 48%;background:linear-gradient(90deg,#8d4d2f,#c47749 50%,#814129);border:3px solid #643823;box-shadow:0 7px 5px #35231855}
+.clay-cluster i:before{content:"";position:absolute;left:6px;top:-7px;width:12px;height:8px;border:3px solid #643823;border-bottom:0;border-radius:50%}
+.clay-cluster i:nth-child(1){left:4px;transform:scale(.82)}.clay-cluster i:nth-child(2){left:32px}.clay-cluster i:nth-child(3){left:63px;transform:scale(.72)}
+.supply-pile{position:absolute;z-index:10;width:108px;height:58px}
+.supply-pile i{position:absolute;bottom:0;width:54px;height:38px;background:#8e633d;border:4px solid #5a3a27;box-shadow:0 6px 5px #35231855}
+.supply-pile i:before,.supply-pile i:after{content:"";position:absolute;background:#5f402c}
+.supply-pile i:before{left:22px;top:0;width:5px;height:100%}.supply-pile i:after{left:0;top:15px;width:100%;height:5px}
+.supply-pile i:nth-child(1){left:0}.supply-pile i:nth-child(2){left:49px;bottom:7px;transform:scale(.88)}
+.tribe-banner{position:absolute;z-index:12;width:54px;height:76px;border-left:5px solid #60402a}
+.tribe-banner:before{content:"";position:absolute;left:5px;top:4px;width:47px;height:54px;background:linear-gradient(#b52d2d,#7f1f20);border:3px solid #d5a84c;clip-path:polygon(0 0,100% 0,100% 82%,50% 100%,0 82%)}
+.tribe-banner:after{content:"♌";position:absolute;left:16px;top:16px;color:#f4d477;font:26px Georgia}
+.banner-left{transform:rotate(-3deg)}.banner-right{transform:rotate(3deg)}
+.world{background:
+ radial-gradient(ellipse at 16% 18%,#d9c28a22 0 9%,transparent 9.5%),
+ radial-gradient(ellipse at 82% 14%,#dbc58c20 0 8%,transparent 8.5%),
+ radial-gradient(ellipse at 76% 78%,#58452d18 0 7%,transparent 7.5%),
+ radial-gradient(circle at 50% 50%,#a88d58 0 14%,transparent 14.4%),
+ repeating-linear-gradient(12deg,transparent 0 34px,#ffffff08 35px 36px),
+ linear-gradient(145deg,#9b814e 0%,#806941 55%,#745d38 100%)}
+.path{background:
+ repeating-linear-gradient(94deg,transparent 0 42px,#8c713e12 43px 45px),
+ linear-gradient(90deg,#cfb67e,#b99e65 55%,#d1b981)}
+.court{background:
+ radial-gradient(circle at 50% 48%,#d1b77d 0 23%,#c2a76e 24% 46%,#ab8d56 47% 66%,transparent 67%);
+ box-shadow:inset 0 0 34px #73572f70,0 7px 18px #49351d25}
+.corral{background:
+ repeating-linear-gradient(12deg,#b69b6518 0 24px,#ffffff09 25px 26px),
+ #a88a552c}
+.animal{animation:animalBreath 1.9s ease-in-out infinite alternate}.animal:nth-child(2){animation-delay:-.8s}
+@keyframes animalBreath{from{transform:translateY(0) scale(1)}to{transform:translateY(-2px) scale(1.02)}}
+@media(max-width:700px){
+ .npc{width:65px;height:91px}.npc b{top:80px;font-size:9px}.npc-child{width:56px;height:78px}.npc-child b{top:69px}
+ .tribe-banner{transform:scale(.85)}
+}
