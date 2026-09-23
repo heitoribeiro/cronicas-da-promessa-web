@@ -1,7 +1,16 @@
 const app = document.querySelector('#app');
-const SAVE = 'cronicas-promessa-save-v2';
+const SAVE = 'cronicas-promessa-save-v3';
 const tribes = ['Rúben','Simeão','Levi','Judá','Dã','Naftali','Gade','Aser','Issacar','Zebulom','José','Benjamim'];
 const vocations = ['Pastor','Agricultor','Coletor','Levita'];
+
+const QUESTS = [
+  { id:'fire', label:'Vá até a fogueira central.', target:{x:900,y:590,r:110}, action:'Examinar fogueira' },
+  { id:'eliabe', label:'Fale com Eliabe, o artesão, na oficina.', target:{x:1330,y:760,r:115}, action:'Falar com Eliabe' },
+  { id:'well', label:'Busque água no poço para ajudar o curral.', target:{x:900,y:825,r:105}, action:'Retirar água' },
+  { id:'corral', label:'Leve a água para a Criança do Rebanho.', target:{x:455,y:790,r:120}, action:'Falar com a Criança do Rebanho' },
+  { id:'elder', label:'Apresente-se ao Ancião junto à Tenda do Estandarte.', target:{x:900,y:300,r:125}, action:'Falar com o Ancião' },
+  { id:'complete', label:'Missão concluída: você conheceu o Acampamento de Judá.' }
+];
 
 let state = {
   profile: null,
@@ -10,11 +19,19 @@ let state = {
   day: 1,
   time: 480,
   inventory: {},
-  reputation: 0
+  reputation: 0,
+  questStep: 0,
+  visited: {}
 };
 
-function $(selector) {
-  return document.querySelector(selector);
+function $(selector) { return document.querySelector(selector); }
+
+function normalizeState() {
+  state.inventory ||= {};
+  state.visited ||= {};
+  if (!Number.isInteger(state.questStep)) state.questStep = 0;
+  if (!Number.isFinite(state.reputation)) state.reputation = 0;
+  if (!Number.isFinite(state.time)) state.time = 480;
 }
 
 function load() {
@@ -24,14 +41,12 @@ function load() {
   } catch (error) {
     console.warn('Falha ao carregar save local:', error);
   }
+  normalizeState();
 }
 
 function save() {
-  try {
-    localStorage.setItem(SAVE, JSON.stringify(state));
-  } catch (error) {
-    console.warn('Falha ao salvar progresso:', error);
-  }
+  try { localStorage.setItem(SAVE, JSON.stringify(state)); }
+  catch (error) { console.warn('Falha ao salvar progresso:', error); }
 }
 
 function isTouch() {
@@ -41,18 +56,13 @@ function isTouch() {
 function renderFatal(error) {
   console.error(error);
   app.innerHTML = `
-    <main class="screen">
-      <section class="panel">
-        <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
-        <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
-        <div class="menu">
-          <button class="btn" id="reloadGame">RECARREGAR</button>
-        </div>
-        <p class="subtitle" style="font-size:13px">Web Alpha 0.3</p>
-      </section>
-    </main>`;
-  const reload = $('#reloadGame');
-  if (reload) reload.addEventListener('click', () => location.reload());
+    <main class="screen"><section class="panel">
+      <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
+      <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
+      <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.4</p>
+    </section></main>`;
+  $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
 
 window.addEventListener('error', event => {
@@ -72,13 +82,12 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.3 • Judá jogável</p>
+        <p class="subtitle">Web Alpha 0.4 • Judá vivo</p>
       </section>
     </main>`;
 
   $('#newGame').addEventListener('click', createCharacter);
-  const continueButton = $('#continueGame');
-  if (state.profile) continueButton.addEventListener('click', game);
+  if (state.profile) $('#continueGame').addEventListener('click', game);
 }
 
 function createCharacter() {
@@ -87,27 +96,12 @@ function createCharacter() {
       <section class="panel">
         <h2 class="title" style="font-size:36px">SUA JORNADA COMEÇA AQUI</h2>
         <div class="form">
-          <label>NOME
-            <input id="characterName" maxlength="22" placeholder="Seu nome" autocomplete="off"/>
-          </label>
+          <label>NOME<input id="characterName" maxlength="22" placeholder="Seu nome" autocomplete="off"/></label>
           <div class="row">
-            <label>PERSONAGEM
-              <select id="characterSex">
-                <option>Masculino</option>
-                <option>Feminino</option>
-              </select>
-            </label>
-            <label>TRIBO DE ISRAEL
-              <select id="characterTribe">
-                ${tribes.map(t => `<option ${t === 'Judá' ? 'selected' : ''}>${t}</option>`).join('')}
-              </select>
-            </label>
+            <label>PERSONAGEM<select id="characterSex"><option>Masculino</option><option>Feminino</option></select></label>
+            <label>TRIBO DE ISRAEL<select id="characterTribe">${tribes.map(t => `<option ${t === 'Judá' ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
           </div>
-          <label>VOCAÇÃO
-            <select id="characterVocation">
-              ${vocations.map(v => `<option>${v}</option>`).join('')}
-            </select>
-          </label>
+          <label>VOCAÇÃO<select id="characterVocation">${vocations.map(v => `<option>${v}</option>`).join('')}</select></label>
           <div class="row">
             <button class="btn secondary" id="backButton">VOLTAR</button>
             <button class="btn" id="startButton">INICIAR JORNADA</button>
@@ -120,10 +114,7 @@ function createCharacter() {
   $('#startButton').addEventListener('click', () => {
     const nameInput = $('#characterName');
     const value = nameInput.value.trim();
-    if (!value) {
-      nameInput.focus();
-      return;
-    }
+    if (!value) return nameInput.focus();
 
     state = {
       profile: {
@@ -132,24 +123,25 @@ function createCharacter() {
         tribe: $('#characterTribe').value,
         vocation: $('#characterVocation').value
       },
-      x: 900,
-      y: 980,
-      day: 1,
-      time: 480,
-      inventory: {},
-      reputation: 0
+      x: 900, y: 980, day: 1, time: 480,
+      inventory: {}, reputation: 0, questStep: 0, visited: {}
     };
-
     save();
     game();
   });
 }
 
+function dialogue(title, text, button='Continuar') {
+  const modal = $('#dialogue');
+  if (!modal) return;
+  modal.innerHTML = `<div class="dialogue-card"><div class="dialogue-name">${title}</div><div class="dialogue-text">${text}</div><button class="dialogue-button">${button}</button></div>`;
+  modal.classList.remove('hidden');
+  modal.querySelector('button').addEventListener('click', () => modal.classList.add('hidden'), { once:true });
+}
+
 function game() {
-  if (!state.profile) {
-    createCharacter();
-    return;
-  }
+  if (!state.profile) return createCharacter();
+  normalizeState();
 
   app.innerHTML = `
     <main class="game">
@@ -157,6 +149,7 @@ function game() {
         <div class="dune dune-a"></div><div class="dune dune-b"></div><div class="dune dune-c"></div>
         <div class="district district-council"></div><div class="district district-family"></div>
         <div class="district district-corral"></div><div class="district district-workshop"></div>
+
         <div class="palisade pal-n"></div><div class="palisade pal-w"></div><div class="palisade pal-e"></div>
         <div class="palisade pal-s1"></div><div class="palisade pal-s2"></div>
         <div class="watchtower tower-nw"></div><div class="watchtower tower-ne"></div>
@@ -170,9 +163,9 @@ function game() {
         <div class="art-tent family-art" style="left:1160px;top:225px"></div>
         <div class="art-tent family-art small" style="left:1370px;top:315px"></div>
         <div class="art-tent family-art small" style="left:1220px;top:390px"></div>
+
         <div class="warehouse" style="left:300px;top:470px"></div><div class="warehouse" style="left:460px;top:490px"></div>
         <div class="workshop" style="left:1230px;top:700px"><span></span></div>
-
         <div class="corral" style="left:245px;top:690px">
           <i class="animal sheep a1"></i><i class="animal sheep a2"></i><i class="animal goat a3"></i><i class="trough"></i>
         </div>
@@ -187,6 +180,15 @@ function game() {
         <div class="jar" style="left:1125px;top:500px"></div><div class="crate" style="left:510px;top:620px"></div>
         <div class="torch" style="left:790px;top:690px"></div><div class="torch" style="left:1010px;top:690px"></div>
 
+        <div class="cook-area" style="left:430px;top:535px"><span class="cook-pot"></span></div>
+
+        <div class="npc npc-elder" style="left:890px;top:292px"><span></span><b>Ancião</b></div>
+        <div class="npc npc-eliabe" style="left:1320px;top:745px"><span></span><b>Eliabe</b></div>
+        <div class="npc npc-child" style="left:445px;top:780px"><span></span><b>Rebanho</b></div>
+        <div class="npc npc-miria" style="left:1245px;top:420px"><span></span><b>Miriã</b></div>
+        <div class="npc npc-hanan" style="left:520px;top:535px"><span></span><b>Hanan</b></div>
+        <div class="npc npc-guard" style="left:820px;top:1015px"><span></span><b>Guarda</b></div>
+
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
         <div class="zone-label corral-zone">Currais</div><div class="zone-label workshop-zone">Oficinas</div>
@@ -199,21 +201,19 @@ function game() {
         Dia ${state.day} • <span id="clock"></span> • Rep. <span id="rep">${state.reputation}</span>
       </div>
 
-      <div class="objective" id="objective">Objetivo: vá até a fogueira central.</div>
+      <div class="objective" id="objective"></div>
+      <div class="inventory-mini" id="inventoryMini"></div>
       <div class="prompt hidden" id="prompt"></div>
       <button class="game-menu" id="gameMenu">☰</button>
 
       <div class="touch hidden" id="touchControls">
         <button data-k="w">▲</button>
-        <div>
-          <button data-k="a">◀</button>
-          <button data-k="s">▼</button>
-          <button data-k="d">▶</button>
-        </div>
+        <div><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div>
       </div>
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
-      <div class="badge">Web Alpha 0.3</div>
+      <div class="dialogue hidden" id="dialogue"></div>
+      <div class="badge">Web Alpha 0.4</div>
     </main>`;
 
   const world = $('#world');
@@ -224,28 +224,81 @@ function game() {
   const clock = $('#clock');
   const rep = $('#rep');
   const objective = $('#objective');
+  const inventoryMini = $('#inventoryMini');
   const menuButton = $('#gameMenu');
   const keys = new Set();
 
   if (isTouch()) touchControls.classList.remove('hidden');
 
-  let near = false;
-  let completed = false;
+  let activeInteraction = null;
+
+  const ambientInteractions = [
+    { id:'miria', x:1260,y:430,r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora','As famílias chegaram cedo hoje. Um acampamento cresce quando cada pessoa cuida um pouco do outro.') },
+    { id:'hanan', x:530,y:545,r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro','O cheiro do pão traz gente para perto. Volte mais tarde e talvez eu precise de algumas ervas.') },
+    { id:'guard', x:830,y:1020,r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá','A entrada está tranquila. O estandarte no alto indica o coração do nosso setor.') }
+  ];
+
+  function refreshHud() {
+    const quest = QUESTS[Math.min(state.questStep, QUESTS.length - 1)];
+    objective.textContent = quest.label;
+    rep.textContent = state.reputation;
+    const items = [];
+    if (state.inventory.lenha) items.push(`Lenha ×${state.inventory.lenha}`);
+    if (state.inventory.agua) items.push(`Água ×${state.inventory.agua}`);
+    inventoryMini.textContent = items.length ? items.join(' • ') : 'Bolsa vazia';
+  }
+
+  function advanceQuest(reward=0) {
+    if (reward) state.reputation += reward;
+    state.questStep = Math.min(state.questStep + 1, QUESTS.length - 1);
+    save();
+    refreshHud();
+  }
+
+  function runQuestInteraction() {
+    switch (state.questStep) {
+      case 0:
+        state.inventory.lenha = (state.inventory.lenha || 0) + 1;
+        dialogue('Fogueira central','Você observa o centro do acampamento. A fogueira reúne viajantes, famílias e trabalhadores. Você separa um pequeno feixe de lenha para ajudar a mantê-la acesa.');
+        advanceQuest(2);
+        break;
+      case 1:
+        dialogue('Eliabe — o artesão','Bem-vindo. Ferramentas quebram, tendas rasgam, carroças cedem... sempre existe algo para consertar. Antes de seguir, leve água ao curral. Eles estão precisando.');
+        advanceQuest(2);
+        break;
+      case 2:
+        state.inventory.agua = (state.inventory.agua || 0) + 1;
+        dialogue('Poço de Judá','Você baixa o balde e retira água fresca. Agora pode levá-la ao curral.');
+        advanceQuest(1);
+        break;
+      case 3:
+        state.inventory.agua = Math.max(0,(state.inventory.agua || 0) - 1);
+        dialogue('Criança do Rebanho','Obrigado! Os animais estavam com sede. O Ancião pediu que todo recém-chegado se apresente junto à Tenda do Estandarte.');
+        advanceQuest(2);
+        break;
+      case 4:
+        dialogue('Ancião do Conselho',`${state.profile.name}, sua jornada começa entre pessoas comuns, trabalho diário e pequenas responsabilidades. Conheça este povo e faça do seu caminho uma história digna de ser lembrada.`,'Concluir');
+        advanceQuest(5);
+        break;
+      default:
+        dialogue('Acampamento de Judá','Você já conheceu os principais pontos do setor. Explore livremente enquanto novas histórias são preparadas.');
+    }
+  }
+
+  function getActiveInteraction() {
+    const quest = QUESTS[state.questStep];
+    if (quest?.target) {
+      const d = Math.hypot(state.x - quest.target.x, state.y - quest.target.y);
+      if (d < quest.target.r) return { action:quest.action, run:runQuestInteraction };
+    }
+    for (const item of ambientInteractions) {
+      if (Math.hypot(state.x-item.x,state.y-item.y) < item.r) return item;
+    }
+    return null;
+  }
 
   function interact() {
-    if (!near) return;
-
-    if (!completed) {
-      completed = true;
-      state.reputation += 2;
-      state.inventory.lenha = (state.inventory.lenha || 0) + 1;
-      save();
-      rep.textContent = state.reputation;
-      objective.textContent = 'Objetivo concluído: você conheceu o pátio central.';
-      prompt.textContent = '+1 Lenha • Reputação +2';
-    } else {
-      prompt.textContent = 'A fogueira aquece o pátio de Judá.';
-    }
+    activeInteraction?.run?.();
   }
 
   function draw() {
@@ -255,58 +308,39 @@ function game() {
     const zoom = isTouch() ? (innerWidth > innerHeight ? 0.78 : 0.62) : 0.9;
     world.style.transform = `translate(${innerWidth / 2}px,${innerHeight / 2}px) scale(${zoom}) translate(${-state.x}px,${-state.y}px)`;
 
-    near = Math.hypot(state.x - 900, state.y - 590) < 105;
-    prompt.classList.toggle('hidden', !near);
-    actionButton.classList.toggle('hidden', !near || !isTouch());
-
-    if (near && !completed) {
-      prompt.textContent = isTouch() ? 'AÇÃO — Examinar fogueira' : 'E — Examinar fogueira';
-    }
+    activeInteraction = getActiveInteraction();
+    prompt.classList.toggle('hidden', !activeInteraction);
+    actionButton.classList.toggle('hidden', !activeInteraction || !isTouch());
+    if (activeInteraction) prompt.textContent = isTouch() ? `AÇÃO — ${activeInteraction.action}` : `E — ${activeInteraction.action}`;
 
     const h = Math.floor(state.time / 60) % 24;
     const m = Math.floor(state.time % 60);
-    clock.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    clock.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   }
 
   function onKeyDown(event) {
     keys.add(event.key.toLowerCase());
     if (event.key.toLowerCase() === 'e') interact();
-    if (event.key === 'Escape') {
-      save();
-      menu();
-    }
+    if (event.key === 'Escape') { save(); menu(); }
   }
-
-  function onKeyUp(event) {
-    keys.delete(event.key.toLowerCase());
-  }
+  function onKeyUp(event) { keys.delete(event.key.toLowerCase()); }
 
   addEventListener('keydown', onKeyDown);
   addEventListener('keyup', onKeyUp);
-
   actionButton.addEventListener('click', interact);
-  menuButton.addEventListener('click', () => {
-    save();
-    menu();
-  });
+  menuButton.addEventListener('click', () => { save(); menu(); });
 
   touchControls.querySelectorAll('button').forEach(button => {
     const key = button.dataset.k;
-    const press = event => {
-      event.preventDefault();
-      keys.add(key);
-    };
-    const release = event => {
-      event.preventDefault();
-      keys.delete(key);
-    };
-
+    const press = event => { event.preventDefault(); keys.add(key); };
+    const release = event => { event.preventDefault(); keys.delete(key); };
     button.addEventListener('pointerdown', press);
     button.addEventListener('pointerup', release);
     button.addEventListener('pointercancel', release);
     button.addEventListener('pointerleave', release);
   });
 
+  refreshHud();
   let last = performance.now();
 
   function tick(now) {
@@ -315,25 +349,18 @@ function game() {
       removeEventListener('keyup', onKeyUp);
       return;
     }
-
-    const dt = Math.min((now - last) / 16.67, 2);
-    last = now;
-
-    let dx = 0;
-    let dy = 0;
-
-    if (keys.has('a') || keys.has('arrowleft')) dx -= 1;
-    if (keys.has('d') || keys.has('arrowright')) dx += 1;
-    if (keys.has('w') || keys.has('arrowup')) dy -= 1;
-    if (keys.has('s') || keys.has('arrowdown')) dy += 1;
-
-    if (dx || dy) {
-      const length = Math.hypot(dx, dy);
-      state.x = Math.max(70, Math.min(1690, state.x + (dx / length) * 4.2 * dt));
-      state.y = Math.max(70, Math.min(1090, state.y + (dy / length) * 4.2 * dt));
-      state.time += 0.04 * dt;
+    const dt = Math.min((now-last)/16.67,2); last = now;
+    let dx=0,dy=0;
+    if (keys.has('a')||keys.has('arrowleft')) dx--;
+    if (keys.has('d')||keys.has('arrowright')) dx++;
+    if (keys.has('w')||keys.has('arrowup')) dy--;
+    if (keys.has('s')||keys.has('arrowdown')) dy++;
+    if (dx||dy) {
+      const length = Math.hypot(dx,dy);
+      state.x = Math.max(70,Math.min(1690,state.x+(dx/length)*4.2*dt));
+      state.y = Math.max(70,Math.min(1090,state.y+(dy/length)*4.2*dt));
+      state.time += .04*dt;
     }
-
     draw();
     requestAnimationFrame(tick);
   }
@@ -343,9 +370,4 @@ function game() {
 }
 
 load();
-
-try {
-  menu();
-} catch (error) {
-  renderFatal(error);
-}
+try { menu(); } catch (error) { renderFatal(error); }
