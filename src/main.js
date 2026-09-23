@@ -60,7 +60,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.5</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.6</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -82,7 +82,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.5 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.6 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -185,13 +185,19 @@ function game() {
         <div class="torch" style="left:790px;top:690px"></div><div class="torch" style="left:1010px;top:690px"></div>
 
         <div class="cook-area" style="left:430px;top:535px"><span class="cook-pot"></span></div>
+        <div class="rug rug-standard" style="left:835px;top:355px"></div>
+        <div class="rug rug-family" style="left:1180px;top:500px"></div>
+        <div class="clay-cluster" style="left:1110px;top:548px"><i></i><i></i><i></i></div>
+        <div class="supply-pile" style="left:515px;top:575px"><i></i><i></i></div>
+        <div class="tribe-banner banner-left" style="left:675px;top:330px"></div>
+        <div class="tribe-banner banner-right" style="left:1080px;top:360px"></div>
 
-        <div class="npc npc-elder" style="left:890px;top:292px"><span></span><b>Ancião</b></div>
-        <div class="npc npc-eliabe" style="left:1320px;top:745px"><span></span><b>Eliabe</b></div>
-        <div class="npc npc-child" style="left:445px;top:780px"><span></span><b>Rebanho</b></div>
-        <div class="npc npc-miria" style="left:1245px;top:420px"><span></span><b>Miriã</b></div>
-        <div class="npc npc-hanan" style="left:520px;top:535px"><span></span><b>Hanan</b></div>
-        <div class="npc npc-guard" style="left:820px;top:1015px"><span></span><b>Guarda</b></div>
+        <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/npcs/elder.svg" alt="Ancião"><b>Ancião</b></div>
+        <div class="npc npc-eliabe" style="left:1320px;top:745px"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="npc npc-child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg" alt="Criança do Rebanho"><b>Rebanho</b></div>
+        <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/npcs/miria.svg" alt="Miriã"><b>Miriã</b></div>
+        <div class="npc npc-hanan" style="left:520px;top:535px"><img src="./assets/art/npcs/hanan.svg" alt="Hanan"><b>Hanan</b></div>
+        <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/npcs/guard.svg" alt="Guarda"><b>Guarda</b></div>
 
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
@@ -217,7 +223,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.5</div>
+      <div class="badge">Web Alpha 0.6</div>
     </main>`;
 
   const world = $('#world');
@@ -246,6 +252,43 @@ function game() {
     { id:'corral-look', x:420,y:820,r:165, action:'Observar rebanho', run:()=>dialogue('Currais','Ovelhas e cabras descansam entre cercas, cochos e recipientes de água. O rebanho sustenta parte importante da vida cotidiana.') },
     { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') }
   ];
+
+
+  const PLAYER_RADIUS = 20;
+  const obstacles = [
+    {type:'rect',x:755,y:150,w:292,h:144},
+    {type:'rect',x:280,y:274,w:190,h:112},
+    {type:'rect',x:1145,y:248,w:180,h:108},
+    {type:'rect',x:1360,y:344,w:142,h:94},
+    {type:'rect',x:1200,y:420,w:142,h:92},
+    {type:'rect',x:275,y:485,w:160,h:88},
+    {type:'rect',x:460,y:522,w:133,h:74},
+    {type:'rect',x:1210,y:700,w:235,h:146},
+    {type:'rect',x:748,y:548,w:128,h:34},
+    {type:'rect',x:995,y:647,w:126,h:34},
+    {type:'circle',x:900,y:820,r:54},
+    {type:'circle',x:900,y:590,r:48},
+    {type:'circle',x:489,y:570,r:50},
+    {type:'circle',x:912,y:332,r:26},
+    {type:'circle',x:1342,y:790,r:26},
+    {type:'circle',x:466,y:822,r:24},
+    {type:'circle',x:1267,y:466,r:26},
+    {type:'circle',x:542,y:580,r:26},
+    {type:'circle',x:842,y:1052,r:26}
+  ];
+
+  function circleHitsRect(px,py,r,o) {
+    const cx = Math.max(o.x, Math.min(px, o.x + o.w));
+    const cy = Math.max(o.y, Math.min(py, o.y + o.h));
+    return Math.hypot(px-cx, py-cy) < r;
+  }
+
+  function canStand(px,py) {
+    if (px < 135 || px > 1665 || py < 95 || py > 1085) return false;
+    return !obstacles.some(o => o.type === 'circle'
+      ? Math.hypot(px-o.x,py-o.y) < PLAYER_RADIUS + o.r
+      : circleHitsRect(px,py,PLAYER_RADIUS,o));
+  }
 
   function refreshHud() {
     const quest = QUESTS[Math.min(state.questStep, QUESTS.length - 1)];
@@ -364,16 +407,23 @@ function game() {
       return;
     }
     const dt = Math.min((now-last)/16.67,2); last = now;
+    const dialogOpen = !$('#dialogue').classList.contains('hidden');
     let dx=0,dy=0;
-    if (keys.has('a')||keys.has('arrowleft')) dx--;
-    if (keys.has('d')||keys.has('arrowright')) dx++;
-    if (keys.has('w')||keys.has('arrowup')) dy--;
-    if (keys.has('s')||keys.has('arrowdown')) dy++;
+    if (!dialogOpen) {
+      if (keys.has('a')||keys.has('arrowleft')) dx--;
+      if (keys.has('d')||keys.has('arrowright')) dx++;
+      if (keys.has('w')||keys.has('arrowup')) dy--;
+      if (keys.has('s')||keys.has('arrowdown')) dy++;
+    }
     player.classList.toggle('walking', Boolean(dx || dy));
     if (dx||dy) {
       const length = Math.hypot(dx,dy);
-      state.x = Math.max(70,Math.min(1690,state.x+(dx/length)*4.2*dt));
-      state.y = Math.max(70,Math.min(1090,state.y+(dy/length)*4.2*dt));
+      const stepX = (dx/length)*4.2*dt;
+      const stepY = (dy/length)*4.2*dt;
+      const nextX = state.x + stepX;
+      const nextY = state.y + stepY;
+      if (canStand(nextX,state.y)) state.x = nextX;
+      if (canStand(state.x,nextY)) state.y = nextY;
       state.time += .04*dt;
     }
     draw();
