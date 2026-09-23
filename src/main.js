@@ -48,7 +48,7 @@ function renderFatal(error) {
         <div class="menu">
           <button class="btn" id="reloadGame">RECARREGAR</button>
         </div>
-        <p class="subtitle" style="font-size:13px">Web Alpha 0.2.1</p>
+        <p class="subtitle" style="font-size:13px">Web Alpha 0.3</p>
       </section>
     </main>`;
   const reload = $('#reloadGame');
@@ -72,7 +72,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.2.1 • Judá jogável</p>
+        <p class="subtitle">Web Alpha 0.3 • Judá jogável</p>
       </section>
     </main>`;
 
@@ -154,26 +154,42 @@ function game() {
   app.innerHTML = `
     <main class="game">
       <div class="world" id="world">
-        <div class="zone standard-zone">TENDA DO ESTANDARTE</div>
-        <div class="zone council-zone">CONSELHO</div>
-        <div class="zone family-zone">TENDAS FAMILIARES</div>
-        <div class="zone corral-zone">CURRAIS</div>
-        <div class="zone workshop-zone">OFICINAS</div>
+        <div class="dune dune-a"></div><div class="dune dune-b"></div><div class="dune dune-c"></div>
+        <div class="district district-council"></div><div class="district district-family"></div>
+        <div class="district district-corral"></div><div class="district district-workshop"></div>
+        <div class="palisade pal-n"></div><div class="palisade pal-w"></div><div class="palisade pal-e"></div>
+        <div class="palisade pal-s1"></div><div class="palisade pal-s2"></div>
+        <div class="watchtower tower-nw"></div><div class="watchtower tower-ne"></div>
+        <div class="watchtower tower-sw"></div><div class="watchtower tower-se"></div>
+        <div class="gate"><span></span><span></span></div>
 
-        <div class="path main-v"></div>
-        <div class="path main-h"></div>
-        <div class="court"></div>
+        <div class="path main-v"></div><div class="path main-h"></div><div class="court"></div>
 
-        <div class="tent standard" style="left:780px;top:105px"></div>
-        <div class="tent" style="left:350px;top:270px"></div>
-        <div class="tent" style="left:1190px;top:250px"></div>
-        <div class="tent" style="left:1370px;top:360px"></div>
+        <div class="art-tent standard-art" style="left:760px;top:105px"><i class="standard-flag"></i></div>
+        <div class="art-tent council-art" style="left:300px;top:245px"></div>
+        <div class="art-tent family-art" style="left:1160px;top:225px"></div>
+        <div class="art-tent family-art small" style="left:1370px;top:315px"></div>
+        <div class="art-tent family-art small" style="left:1220px;top:390px"></div>
+        <div class="warehouse" style="left:300px;top:470px"></div><div class="warehouse" style="left:460px;top:490px"></div>
+        <div class="workshop" style="left:1230px;top:700px"><span></span></div>
+
+        <div class="corral" style="left:245px;top:690px">
+          <i class="animal sheep a1"></i><i class="animal sheep a2"></i><i class="animal goat a3"></i><i class="trough"></i>
+        </div>
 
         <div class="fire" style="left:875px;top:555px"></div>
-        <div class="well" style="left:855px;top:790px"></div>
-        <div class="prop" style="left:290px;top:700px">🐑</div>
-        <div class="prop" style="left:390px;top:740px">🐐</div>
-        <div class="prop" style="left:1280px;top:720px">⚒</div>
+        <div class="bench" style="left:760px;top:540px"></div><div class="bench" style="left:1005px;top:640px"></div>
+        <div class="well" style="left:855px;top:790px"><span class="well-roof"></span></div>
+
+        <div class="acacia" style="left:110px;top:180px"></div><div class="acacia small" style="left:1550px;top:180px"></div>
+        <div class="acacia" style="left:90px;top:870px"></div><div class="acacia small" style="left:1540px;top:865px"></div>
+        <div class="rock r1" style="left:620px;top:270px"></div><div class="rock r2" style="left:1080px;top:850px"></div>
+        <div class="jar" style="left:1125px;top:500px"></div><div class="crate" style="left:510px;top:620px"></div>
+        <div class="torch" style="left:790px;top:690px"></div><div class="torch" style="left:1010px;top:690px"></div>
+
+        <div class="zone-label standard-zone">Tenda do Estandarte</div>
+        <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
+        <div class="zone-label corral-zone">Currais</div><div class="zone-label workshop-zone">Oficinas</div>
 
         <div class="player" id="player"></div>
       </div>
@@ -197,7 +213,7 @@ function game() {
       </div>
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
-      <div class="badge">Web Alpha 0.2.1</div>
+      <div class="badge">Web Alpha 0.3</div>
     </main>`;
 
   const world = $('#world');
@@ -236,7 +252,8 @@ function game() {
     player.style.left = state.x + 'px';
     player.style.top = state.y + 'px';
 
-    world.style.transform = `translate(${innerWidth / 2 - state.x}px,${innerHeight / 2 - state.y}px)`;
+    const zoom = isTouch() ? (innerWidth > innerHeight ? 0.78 : 0.62) : 0.9;
+    world.style.transform = `translate(${innerWidth / 2}px,${innerHeight / 2}px) scale(${zoom}) translate(${-state.x}px,${-state.y}px)`;
 
     near = Math.hypot(state.x - 900, state.y - 590) < 105;
     prompt.classList.toggle('hidden', !near);
