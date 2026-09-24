@@ -263,3 +263,30 @@
  .elder-interior{left:460px;top:275px}.eliabe-interior{left:612px;top:375px}
  .interior-marker{font-size:10px}
 }
+
+/* Web Alpha 0.10 — vida simulada, casa, necessidades e calendário */
+.player-home-asset{width:190px;height:auto;z-index:1030;filter:drop-shadow(0 12px 8px #2d1d1455)}
+.player-home-label{z-index:2500!important}
+.needs-hud{position:fixed;z-index:5000;left:18px;top:112px;width:230px;padding:8px 10px;border:1px solid #a77b3d88;border-radius:9px;background:#25180dd9;color:#f1ddad;font:12px Georgia;backdrop-filter:blur(4px);box-shadow:0 8px 24px #24170d38}
+.needs-hud span{display:grid;grid-template-columns:48px 1fr 26px;align-items:center;gap:7px;margin:3px 0}
+.need-bar{display:block;height:8px;border-radius:8px;overflow:hidden;background:#130d09aa;border:1px solid #8c653b77}
+.need-bar b{display:block;height:100%;width:100%;border-radius:8px;background:linear-gradient(90deg,#6f8e4a,#c9b858);transition:width .35s ease}
+.needs-hud span:nth-child(2) .need-bar b{background:linear-gradient(90deg,#a05a35,#d6b052)}
+.needs-hud em{font-style:normal;text-align:right;color:#d8bb7d;font-size:10px}
+.needs-hud.warning{border-color:#d9874f;background:#321b10e6}
+.daily-task{position:fixed;z-index:5000;right:18px;top:92px;max-width:340px;padding:7px 10px;border:1px solid #a77b3d77;border-radius:8px;background:#25180dc7;color:#e7d19f;font:12px/1.25 Georgia;backdrop-filter:blur(4px)}
+.daily-task:empty{display:none}
+.bed-marker{left:220px;top:405px}.chest-marker{left:648px;top:515px}
+.interior-map#playerInterior{background:#927148}
+.interior-map#playerInterior .player-art{z-index:1800}
+.daylight.night{background:linear-gradient(180deg,#1e2d4d94,#11182f8c);opacity:.84}
+.daylight.evening{background:linear-gradient(180deg,#ed87533b,#8d4c3d2e);opacity:.68}
+.hud{min-width:260px}
+@media(max-width:700px){
+ .player-home-asset{width:172px}
+ .needs-hud{left:8px;top:85px;width:178px;padding:6px 7px;font-size:9px}
+ .needs-hud span{grid-template-columns:38px 1fr 22px;gap:4px}
+ .need-bar{height:6px}
+ .daily-task{right:8px;top:64px;max-width:42vw;padding:5px 7px;font-size:9px}
+ .bed-marker{left:225px;top:405px}.chest-marker{left:650px;top:515px}
+}
