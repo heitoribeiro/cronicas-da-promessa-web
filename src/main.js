@@ -71,7 +71,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.13</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.14</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -93,7 +93,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.13 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.14 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -302,7 +302,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.13</div>
+      <div class="badge">Web Alpha 0.14</div>
     </main>`;
 
   const world = $('#world');
@@ -674,7 +674,7 @@ function game() {
 
   function questGuidance() {
     const quest = QUESTS[state.questStep];
-    if (!quest?.target) return quest.label;
+    if (!quest?.target) return getDailyTaskText();
     if (currentScene !== 'outdoor') return `${quest.label} Saia da tenda para seguir a missão.`;
     const npc = quest.id === 'eliabe' ? npcAgents.eliabe : quest.id === 'corral' ? npcAgents.child : quest.id === 'elder' ? npcAgents.elder : null;
     if (npc?.inside === 'rest') return `${quest.label} O personagem está descansando. Volte pela manhã.`;
@@ -689,12 +689,30 @@ function game() {
 
   function questDestination() {
     const quest = QUESTS[state.questStep];
-    if (!quest?.target) return null;
+    if (!quest?.target) return dailyDestination();
     const npc = quest.id === 'eliabe' ? npcAgents.eliabe : quest.id === 'corral' ? npcAgents.child : quest.id === 'elder' ? npcAgents.elder : null;
     if (npc?.inside === 'workshop') return {x:1325,y:835,label:'Entre na oficina'};
     if (npc?.inside === 'standard') return {x:900,y:330,label:'Entre na tenda'};
     if (npc?.inside === 'rest') return {x:quest.target.x,y:quest.target.y,label:'Volte pela manhã'};
     return {x:npc?.x ?? quest.target.x,y:npc?.y ?? quest.target.y,label:quest.action};
+  }
+
+  function dailyDestination() {
+    if (state.dailyTask?.id === 'morning-water') {
+      if (state.dailyTask.step === 0) return {x:900,y:825,label:'Encha o jarro no poço'};
+      if (!npcAgents.hanan.inside) return {x:npcAgents.hanan.x,y:npcAgents.hanan.y,label:'Entregue a Hanan'};
+    }
+    if (state.dailyTask?.id === 'evening-herd') {
+      if (state.dailyTask.step === 0) return {x:900,y:1010,label:'Confira a entrada'};
+      if (!npcAgents.child.inside) return {x:npcAgents.child.x,y:npcAgents.child.y,label:'Avise o rebanho'};
+    }
+    if (state.hunger <= 35 && canEatNow()) return {x:489,y:570,label:'Coma na Cozinha'};
+    const windowId = timedWindowId();
+    if (windowId === 'morning-water' && !dailyDone(windowId) && !npcAgents.hanan.inside)
+      return {x:npcAgents.hanan.x,y:npcAgents.hanan.y,label:'Ajude Hanan'};
+    if (windowId === 'evening-herd' && !dailyDone(windowId) && !npcAgents.child.inside)
+      return {x:npcAgents.child.x,y:npcAgents.child.y,label:'Ajude no rebanho'};
+    return null;
   }
 
   function refreshHud() {
@@ -1027,7 +1045,11 @@ function game() {
     } else {
       playerFrame = 1;
     }
-    const src = `./assets/art/characters/${playerSexSlug}_${playerFacing}_${playerFrame}.svg`;
+    // Usa o sprite lateral já carregável e espelha a imagem no navegador.
+    const mirrorLeft = playerSexSlug === 'female' && playerFacing === 'left';
+    const spriteFacing = mirrorLeft ? 'right' : playerFacing;
+    const src = `./assets/art/characters/${playerSexSlug}_${spriteFacing}_${playerFrame}.svg`;
+    playerImg.classList.toggle('mirror-left', mirrorLeft);
     if (!playerImg.src.endsWith(src.replace('./','/'))) playerImg.setAttribute('src',src);
     player.dataset.facing = playerFacing;
   }
