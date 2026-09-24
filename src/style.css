@@ -236,3 +236,30 @@
  .gate-asset{width:225px}
  .animal-sprite{width:68px}
 }
+
+/* Web Alpha 0.9 — interiores jogáveis e ciclo de iluminação */
+.interior-map{position:fixed;left:0;top:0;width:1000px;height:700px;transform-origin:0 0;overflow:hidden;background:#8f7048;z-index:1200;box-shadow:inset 0 0 80px #21160d66}
+.interior-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.interior-map .player-art{position:absolute;z-index:1800}
+.interior-npc{position:absolute;width:92px;height:126px;z-index:1700;filter:drop-shadow(0 9px 6px #2e1d1455)}
+.interior-npc img{display:block;width:100%;height:100%;object-fit:contain}
+.interior-npc b{position:absolute;left:50%;top:110px;transform:translateX(-50%);white-space:nowrap;padding:4px 8px;border-radius:7px;background:#2c1b11e8;border:1px solid #c89b536f;color:#f2d89b;font:700 12px Georgia}
+.elder-interior{left:455px;top:265px}.eliabe-interior{left:605px;top:365px}
+.interior-marker{position:absolute;padding:6px 11px;border-radius:8px;background:#2a1a11d9;border:1px solid #d0a35a;color:#f5dfaa;font:700 12px Georgia;letter-spacing:.8px}
+.exit-marker{left:462px;top:625px}
+.daylight{position:fixed;inset:0;pointer-events:none;z-index:4200;transition:background 1.8s ease,opacity 1.8s ease;mix-blend-mode:multiply}
+.daylight.morning{background:linear-gradient(180deg,#ffd99c22,#ffb15f0a);opacity:.52}
+.daylight.afternoon{background:#fff7dc;opacity:.03}
+.daylight.evening{background:linear-gradient(180deg,#ff9f5f34,#b85f4225);opacity:.64}
+.daylight.night{background:linear-gradient(180deg,#24385c88,#151b347c);opacity:.80}
+.interior-map:not(.hidden)~.daylight.night{opacity:.48}
+.interior-map:not(.hidden)~.daylight.evening{opacity:.38}
+.gate-asset{filter:drop-shadow(0 12px 9px #261a125f)}
+.district{border-color:#5e4c2b1e;background:#dec6900b}
+.zone-label{opacity:.52}
+.world:hover .zone-label{opacity:.72}
+@media(max-width:700px){
+ .interior-npc{width:82px;height:112px}.interior-npc b{top:98px;font-size:10px}
+ .elder-interior{left:460px;top:275px}.eliabe-interior{left:612px;top:375px}
+ .interior-marker{font-size:10px}
+}
