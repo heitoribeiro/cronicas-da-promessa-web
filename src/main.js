@@ -60,7 +60,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.6</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.7</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -82,7 +82,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.6 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.7 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -142,7 +142,8 @@ function dialogue(title, text, button='Continuar') {
 function game() {
   if (!state.profile) return createCharacter();
   normalizeState();
-  const playerAsset = state.profile.sex === 'Feminino' ? './assets/art/characters/player_female.svg' : './assets/art/characters/player_male.svg';
+  const playerSexSlug = state.profile.sex === 'Feminino' ? 'female' : 'male';
+  const playerAsset = `./assets/art/characters/${playerSexSlug}_down_1.svg`;
 
   app.innerHTML = `
     <main class="game">
@@ -178,9 +179,17 @@ function game() {
         <div class="bench" style="left:760px;top:540px"></div><div class="bench" style="left:1005px;top:640px"></div>
         <img class="scenic-asset well-asset" style="left:820px;top:744px" src="./assets/art/judah/well.svg" alt="Poço de Judá">
 
-        <div class="acacia" style="left:110px;top:180px"></div><div class="acacia small" style="left:1550px;top:180px"></div>
-        <div class="acacia" style="left:90px;top:870px"></div><div class="acacia small" style="left:1540px;top:865px"></div>
-        <div class="rock r1" style="left:620px;top:270px"></div><div class="rock r2" style="left:1080px;top:850px"></div>
+        <img class="scenic-asset flora-asset acacia-asset" style="left:72px;top:135px" src="./assets/art/judah/acacia.svg" alt="">
+        <img class="scenic-asset flora-asset acacia-asset small-flora" style="left:1510px;top:145px" src="./assets/art/judah/acacia.svg" alt="">
+        <img class="scenic-asset flora-asset acacia-asset" style="left:58px;top:820px" src="./assets/art/judah/acacia.svg" alt="">
+        <img class="scenic-asset flora-asset acacia-asset small-flora" style="left:1495px;top:820px" src="./assets/art/judah/acacia.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset" style="left:185px;top:515px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset" style="left:1465px;top:555px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset mini-flora" style="left:675px;top:930px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset mini-flora" style="left:1050px;top:945px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset prop-art rock-art" style="left:585px;top:245px" src="./assets/art/judah/rock_cluster.svg" alt="">
+        <img class="scenic-asset prop-art rock-art small-rock" style="left:1050px;top:830px" src="./assets/art/judah/rock_cluster.svg" alt="">
+        <img class="scenic-asset prop-art supply-art" style="left:470px;top:560px" src="./assets/art/judah/supply_stack.svg" alt="">
         <div class="jar" style="left:1125px;top:500px"></div><div class="crate" style="left:510px;top:620px"></div>
         <div class="torch" style="left:790px;top:690px"></div><div class="torch" style="left:1010px;top:690px"></div>
 
@@ -223,7 +232,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.6</div>
+      <div class="badge">Web Alpha 0.7</div>
     </main>`;
 
   const world = $('#world');
@@ -243,9 +252,9 @@ function game() {
   let activeInteraction = null;
 
   const ambientInteractions = [
-    { id:'miria', x:1260,y:430,r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora','As famílias chegaram cedo hoje. Um acampamento cresce quando cada pessoa cuida um pouco do outro.') },
-    { id:'hanan', x:530,y:545,r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro','O cheiro do pão traz gente para perto. Volte mais tarde e talvez eu precise de algumas ervas.') },
-    { id:'guard', x:830,y:1020,r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá','A entrada está tranquila. O estandarte no alto indica o coração do nosso setor.') },
+    { id:'miria', npc:'miria', r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora','As famílias chegaram cedo hoje. Um acampamento cresce quando cada pessoa cuida um pouco do outro.') },
+    { id:'hanan', npc:'hanan', r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro','O cheiro do pão traz gente para perto. Volte mais tarde e talvez eu precise de algumas ervas.') },
+    { id:'guard', npc:'guard', r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá','A entrada está tranquila. O estandarte no alto indica o coração do nosso setor.') },
     { id:'standard', x:900,y:205,r:150, action:'Observar Tenda do Estandarte', run:()=>dialogue('Tenda do Estandarte','O vermelho e o dourado destacam o setor de Judá. O estandarte do leão marca o ponto de liderança da tribo.') },
     { id:'workshop', x:1325,y:735,r:150, action:'Examinar oficina', run:()=>dialogue('Oficina de Judá','Madeira, metal, couro e ferramentas ocupam cada bancada. O trabalho de Eliabe mantém o acampamento em movimento.') },
     { id:'warehouse', x:380,y:505,r:145, action:'Examinar armazém', run:()=>dialogue('Armazéns','Mantimentos, tecidos, jarros e peças de reposição são organizados para atender as famílias do setor.') },
@@ -253,6 +262,33 @@ function game() {
     { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') }
   ];
 
+  const npcAgents = {
+    elder: { el:$('.npc-elder'), x:890, y:292, route:[[890,292],[835,325],[930,330]], target:1, speed:.34 },
+    eliabe:{ el:$('.npc-eliabe'),x:1320,y:745,route:[[1320,745],[1370,780],[1275,790]],target:1,speed:.42 },
+    child: { el:$('.npc-child'), x:445, y:780, route:[[445,780],[360,825],[510,835],[420,745]], target:1, speed:.45 },
+    miria: { el:$('.npc-miria'), x:1245,y:420,route:[[1245,420],[1325,445],[1190,470],[1270,390]],target:1,speed:.38 },
+    hanan: { el:$('.npc-hanan'), x:520,y:535,route:[[520,535],[455,560],[570,575]],target:1,speed:.30 },
+    guard: { el:$('.npc-guard'), x:820,y:1015,route:[[820,1015],[980,1015],[900,965]],target:1,speed:.48 }
+  };
+
+  function moveNpc(agent, dt) {
+    const target = agent.route[agent.target];
+    const dx = target[0]-agent.x, dy = target[1]-agent.y;
+    const dist = Math.hypot(dx,dy);
+    if (dist < 4) {
+      agent.target = (agent.target + 1) % agent.route.length;
+      agent.el.classList.remove('npc-walking');
+      return;
+    }
+    const step = Math.min(dist, agent.speed * dt * 1.5);
+    agent.x += dx/dist * step;
+    agent.y += dy/dist * step;
+    agent.el.style.left = agent.x + 'px';
+    agent.el.style.top = agent.y + 'px';
+    agent.el.classList.add('npc-walking');
+    agent.el.classList.toggle('face-left', dx < -1);
+    agent.el.classList.toggle('face-right', dx > 1);
+  }
 
   const PLAYER_RADIUS = 20;
   const obstacles = [
@@ -268,13 +304,7 @@ function game() {
     {type:'rect',x:995,y:647,w:126,h:34},
     {type:'circle',x:900,y:820,r:54},
     {type:'circle',x:900,y:590,r:48},
-    {type:'circle',x:489,y:570,r:50},
-    {type:'circle',x:912,y:332,r:26},
-    {type:'circle',x:1342,y:790,r:26},
-    {type:'circle',x:466,y:822,r:24},
-    {type:'circle',x:1267,y:466,r:26},
-    {type:'circle',x:542,y:580,r:26},
-    {type:'circle',x:842,y:1052,r:26}
+    {type:'circle',x:489,y:570,r:50}
   ];
 
   function circleHitsRect(px,py,r,o) {
@@ -285,9 +315,11 @@ function game() {
 
   function canStand(px,py) {
     if (px < 135 || px > 1665 || py < 95 || py > 1085) return false;
-    return !obstacles.some(o => o.type === 'circle'
+    const hitsWorld = obstacles.some(o => o.type === 'circle'
       ? Math.hypot(px-o.x,py-o.y) < PLAYER_RADIUS + o.r
       : circleHitsRect(px,py,PLAYER_RADIUS,o));
+    if (hitsWorld) return false;
+    return !Object.values(npcAgents).some(npc => Math.hypot(px-npc.x,py-npc.y) < PLAYER_RADIUS + 24);
   }
 
   function refreshHud() {
@@ -339,12 +371,17 @@ function game() {
 
   function getActiveInteraction() {
     const quest = QUESTS[state.questStep];
-    if (quest?.target) {
-      const d = Math.hypot(state.x - quest.target.x, state.y - quest.target.y);
-      if (d < quest.target.r) return { action:quest.action, run:runQuestInteraction };
+    const questNpc = quest?.id === 'eliabe' ? npcAgents.eliabe : quest?.id === 'corral' ? npcAgents.child : quest?.id === 'elder' ? npcAgents.elder : null;
+    if (quest?.target || questNpc) {
+      const tx = questNpc ? questNpc.x : quest.target.x;
+      const ty = questNpc ? questNpc.y : quest.target.y;
+      const tr = questNpc ? 105 : quest.target.r;
+      if (Math.hypot(state.x-tx,state.y-ty) < tr) return { action:quest.action, run:runQuestInteraction };
     }
     for (const item of ambientInteractions) {
-      if (Math.hypot(state.x-item.x,state.y-item.y) < item.r) return item;
+      const npc = item.npc ? npcAgents[item.npc] : null;
+      const tx = npc ? npc.x : item.x, ty = npc ? npc.y : item.y;
+      if (Math.hypot(state.x-tx,state.y-ty) < item.r) return item;
     }
     return null;
   }
@@ -398,6 +435,28 @@ function game() {
   });
 
   refreshHud();
+  const playerImg = player.querySelector('img');
+  let playerFacing = 'down';
+  let playerFrame = 1;
+  let lastPlayerFrame = 0;
+
+  function updatePlayerSprite(dx,dy,now) {
+    const moving = Boolean(dx || dy);
+    if (moving) {
+      if (Math.abs(dx) > Math.abs(dy)) playerFacing = dx < 0 ? 'left' : 'right';
+      else playerFacing = dy < 0 ? 'up' : 'down';
+      if (now - lastPlayerFrame > 165) {
+        playerFrame = playerFrame === 1 ? 2 : 1;
+        lastPlayerFrame = now;
+      }
+    } else {
+      playerFrame = 1;
+    }
+    const src = `./assets/art/characters/${playerSexSlug}_${playerFacing}_${playerFrame}.svg`;
+    if (!playerImg.src.endsWith(src.replace('./','/'))) playerImg.setAttribute('src',src);
+    player.dataset.facing = playerFacing;
+  }
+
   let last = performance.now();
 
   function tick(now) {
@@ -416,6 +475,8 @@ function game() {
       if (keys.has('s')||keys.has('arrowdown')) dy++;
     }
     player.classList.toggle('walking', Boolean(dx || dy));
+    updatePlayerSprite(dx,dy,now);
+    if (!dialogOpen) Object.values(npcAgents).forEach(agent => moveNpc(agent,dt));
     if (dx||dy) {
       const length = Math.hypot(dx,dy);
       const stepX = (dx/length)*4.2*dt;
