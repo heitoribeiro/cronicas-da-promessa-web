@@ -927,6 +927,7 @@ function game() {
   }
 
   let last = performance.now();
+  let lastHudRefresh = 0;
 
   function tick(now) {
     if (!document.body.contains(player)) {
@@ -981,7 +982,10 @@ function game() {
         if (canStandInterior(currentScene,indoorPos.x,nextIndoorY)) indoorPos.y = nextIndoorY;
       }
     }
-    refreshHud();
+    if (now - lastHudRefresh > 250) {
+      refreshHud();
+      lastHudRefresh = now;
+    }
     draw();
     requestAnimationFrame(tick);
   }
