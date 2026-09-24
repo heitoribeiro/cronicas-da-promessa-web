@@ -195,3 +195,23 @@
  .npc{width:65px;height:91px}.npc b{top:80px;font-size:9px}.npc-child{width:56px;height:78px}.npc-child b{top:69px}
  .tribe-banner{transform:scale(.85)}
 }
+
+/* Web Alpha 0.7 — direção, rotinas e ambientação */
+.flora-asset{z-index:7;filter:drop-shadow(0 10px 7px #2e201552)}
+.acacia-asset{width:165px}.small-flora{width:128px}.shrub-asset{width:112px}.mini-flora{width:82px;opacity:.9}
+.prop-art{z-index:8}.rock-art{width:105px}.small-rock{width:76px}.supply-art{width:128px}
+.npc img{transition:transform .12s linear;transform-origin:50% 100%}
+.npc.face-left img{transform:scaleX(-1)}.npc.face-right img{transform:scaleX(1)}
+.npc.npc-walking img{animation:npcWalkStep .34s ease-in-out infinite alternate}
+@keyframes npcWalkStep{from{translate:0 0}to{translate:0 -3px}}
+.player-art.walking img{animation:none}
+.player-art[data-facing="left"]{filter:drop-shadow(-5px 9px 5px #30201355)}
+.player-art[data-facing="right"]{filter:drop-shadow(5px 9px 5px #30201355)}
+.zone-label{opacity:.68}.world:hover .zone-label{opacity:.82}
+.tribe-banner:after{content:"♌";font-family:Georgia,serif}
+.palisade{opacity:.92}
+@media(max-width:700px){
+ .acacia-asset{width:148px}.small-flora{width:112px}.shrub-asset{width:94px}.mini-flora{width:70px}
+ .rock-art{width:92px}.small-rock{width:68px}.supply-art{width:112px}
+ .zone-label{opacity:.58}
+}
