@@ -356,13 +356,13 @@ function game() {
     { id:'miria', npc:'miria', r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora',contextualNpcText('miria')) },
     { id:'hanan', npc:'hanan', r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro',contextualNpcText('hanan')) },
     { id:'guard', npc:'guard', r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá',contextualNpcText('guard')) },
+    { id:'enter-standard', x:900,y:330,r:95, action:'Entrar na Tenda do Estandarte', run:()=>enterScene('standard') },
+    { id:'enter-workshop', x:1325,y:835,r:105, action:'Entrar na oficina', run:()=>enterScene('workshop') },
     { id:'standard', x:900,y:205,r:150, action:'Observar Tenda do Estandarte', run:()=>dialogue('Tenda do Estandarte','O vermelho e o dourado destacam o setor de Judá. O estandarte do leão marca o ponto de liderança da tribo.') },
     { id:'workshop', x:1325,y:735,r:150, action:'Examinar oficina', run:()=>dialogue('Oficina de Judá','Madeira, metal, couro e ferramentas ocupam cada bancada. O trabalho de Eliabe mantém o acampamento em movimento.') },
     { id:'warehouse', x:380,y:505,r:145, action:'Examinar armazém', run:()=>dialogue('Armazéns','Mantimentos, tecidos, jarros e peças de reposição são organizados para atender as famílias do setor.') },
     { id:'corral-look', x:420,y:820,r:165, action:'Observar rebanho', run:()=>dialogue('Currais','Ovelhas e cabras descansam entre cercas, cochos e recipientes de água. O rebanho sustenta parte importante da vida cotidiana.') },
-    { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') },
-    { id:'enter-standard', x:900,y:330,r:95, action:'Entrar na Tenda do Estandarte', run:()=>enterScene('standard') },
-    { id:'enter-workshop', x:1325,y:835,r:105, action:'Entrar na oficina', run:()=>enterScene('workshop') }
+    { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') }
   ];
 
   const npcAgents = {
@@ -489,7 +489,7 @@ function game() {
   ySortedScenery.forEach(([selector,y]) => document.querySelectorAll(selector).forEach(el => el.style.zIndex = String(100 + y)));
 
   function updateDepth() {
-    player.style.zIndex = String(100 + Math.floor(state.y));
+    player.style.zIndex = String(100 + Math.floor(currentScene === 'outdoor' ? state.y : indoorPos.y));
     Object.values(npcAgents).forEach(agent => agent.el.style.zIndex = String(100 + Math.floor(agent.y)));
   }
 
@@ -522,7 +522,7 @@ function game() {
       ? Math.hypot(px-o.x,py-o.y) < PLAYER_RADIUS + o.r
       : circleHitsRect(px,py,PLAYER_RADIUS,o));
     if (hitsWorld) return false;
-    return !Object.values(npcAgents).some(npc => Math.hypot(px-npc.x,py-npc.y) < PLAYER_RADIUS + 24);
+    return !Object.values(npcAgents).some(npc => !npc.inside && Math.hypot(px-npc.x,py-npc.y) < PLAYER_RADIUS + 24);
   }
 
   function refreshHud() {
