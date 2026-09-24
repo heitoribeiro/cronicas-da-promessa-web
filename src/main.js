@@ -71,7 +71,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.11</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.12</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -93,7 +93,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.11 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.12 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -166,6 +166,7 @@ function game() {
 
         <div class="palisade pal-n"></div><div class="palisade pal-w"></div><div class="palisade pal-e"></div>
         <div class="palisade pal-s1"></div><div class="palisade pal-s2"></div>
+        <div class="world-quest hidden" id="worldQuest" aria-hidden="true"><span>◆</span><b id="worldQuestLabel"></b></div>
         <img class="scenic-asset tower-asset tower-nw" src="./assets/art/judah/watchtower.svg" alt="">
         <img class="scenic-asset tower-asset tower-ne" src="./assets/art/judah/watchtower.svg" alt="">
         <img class="scenic-asset tower-asset tower-sw" src="./assets/art/judah/watchtower.svg" alt="">
@@ -297,7 +298,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.11</div>
+      <div class="badge">Web Alpha 0.12</div>
     </main>`;
 
   const world = $('#world');
@@ -323,6 +324,7 @@ function game() {
   const menuButton = $('#gameMenu');
   const mapOverlay = $('#mapOverlay');
   const mapButton = $('#mapButton');
+  const worldQuest = $('#worldQuest');
   const keys = new Set();
 
   if (isTouch()) touchControls.classList.remove('hidden');
@@ -667,13 +669,24 @@ function game() {
     if (!quest?.target) return quest.label;
     if (currentScene !== 'outdoor') return `${quest.label} Saia da tenda para seguir a missão.`;
     const npc = quest.id === 'eliabe' ? npcAgents.eliabe : quest.id === 'corral' ? npcAgents.child : quest.id === 'elder' ? npcAgents.elder : null;
-    const destination = npc?.inside === 'workshop' ? {x:1325,y:835} : npc?.inside === 'standard' ? {x:900,y:330} : npc || quest.target;
+    if (npc?.inside === 'rest') return `${quest.label} O personagem está descansando. Volte pela manhã.`;
+    const destination = questDestination();
     const dx = destination.x - state.x, dy = destination.y - state.y;
     const distance = Math.round(Math.hypot(dx,dy));
     if (distance < (quest.target.r || 110)) return quest.label;
     const direction = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'leste' : 'oeste') : (dy > 0 ? 'sul' : 'norte');
     const place = npc?.inside ? 'Entre na tenda indicada. ' : '';
     return `${quest.label} ${place}Siga para ${direction} (${distance} passos).`;
+  }
+
+  function questDestination() {
+    const quest = QUESTS[state.questStep];
+    if (!quest?.target) return null;
+    const npc = quest.id === 'eliabe' ? npcAgents.eliabe : quest.id === 'corral' ? npcAgents.child : quest.id === 'elder' ? npcAgents.elder : null;
+    if (npc?.inside === 'workshop') return {x:1325,y:835,label:'Entre na oficina'};
+    if (npc?.inside === 'standard') return {x:900,y:330,label:'Entre na tenda'};
+    if (npc?.inside === 'rest') return {x:quest.target.x,y:quest.target.y,label:'Volte pela manhã'};
+    return {x:npc?.x ?? quest.target.x,y:npc?.y ?? quest.target.y,label:quest.action};
   }
 
   function refreshHud() {
@@ -695,9 +708,7 @@ function game() {
   }
 
   function updateMap() {
-    const quest = QUESTS[state.questStep];
-    const npc = quest?.id === 'eliabe' ? npcAgents.eliabe : quest?.id === 'corral' ? npcAgents.child : quest?.id === 'elder' ? npcAgents.elder : null;
-    const target = npc?.inside === 'workshop' ? {x:1325,y:835} : npc?.inside === 'standard' ? {x:900,y:330} : npc || quest?.target;
+    const target = questDestination();
     const marker = $('#mapQuest');
     marker.classList.toggle('hidden', !target);
     if (target) {
@@ -913,6 +924,14 @@ function game() {
   function draw() {
     applyLighting();
     updateInteriorNpcs();
+
+    const destination = questDestination();
+    worldQuest.classList.toggle('hidden', !destination || currentScene !== 'outdoor');
+    if (destination) {
+      worldQuest.style.left = `${destination.x}px`;
+      worldQuest.style.top = `${destination.y - 58}px`;
+      $('#worldQuestLabel').textContent = destination.label;
+    }
 
     if (currentScene === 'outdoor') {
       player.style.left = state.x + 'px';
