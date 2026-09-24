@@ -516,6 +516,26 @@ function game() {
     return Math.hypot(px-cx, py-cy) < r;
   }
 
+  function canStandInterior(scene,px,py) {
+    if (px < 85 || px > 915 || py < 135 || py > 630) return false;
+    const rects = scene === 'standard'
+      ? [
+          {x:350,y:330,w:300,h:125},
+          {x:185,y:365,w:145,h:120},
+          {x:670,y:365,w:145,h:120}
+        ]
+      : [
+          {x:105,y:150,w:310,h:225},
+          {x:500,y:220,w:305,h:145},
+          {x:790,y:165,w:145,h:225},
+          {x:105,y:405,w:360,h:145}
+        ];
+    const circles = scene === 'workshop' ? [{x:650,y:495,r:92}] : [{x:170,y:260,r:45},{x:830,y:260,r:45}];
+    if (rects.some(o => circleHitsRect(px,py,PLAYER_RADIUS,o))) return false;
+    if (circles.some(o => Math.hypot(px-o.x,py-o.y) < PLAYER_RADIUS + o.r)) return false;
+    return true;
+  }
+
   function canStand(px,py) {
     if (px < 135 || px > 1665 || py < 95 || py > 1085) return false;
     const hitsWorld = obstacles.some(o => o.type === 'circle'
@@ -732,6 +752,11 @@ function game() {
       Object.entries(npcAgents).forEach(([key,agent]) => moveNpc(key,agent,dt));
       if (currentScene === 'outdoor') animalAgents.forEach(agent => moveAnimal(agent,dt));
       state.time += .018 * dt;
+      if (state.time >= 1440) {
+        state.time -= 1440;
+        state.day += 1;
+        save();
+      }
     }
     updateDepth();
     if (dx||dy) {
@@ -744,8 +769,10 @@ function game() {
         if (canStand(nextX,state.y)) state.x = nextX;
         if (canStand(state.x,nextY)) state.y = nextY;
       } else {
-        indoorPos.x = Math.max(80,Math.min(920,indoorPos.x+stepX*1.15));
-        indoorPos.y = Math.max(120,Math.min(635,indoorPos.y+stepY*1.15));
+        const nextIndoorX = indoorPos.x + stepX*1.15;
+        const nextIndoorY = indoorPos.y + stepY*1.15;
+        if (canStandInterior(currentScene,nextIndoorX,indoorPos.y)) indoorPos.x = nextIndoorX;
+        if (canStandInterior(currentScene,indoorPos.x,nextIndoorY)) indoorPos.y = nextIndoorY;
       }
     }
     draw();
