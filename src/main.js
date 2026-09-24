@@ -641,9 +641,23 @@ function game() {
     return !Object.values(npcAgents).some(npc => !npc.inside && Math.hypot(px-npc.x,py-npc.y) < PLAYER_RADIUS + 24);
   }
 
+  function questGuidance() {
+    const quest = QUESTS[state.questStep];
+    if (!quest?.target) return quest.label;
+    if (currentScene !== 'outdoor') return `${quest.label} Saia da tenda para seguir a missão.`;
+    const npc = quest.id === 'eliabe' ? npcAgents.eliabe : quest.id === 'corral' ? npcAgents.child : quest.id === 'elder' ? npcAgents.elder : null;
+    const destination = npc?.inside === 'workshop' ? {x:1325,y:835} : npc?.inside === 'standard' ? {x:900,y:330} : npc || quest.target;
+    const dx = destination.x - state.x, dy = destination.y - state.y;
+    const distance = Math.round(Math.hypot(dx,dy));
+    if (distance < (quest.target.r || 110)) return quest.label;
+    const direction = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'leste' : 'oeste') : (dy > 0 ? 'sul' : 'norte');
+    const place = npc?.inside ? 'Entre na tenda indicada. ' : '';
+    return `${quest.label} ${place}Siga para ${direction} (${distance} passos).`;
+  }
+
   function refreshHud() {
     const quest = QUESTS[Math.min(state.questStep, QUESTS.length - 1)];
-    objective.textContent = quest.label;
+    objective.textContent = questGuidance();
     rep.textContent = state.reputation;
     calendarDay.textContent = calendarLabel();
     energyBar.style.width = state.energy.toFixed(0) + '%';
@@ -765,7 +779,7 @@ function game() {
     if (timed) return timed;
     const quest = QUESTS[state.questStep];
     const questNpc = quest?.id === 'eliabe' ? npcAgents.eliabe : quest?.id === 'corral' ? npcAgents.child : quest?.id === 'elder' ? npcAgents.elder : null;
-    if (quest?.target || questNpc) {
+    if ((quest?.target || questNpc) && !questNpc?.inside) {
       const tx = questNpc ? questNpc.x : quest.target.x;
       const ty = questNpc ? questNpc.y : quest.target.y;
       const tr = questNpc ? 105 : quest.target.r;
@@ -788,6 +802,7 @@ function game() {
     if (currentScene === 'standard') {
       const elder = npcAgents.elder;
       if (elder.inside === 'standard' && Math.hypot(indoorPos.x-500,indoorPos.y-330) < 130) {
+        if (state.questStep === 4) return {action:QUESTS[4].action,run:runQuestInteraction};
         return {action:'Falar com o Ancião',run:()=>dialogue('Ancião do Conselho',contextualNpcText('elder'))};
       }
       if (Math.hypot(indoorPos.x-500,indoorPos.y-375) < 120) {
@@ -809,6 +824,7 @@ function game() {
     if (currentScene === 'workshop') {
       const eliabe = npcAgents.eliabe;
       if (eliabe.inside === 'workshop' && Math.hypot(indoorPos.x-650,indoorPos.y-430) < 135) {
+        if (state.questStep === 1) return {action:QUESTS[1].action,run:runQuestInteraction};
         return {action:'Falar com Eliabe',run:()=>dialogue('Eliabe — o artesão',contextualNpcText('eliabe'))};
       }
       if (Math.hypot(indoorPos.x-840,indoorPos.y-300) < 110) {
@@ -830,6 +846,7 @@ function game() {
   }
 
   function interact() {
+    if (!$('#dialogue').classList.contains('hidden')) return;
     activeInteraction?.run?.();
   }
 
@@ -883,8 +900,12 @@ function game() {
 
   function onKeyDown(event) {
     keys.add(event.key.toLowerCase());
-    if (event.key.toLowerCase() === 'e') interact();
-    if (event.key === 'Escape') { save(); menu(); }
+    if (event.key.toLowerCase() === 'e' && !event.repeat) interact();
+    if (event.key === 'Escape') {
+      const modal = $('#dialogue');
+      if (!modal.classList.contains('hidden')) modal.classList.add('hidden');
+      else { save(); menu(); }
+    }
   }
   function onKeyUp(event) { keys.delete(event.key.toLowerCase()); }
 
