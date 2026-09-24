@@ -71,7 +71,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.12</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.13</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -93,7 +93,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.12 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.13 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -190,6 +190,7 @@ function game() {
           <img class="animal-sprite goat-one" src="./assets/art/animals/goat.svg" alt="Cabra">
           <i class="trough"></i>
         </div>
+        <div class="corral-front" style="left:245px;top:948px"></div>
 
         <img class="scenic-asset campfire-asset" style="left:842px;top:520px" src="./assets/art/judah/campfire.svg" alt="Fogueira central">
         <div class="bench" style="left:760px;top:540px"></div><div class="bench" style="left:1005px;top:640px"></div>
@@ -212,6 +213,7 @@ function game() {
         <div class="torch" style="left:790px;top:690px"></div><div class="torch" style="left:1010px;top:690px"></div>
 
         <div class="cook-area" style="left:430px;top:535px"><span class="cook-pot"></span></div>
+        <div class="zone-label kitchen-label" style="left:442px;top:475px">Cozinha</div>
         <div class="rug rug-standard" style="left:835px;top:355px"></div>
         <div class="rug rug-family" style="left:1180px;top:500px"></div>
         <div class="clay-cluster" style="left:1110px;top:548px"><i></i><i></i><i></i></div>
@@ -266,6 +268,7 @@ function game() {
         <span>Energia <i class="need-bar"><b id="energyBar"></b></i><em id="energyText"></em></span>
         <span>Fome <i class="need-bar"><b id="hungerBar"></b></i><em id="hungerText"></em></span>
       </div>
+      <div class="meal-hint" id="mealHint"></div>
       <div class="objective" id="objective"></div>
       <div class="daily-task" id="dailyTask"></div>
       <div class="inventory-mini" id="inventoryMini"></div>
@@ -283,6 +286,7 @@ function game() {
             <div class="map-place" style="left:74%;top:63%">Oficina</div>
             <div class="map-place" style="left:50%;top:69%">Poço</div>
             <div class="map-place" style="left:25%;top:66%">Curral</div>
+            <div class="map-place" style="left:27%;top:47%">Cozinha</div>
             <div class="map-place" style="left:37%;top:84%">Sua tenda</div>
             <div class="map-quest hidden" id="mapQuest" aria-label="Destino da missão"></div>
             <div class="map-player" id="mapPlayer" aria-label="Sua posição"></div>
@@ -298,7 +302,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.12</div>
+      <div class="badge">Web Alpha 0.13</div>
     </main>`;
 
   const world = $('#world');
@@ -373,7 +377,7 @@ function game() {
 
   function eatMeal() {
     const meal = mealWindow();
-    if (!meal) return dialogue('Cozinha','Não há refeição sendo servida neste horário.');
+    if (!meal) return dialogue('Cozinha','As refeições são servidas aqui: desjejum das 06:30 às 09:00, almoço das 12:00 às 14:00 e ceia das 18:00 às 20:30.');
     const key = mealKey();
     if (state.meals[key]) return dialogue('Cozinha',`Você já fez a ${meal.label.toLowerCase()} de hoje.`);
     state.meals[key] = true;
@@ -458,10 +462,10 @@ function game() {
   }
 
   const ambientInteractions = [
+    { id:'meal', x:489,y:570,r:95, action:()=>canEatNow() ? `${mealWindow().label} na cozinha` : 'Consultar cozinha', run:eatMeal },
     { id:'miria', npc:'miria', r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora',contextualNpcText('miria')) },
     { id:'hanan', npc:'hanan', r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro',contextualNpcText('hanan')) },
     { id:'guard', npc:'guard', r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá',contextualNpcText('guard')) },
-    { id:'meal', x:489,y:570,r:95, enabled:()=>canEatNow(), action:()=>`${mealWindow()?.label || 'Refeição'} comunitária`, run:eatMeal },
     { id:'enter-home', x:660,y:1005,r:90, action:'Entrar na sua tenda', run:()=>enterScene('home') },
     { id:'enter-standard', x:900,y:330,r:95, action:'Entrar na Tenda do Estandarte', run:()=>enterScene('standard') },
     { id:'enter-workshop', x:1325,y:835,r:105, action:'Entrar na oficina', run:()=>enterScene('workshop') },
@@ -587,18 +591,22 @@ function game() {
     agent.y += dy/dist*step;
     agent.el.style.left = agent.x + 'px';
     agent.el.style.top = agent.y + 'px';
+    agent.el.style.zIndex = String(100 + Math.round(690 + agent.y));
     agent.el.classList.add('animal-walking');
     agent.el.classList.toggle('face-left',dx < 0);
   }
 
-  const ySortedScenery = [
-    ['.standard-tent-asset',300],['.council-tent-asset',385],['.family-tent-asset:not(.family-small)',355],
-    ['.family-tent-asset.family-small:nth-of-type(2)',438],['.workshop-asset',846],
-    ['.warehouse-asset:not(.warehouse-small)',575],['.warehouse-small',596],
-    ['.campfire-asset',635],['.well-asset',858],['.gate-asset',1080],
-    ['.acacia-asset',330],['.rock-art',350],['.supply-art',665]
-  ];
-  ySortedScenery.forEach(([selector,y]) => document.querySelectorAll(selector).forEach(el => el.style.zIndex = String(100 + y)));
+  // A base visual dos objetos define se passam à frente ou atrás dos personagens.
+  const depthScenery = [...world.querySelectorAll('.scenic-asset,.bench,.jar,.crate,.torch,.clay-cluster,.supply-pile,.tribe-banner')];
+  function sortScenery() {
+    depthScenery.forEach(el => {
+      const foot = el.offsetTop + el.offsetHeight * .9;
+      el.style.zIndex = String(100 + Math.round(foot));
+    });
+  }
+  sortScenery();
+  world.querySelectorAll('.scenic-asset').forEach(el => el.addEventListener('load', sortScenery, {once:true}));
+  addEventListener('resize', sortScenery);
 
   function updateDepth() {
     player.style.zIndex = String(100 + Math.floor(currentScene === 'outdoor' ? state.y : indoorPos.y));
@@ -698,6 +706,10 @@ function game() {
     hungerBar.style.width = state.hunger.toFixed(0) + '%';
     energyText.textContent = Math.round(state.energy);
     hungerText.textContent = Math.round(state.hunger);
+    const meal = mealWindow();
+    $('#mealHint').textContent = meal
+      ? (canEatNow() ? `${meal.label} disponível na Cozinha, a oeste da fogueira.` : `${meal.label} já feita. Próxima refeição na Cozinha.`)
+      : 'Coma na Cozinha, a oeste da fogueira: 06:30, 12:00 ou 18:00.';
     const warning = needWarning();
     document.querySelector('.needs-hud')?.classList.toggle('warning',Boolean(warning));
     dailyTaskEl.textContent = getDailyTaskText();
@@ -1027,6 +1039,7 @@ function game() {
     if (!document.body.contains(player)) {
       removeEventListener('keydown', onKeyDown);
       removeEventListener('keyup', onKeyUp);
+      removeEventListener('resize', sortScenery);
       return;
     }
     const dt = Math.min((now-last)/16.67,2); last = now;
