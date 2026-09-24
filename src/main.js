@@ -21,7 +21,12 @@ let state = {
   inventory: {},
   reputation: 0,
   questStep: 0,
-  visited: {}
+  visited: {},
+  energy: 100,
+  hunger: 82,
+  meals: {},
+  dailyTask: null,
+  dailyCompleted: {}
 };
 
 function $(selector) { return document.querySelector(selector); }
@@ -29,6 +34,12 @@ function $(selector) { return document.querySelector(selector); }
 function normalizeState() {
   state.inventory ||= {};
   state.visited ||= {};
+  state.meals ||= {};
+  state.dailyCompleted ||= {};
+  if (!Number.isFinite(state.energy)) state.energy = 100;
+  if (!Number.isFinite(state.hunger)) state.hunger = 82;
+  state.energy = Math.max(0,Math.min(100,state.energy));
+  state.hunger = Math.max(0,Math.min(100,state.hunger));
   if (!Number.isInteger(state.questStep)) state.questStep = 0;
   if (!Number.isFinite(state.reputation)) state.reputation = 0;
   if (!Number.isFinite(state.time)) state.time = 480;
@@ -60,7 +71,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.9</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.10</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -82,7 +93,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.9 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.10 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -124,7 +135,8 @@ function createCharacter() {
         vocation: $('#characterVocation').value
       },
       x: 900, y: 980, day: 1, time: 480,
-      inventory: {}, reputation: 0, questStep: 0, visited: {}
+      inventory: {}, reputation: 0, questStep: 0, visited: {},
+      energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {}
     };
     save();
     game();
@@ -206,6 +218,9 @@ function game() {
         <div class="tribe-banner banner-left" style="left:675px;top:330px"></div>
         <div class="tribe-banner banner-right" style="left:1080px;top:360px"></div>
 
+        <img class="scenic-asset player-home-asset" style="left:565px;top:835px" src="./assets/art/judah/player_tent.svg" alt="Sua tenda">
+        <div class="zone-label player-home-label" style="left:615px;top:825px">Sua tenda</div>
+
         <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/npcs/elder.svg" alt="Ancião"><b>Ancião</b></div>
         <div class="npc npc-eliabe" style="left:1320px;top:745px"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
         <div class="npc npc-child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg" alt="Criança do Rebanho"><b>Rebanho</b></div>
@@ -232,14 +247,26 @@ function game() {
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
+      <div class="interior-map hidden" id="playerInterior">
+        <img class="interior-bg" src="./assets/art/interiors/player_tent_interior.svg" alt="Interior da sua tenda">
+        <div class="interior-marker bed-marker">CAMA</div>
+        <div class="interior-marker chest-marker">BAÚ</div>
+        <div class="interior-marker exit-marker">SAÍDA</div>
+      </div>
+
       <div class="daylight" id="daylight"></div>
 
       <div class="hud">
         <b>${state.profile.name}</b> • Tribo de ${state.profile.tribe} • ${state.profile.vocation}<br>
-        Dia ${state.day} • <span id="clock"></span> • <span id="dayPhase"></span> • Rep. <span id="rep">${state.reputation}</span>
+        Dia ${state.day} • <span id="calendarDay"></span> • <span id="clock"></span> • <span id="dayPhase"></span> • Rep. <span id="rep">${state.reputation}</span>
       </div>
 
+      <div class="needs-hud" id="needsHud">
+        <span>Energia <i class="need-bar"><b id="energyBar"></b></i><em id="energyText"></em></span>
+        <span>Fome <i class="need-bar"><b id="hungerBar"></b></i><em id="hungerText"></em></span>
+      </div>
       <div class="objective" id="objective"></div>
+      <div class="daily-task" id="dailyTask"></div>
       <div class="inventory-mini" id="inventoryMini"></div>
       <div class="prompt hidden" id="prompt"></div>
       <button class="game-menu" id="gameMenu">☰</button>
@@ -251,19 +278,26 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.9</div>
+      <div class="badge">Web Alpha 0.10</div>
     </main>`;
 
   const world = $('#world');
   const standardInterior = $('#standardInterior');
   const workshopInterior = $('#workshopInterior');
+  const playerInterior = $('#playerInterior');
   const player = $('#player');
   const prompt = $('#prompt');
   const touchControls = $('#touchControls');
   const actionButton = $('#actionButton');
   const clock = $('#clock');
   const dayPhase = $('#dayPhase');
+  const calendarDay = $('#calendarDay');
   const daylight = $('#daylight');
+  const energyBar = $('#energyBar');
+  const hungerBar = $('#hungerBar');
+  const energyText = $('#energyText');
+  const hungerText = $('#hungerText');
+  const dailyTaskEl = $('#dailyTask');
   const rep = $('#rep');
   const objective = $('#objective');
   const inventoryMini = $('#inventoryMini');
@@ -287,6 +321,51 @@ function game() {
 
   function phaseLabel() {
     return ({morning:'Manhã',afternoon:'Tarde',evening:'Entardecer',night:'Noite'})[timePhase()];
+  }
+
+  function calendarLabel() {
+    const weekDay = ((state.day - 1) % 7) + 1;
+    const week = Math.floor((state.day - 1) / 7) + 1;
+    const dayName = weekDay === 7 ? 'Shabat' : weekDay + 'º dia';
+    return `Semana ${week} • ${dayName}`;
+  }
+
+  function mealWindow() {
+    const minute = ((state.time % 1440) + 1440) % 1440;
+    if (minute >= 390 && minute < 540) return {id:'manha',label:'Desjejum'};
+    if (minute >= 720 && minute < 840) return {id:'meio-dia',label:'Refeição'};
+    if (minute >= 1080 && minute < 1230) return {id:'noite',label:'Ceia'};
+    return null;
+  }
+
+  function mealKey() {
+    const meal = mealWindow();
+    return meal ? `${state.day}:${meal.id}` : '';
+  }
+
+  function canEatNow() {
+    const meal = mealWindow();
+    return Boolean(meal && !state.meals[mealKey()]);
+  }
+
+  function eatMeal() {
+    const meal = mealWindow();
+    if (!meal) return dialogue('Cozinha','Não há refeição sendo servida neste horário.');
+    const key = mealKey();
+    if (state.meals[key]) return dialogue('Cozinha',`Você já fez a ${meal.label.toLowerCase()} de hoje.`);
+    state.meals[key] = true;
+    state.hunger = Math.min(100,state.hunger + 38);
+    state.energy = Math.min(100,state.energy + 8);
+    save();
+    dialogue(meal.label,`Você se alimenta com o povo de Judá. Fome restaurada e um pouco da energia retorna.`);
+  }
+
+  function needWarning() {
+    if (state.energy <= 10) return 'Exausto';
+    if (state.hunger <= 10) return 'Faminto';
+    if (state.energy <= 30) return 'Cansado';
+    if (state.hunger <= 30) return 'Com fome';
+    return '';
   }
 
   function contextualNpcText(key) {
@@ -332,7 +411,8 @@ function game() {
     world.classList.add('hidden');
     standardInterior.classList.toggle('hidden', scene !== 'standard');
     workshopInterior.classList.toggle('hidden', scene !== 'workshop');
-    const target = scene === 'standard' ? standardInterior : workshopInterior;
+    playerInterior.classList.toggle('hidden', scene !== 'home');
+    const target = scene === 'standard' ? standardInterior : scene === 'workshop' ? workshopInterior : playerInterior;
     target.appendChild(player);
     indoorPos.x = 500;
     indoorPos.y = 585;
@@ -345,10 +425,12 @@ function game() {
     currentScene = 'outdoor';
     standardInterior.classList.add('hidden');
     workshopInterior.classList.add('hidden');
+    playerInterior.classList.add('hidden');
     world.classList.remove('hidden');
     world.appendChild(player);
     if (scene === 'standard') { state.x = 900; state.y = 350; }
-    else { state.x = 1325; state.y = 875; }
+    else if (scene === 'workshop') { state.x = 1325; state.y = 875; }
+    else { state.x = 660; state.y = 1020; }
     save();
   }
 
@@ -356,6 +438,8 @@ function game() {
     { id:'miria', npc:'miria', r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora',contextualNpcText('miria')) },
     { id:'hanan', npc:'hanan', r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro',contextualNpcText('hanan')) },
     { id:'guard', npc:'guard', r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá',contextualNpcText('guard')) },
+    { id:'meal', x:489,y:570,r:95, enabled:()=>canEatNow(), action:()=>`${mealWindow()?.label || 'Refeição'} comunitária`, run:eatMeal },
+    { id:'enter-home', x:660,y:1005,r:90, action:'Entrar na sua tenda', run:()=>enterScene('home') },
     { id:'enter-standard', x:900,y:330,r:95, action:'Entrar na Tenda do Estandarte', run:()=>enterScene('standard') },
     { id:'enter-workshop', x:1325,y:835,r:105, action:'Entrar na oficina', run:()=>enterScene('workshop') },
     { id:'standard', x:900,y:205,r:150, action:'Observar Tenda do Estandarte', run:()=>dialogue('Tenda do Estandarte','O vermelho e o dourado destacam o setor de Judá. O estandarte do leão marca o ponto de liderança da tribo.') },
@@ -381,7 +465,8 @@ function game() {
       {from:525,to:570,tag:'interior-estandarte',inside:'standard',route:[[500,330]]},
       {from:570,to:600,tag:'saindo-estandarte',route:[[900,338],[690,360],[540,330]]},
       {from:600,to:720,tag:'conselho',route:[[540,330],[500,355],[565,350]]},
-      {from:720,to:1440,tag:'estandarte',route:[[890,292],[850,320],[930,322]]}
+      {from:720,to:1260,tag:'estandarte',route:[[890,292],[850,320],[930,322]]},
+      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[890,292]]}
     ],
     eliabe:[
       {from:480,to:510,tag:'oficina',route:[[1320,745],[1370,780],[1275,790]]},
@@ -390,22 +475,26 @@ function game() {
       {from:690,to:705,tag:'saindo-oficina',route:[[1325,835],[980,650],[575,560]]},
       {from:705,to:750,tag:'armazem',route:[[575,560],[530,590],[610,585]]},
       {from:750,to:1080,tag:'interior-oficina-2',inside:'workshop',route:[[650,430]]},
-      {from:1080,to:1440,tag:'oficina-fim',route:[[1320,745],[1370,780],[1275,790]]}
+      {from:1080,to:1260,tag:'oficina-fim',route:[[1320,745],[1370,780],[1275,790]]},
+      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[1320,745]]}
     ],
     child:[
       {from:480,to:690,tag:'curral',route:[[445,780],[360,825],[510,835],[420,745]]},
       {from:690,to:750,tag:'poco',route:[[760,835],[820,850],[735,860]]},
-      {from:750,to:1440,tag:'curral',route:[[445,780],[360,825],[510,835],[420,745]]}
+      {from:750,to:1260,tag:'curral',route:[[445,780],[360,825],[510,835],[420,745]]},
+      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[445,780]]}
     ],
     miria:[
       {from:480,to:600,tag:'familias',route:[[1245,420],[1325,445],[1190,470],[1270,390]]},
       {from:600,to:690,tag:'poco',route:[[1015,815],[975,850],[1040,845]]},
-      {from:690,to:1440,tag:'familias',route:[[1245,420],[1325,445],[1190,470],[1270,390]]}
+      {from:690,to:1260,tag:'familias',route:[[1245,420],[1325,445],[1190,470],[1270,390]]},
+      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[1245,420]]}
     ],
     hanan:[
       {from:480,to:660,tag:'cozinha',route:[[520,535],[455,560],[570,575]]},
       {from:660,to:750,tag:'patio',route:[[735,610],[700,640],[770,645]]},
-      {from:750,to:1440,tag:'cozinha',route:[[520,535],[455,560],[570,575]]}
+      {from:750,to:1260,tag:'cozinha',route:[[520,535],[455,560],[570,575]]},
+      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[520,535]]}
     ],
     guard:[
       {from:480,to:600,tag:'entrada',route:[[820,1015],[980,1015],[900,965]]},
@@ -503,6 +592,7 @@ function game() {
     {type:'rect',x:275,y:485,w:160,h:88},
     {type:'rect',x:460,y:522,w:133,h:74},
     {type:'rect',x:1210,y:700,w:235,h:146},
+    {type:'rect',x:585,y:855,w:150,h:92},
     {type:'rect',x:748,y:548,w:128,h:34},
     {type:'rect',x:995,y:647,w:126,h:34},
     {type:'circle',x:900,y:820,r:54},
@@ -524,13 +614,19 @@ function game() {
           {x:185,y:365,w:145,h:120},
           {x:670,y:365,w:145,h:120}
         ]
-      : [
-          {x:105,y:150,w:310,h:225},
-          {x:500,y:220,w:305,h:145},
-          {x:790,y:165,w:145,h:225},
-          {x:105,y:405,w:360,h:145}
-        ];
-    const circles = scene === 'workshop' ? [{x:650,y:495,r:92}] : [{x:170,y:260,r:45},{x:830,y:260,r:45}];
+      : scene === 'workshop'
+        ? [
+            {x:105,y:150,w:310,h:225},
+            {x:500,y:220,w:305,h:145},
+            {x:790,y:165,w:145,h:225},
+            {x:105,y:405,w:360,h:145}
+          ]
+        : [
+            {x:115,y:235,w:325,h:180},
+            {x:575,y:240,w:235,h:150},
+            {x:600,y:415,w:160,h:120}
+          ];
+    const circles = scene === 'workshop' ? [{x:650,y:495,r:92}] : scene === 'standard' ? [{x:170,y:260,r:45},{x:830,y:260,r:45}] : [];
     if (rects.some(o => circleHitsRect(px,py,PLAYER_RADIUS,o))) return false;
     if (circles.some(o => Math.hypot(px-o.x,py-o.y) < PLAYER_RADIUS + o.r)) return false;
     return true;
@@ -549,6 +645,14 @@ function game() {
     const quest = QUESTS[Math.min(state.questStep, QUESTS.length - 1)];
     objective.textContent = quest.label;
     rep.textContent = state.reputation;
+    calendarDay.textContent = calendarLabel();
+    energyBar.style.width = state.energy.toFixed(0) + '%';
+    hungerBar.style.width = state.hunger.toFixed(0) + '%';
+    energyText.textContent = Math.round(state.energy);
+    hungerText.textContent = Math.round(state.hunger);
+    const warning = needWarning();
+    document.querySelector('.needs-hud')?.classList.toggle('warning',Boolean(warning));
+    dailyTaskEl.textContent = getDailyTaskText();
     const items = [];
     if (state.inventory.lenha) items.push(`Lenha ×${state.inventory.lenha}`);
     if (state.inventory.agua) items.push(`Água ×${state.inventory.agua}`);
@@ -560,6 +664,70 @@ function game() {
     state.questStep = Math.min(state.questStep + 1, QUESTS.length - 1);
     save();
     refreshHud();
+  }
+
+  function timedWindowId() {
+    const minute = ((state.time % 1440) + 1440) % 1440;
+    if (minute >= 390 && minute < 600) return 'morning-water';
+    if (minute >= 1020 && minute < 1200) return 'evening-herd';
+    return null;
+  }
+
+  function dailyDone(id) {
+    return Boolean(state.dailyCompleted[`${state.day}:${id}`]);
+  }
+
+  function getDailyTaskText() {
+    if (state.questStep < QUESTS.length - 1) return '';
+    if (state.dailyTask) {
+      if (state.dailyTask.id === 'morning-water') {
+        return state.dailyTask.step === 0 ? 'Rotina: busque água no poço para Hanan.' : 'Rotina: entregue a água a Hanan.';
+      }
+      if (state.dailyTask.id === 'evening-herd') {
+        return state.dailyTask.step === 0 ? 'Rotina: confira a entrada antes de recolher o rebanho.' : 'Rotina: volte à Criança do Rebanho.';
+      }
+    }
+    const id = timedWindowId();
+    if (id === 'morning-water' && !dailyDone(id)) return 'Disponível até 10:00: Preparativos da manhã com Hanan.';
+    if (id === 'evening-herd' && !dailyDone(id)) return 'Disponível até 20:00: Recolher o rebanho.';
+    return 'Rotina livre: alimente-se, explore e descanse antes da noite.';
+  }
+
+  function completeDailyTask(id,reward) {
+    state.dailyCompleted[`${state.day}:${id}`] = true;
+    state.dailyTask = null;
+    state.reputation += reward;
+    save();
+    refreshHud();
+  }
+
+  function getTimedInteraction() {
+    if (state.questStep < QUESTS.length - 1 || currentScene !== 'outdoor') return null;
+    const hanan = npcAgents.hanan, child = npcAgents.child;
+    if (state.dailyTask?.id === 'morning-water') {
+      if (state.dailyTask.step === 0 && Math.hypot(state.x-900,state.y-825) < 115) {
+        return {action:'Encher jarro para Hanan',run:()=>{state.inventory.agua_hanan=1;state.dailyTask.step=1;save();refreshHud();dialogue('Poço','Você enche um jarro para os preparativos da manhã.');}};
+      }
+      if (state.dailyTask.step === 1 && !hanan.inside && Math.hypot(state.x-hanan.x,state.y-hanan.y) < 110) {
+        return {action:'Entregar água a Hanan',run:()=>{delete state.inventory.agua_hanan;completeDailyTask('morning-water',3);state.hunger=Math.min(100,state.hunger+12);dialogue('Hanan','Chegou na hora certa. Obrigado. Pegue também um pouco de pão antes de seguir.');}};
+      }
+    }
+    if (state.dailyTask?.id === 'evening-herd') {
+      if (state.dailyTask.step === 0 && Math.hypot(state.x-900,state.y-1010) < 125) {
+        return {action:'Conferir a entrada',run:()=>{state.dailyTask.step=1;save();refreshHud();dialogue('Entrada de Judá','A passagem está livre. É hora de conduzir o rebanho para dentro do setor.');}};
+      }
+      if (state.dailyTask.step === 1 && !child.inside && Math.hypot(state.x-child.x,state.y-child.y) < 115) {
+        return {action:'Avisar a Criança do Rebanho',run:()=>{completeDailyTask('evening-herd',4);dialogue('Criança do Rebanho','Tudo certo! Agora podemos recolher os animais antes de escurecer de vez.');}};
+      }
+    }
+    const id = timedWindowId();
+    if (id === 'morning-water' && !dailyDone(id) && !hanan.inside && Math.hypot(state.x-hanan.x,state.y-hanan.y) < 110) {
+      return {action:'Ajudar Hanan',run:()=>{state.dailyTask={id,step:0};save();refreshHud();dialogue('Hanan — Preparativos da manhã','Preciso de água fresca antes que a cozinha fique cheia. Traga um jarro do poço antes das dez.');}};
+    }
+    if (id === 'evening-herd' && !dailyDone(id) && !child.inside && Math.hypot(state.x-child.x,state.y-child.y) < 115) {
+      return {action:'Ajudar com o rebanho',run:()=>{state.dailyTask={id,step:0};save();refreshHud();dialogue('Criança do Rebanho','Antes de recolher os animais, pode conferir se a entrada principal está livre?');}};
+    }
+    return null;
   }
 
   function runQuestInteraction() {
@@ -593,6 +761,8 @@ function game() {
   }
 
   function getActiveInteraction() {
+    const timed = getTimedInteraction();
+    if (timed) return timed;
     const quest = QUESTS[state.questStep];
     const questNpc = quest?.id === 'eliabe' ? npcAgents.eliabe : quest?.id === 'corral' ? npcAgents.child : quest?.id === 'elder' ? npcAgents.elder : null;
     if (quest?.target || questNpc) {
@@ -602,10 +772,13 @@ function game() {
       if (Math.hypot(state.x-tx,state.y-ty) < tr) return { action:quest.action, run:runQuestInteraction };
     }
     for (const item of ambientInteractions) {
+      if (item.enabled && !item.enabled()) continue;
       const npc = item.npc ? npcAgents[item.npc] : null;
       if (npc?.inside) continue;
       const tx = npc ? npc.x : item.x, ty = npc ? npc.y : item.y;
-      if (Math.hypot(state.x-tx,state.y-ty) < item.r) return item;
+      if (Math.hypot(state.x-tx,state.y-ty) < item.r) {
+        return {...item,action:typeof item.action === 'function' ? item.action() : item.action};
+      }
     }
     return null;
   }
@@ -621,6 +794,18 @@ function game() {
         return {action:'Examinar mesa do conselho',run:()=>dialogue('Mesa do conselho','Mapas, anotações e registros de famílias estão organizados sobre a mesa. Aqui são tratadas decisões do setor de Judá.')};
       }
     }
+    if (currentScene === 'home') {
+      if (Math.hypot(indoorPos.x-270,indoorPos.y-330) < 125) {
+        const minute = ((state.time % 1440) + 1440) % 1440;
+        const canSleep = minute >= 1200 || minute < 360;
+        return canSleep
+          ? {action:'Dormir até o amanhecer',run:()=>sleepUntilMorning()}
+          : {action:'Descansar',run:()=>dialogue('Sua cama','Ainda é cedo para encerrar o dia. Você pode voltar depois das 20:00.')};
+      }
+      if (Math.hypot(indoorPos.x-680,indoorPos.y-475) < 100) {
+        return {action:'Abrir baú',run:()=>dialogue('Baú pessoal','Aqui ficarão ferramentas, roupas e itens importantes. O armazenamento completo será ampliado nas próximas versões.')};
+      }
+    }
     if (currentScene === 'workshop') {
       const eliabe = npcAgents.eliabe;
       if (eliabe.inside === 'workshop' && Math.hypot(indoorPos.x-650,indoorPos.y-430) < 135) {
@@ -631,6 +816,17 @@ function game() {
       }
     }
     return null;
+  }
+
+  function sleepUntilMorning() {
+    state.day += 1;
+    state.time = 360;
+    state.energy = 100;
+    state.hunger = Math.max(52,state.hunger - 8);
+    state.dailyTask = null;
+    save();
+    refreshHud();
+    dialogue('Amanhecer',`Você descansa durante a noite. Começa o Dia ${state.day} com a energia restaurada.`,'Levantar');
   }
 
   function interact() {
@@ -649,6 +845,7 @@ function game() {
   function applyLighting() {
     const phase = timePhase();
     dayPhase.textContent = phaseLabel();
+    calendarDay.textContent = calendarLabel();
     daylight.className = 'daylight ' + phase;
   }
 
@@ -670,7 +867,7 @@ function game() {
     } else {
       player.style.left = indoorPos.x + 'px';
       player.style.top = indoorPos.y + 'px';
-      const activeInterior = currentScene === 'standard' ? standardInterior : workshopInterior;
+      const activeInterior = currentScene === 'standard' ? standardInterior : currentScene === 'workshop' ? workshopInterior : playerInterior;
       const scale = Math.min(innerWidth / 1000, innerHeight / 700);
       activeInterior.style.transform = `translate(${innerWidth/2}px,${innerHeight/2}px) scale(${scale}) translate(-500px,-350px)`;
       activeInteraction = getInteriorInteraction();
@@ -751,7 +948,15 @@ function game() {
     if (!dialogOpen) {
       Object.entries(npcAgents).forEach(([key,agent]) => moveNpc(key,agent,dt));
       if (currentScene === 'outdoor') animalAgents.forEach(agent => moveAnimal(agent,dt));
-      state.time += .018 * dt;
+      const gameMinutes = .018 * dt;
+      state.time += gameMinutes;
+      state.hunger = Math.max(0,state.hunger - gameMinutes/30);
+      state.energy = Math.max(0,state.energy - gameMinutes/(dx||dy ? 28 : 95));
+      if (state.hunger <= 0) state.energy = Math.max(0,state.energy - gameMinutes/12);
+      const activeWindow = timedWindowId();
+      if (state.dailyTask && !activeWindow && ((state.dailyTask.id === 'morning-water' && state.time >= 600) || (state.dailyTask.id === 'evening-herd' && state.time >= 1200))) {
+        state.dailyTask = null;
+      }
       if (state.time >= 1440) {
         state.time -= 1440;
         state.day += 1;
@@ -761,8 +966,9 @@ function game() {
     updateDepth();
     if (dx||dy) {
       const length = Math.hypot(dx,dy);
-      const stepX = (dx/length)*4.2*dt;
-      const stepY = (dy/length)*4.2*dt;
+      const speedFactor = state.energy < 10 ? .58 : state.energy < 30 ? .82 : 1;
+      const stepX = (dx/length)*4.2*dt*speedFactor;
+      const stepY = (dy/length)*4.2*dt*speedFactor;
       if (currentScene === 'outdoor') {
         const nextX = state.x + stepX;
         const nextY = state.y + stepY;
@@ -775,6 +981,7 @@ function game() {
         if (canStandInterior(currentScene,indoorPos.x,nextIndoorY)) indoorPos.y = nextIndoorY;
       }
     }
+    refreshHud();
     draw();
     requestAnimationFrame(tick);
   }
