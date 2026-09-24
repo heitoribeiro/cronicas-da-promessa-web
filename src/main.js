@@ -60,7 +60,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.8</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.9</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -82,7 +82,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.8 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.9 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -220,9 +220,23 @@ function game() {
         <div class="player player-art" id="player"><img src="${playerAsset}" alt="Personagem"></div>
       </div>
 
+      <div class="interior-map hidden" id="standardInterior">
+        <img class="interior-bg" src="./assets/art/interiors/judah_standard_interior.svg" alt="Interior da Tenda do Estandarte">
+        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/npcs/elder.svg" alt="Ancião"><b>Ancião</b></div>
+        <div class="interior-marker exit-marker">SAÍDA</div>
+      </div>
+
+      <div class="interior-map hidden" id="workshopInterior">
+        <img class="interior-bg" src="./assets/art/interiors/workshop_interior.svg" alt="Interior da Oficina">
+        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="interior-marker exit-marker">SAÍDA</div>
+      </div>
+
+      <div class="daylight" id="daylight"></div>
+
       <div class="hud">
         <b>${state.profile.name}</b> • Tribo de ${state.profile.tribe} • ${state.profile.vocation}<br>
-        Dia ${state.day} • <span id="clock"></span> • Rep. <span id="rep">${state.reputation}</span>
+        Dia ${state.day} • <span id="clock"></span> • <span id="dayPhase"></span> • Rep. <span id="rep">${state.reputation}</span>
       </div>
 
       <div class="objective" id="objective"></div>
@@ -237,15 +251,19 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.8</div>
+      <div class="badge">Web Alpha 0.9</div>
     </main>`;
 
   const world = $('#world');
+  const standardInterior = $('#standardInterior');
+  const workshopInterior = $('#workshopInterior');
   const player = $('#player');
   const prompt = $('#prompt');
   const touchControls = $('#touchControls');
   const actionButton = $('#actionButton');
   const clock = $('#clock');
+  const dayPhase = $('#dayPhase');
+  const daylight = $('#daylight');
   const rep = $('#rep');
   const objective = $('#objective');
   const inventoryMini = $('#inventoryMini');
@@ -255,16 +273,96 @@ function game() {
   if (isTouch()) touchControls.classList.remove('hidden');
 
   let activeInteraction = null;
+  let currentScene = 'outdoor';
+  const indoorPos = { x:500, y:585 };
+  let lastOutdoorPosition = { x:state.x, y:state.y };
+
+  function timePhase() {
+    const minute = ((state.time % 1440) + 1440) % 1440;
+    if (minute >= 300 && minute < 720) return 'morning';
+    if (minute >= 720 && minute < 1080) return 'afternoon';
+    if (minute >= 1080 && minute < 1260) return 'evening';
+    return 'night';
+  }
+
+  function phaseLabel() {
+    return ({morning:'Manhã',afternoon:'Tarde',evening:'Entardecer',night:'Noite'})[timePhase()];
+  }
+
+  function contextualNpcText(key) {
+    const phase = timePhase();
+    const table = {
+      miria:{
+        morning:'As famílias começaram cedo. Pela manhã, água, tecidos e pequenos cuidados ocupam quase todo mundo.',
+        afternoon:'À tarde eu costumo conferir as crianças e as tendas. O calor muda o ritmo do acampamento.',
+        evening:'O entardecer reúne as famílias. É quando as histórias do dia começam a circular.',
+        night:'À noite falamos baixo. Há crianças dormindo e guardas atentos ao redor do setor.'
+      },
+      hanan:{
+        morning:'O pão da manhã já saiu. Ainda há muito a preparar antes que o sol fique alto.',
+        afternoon:'Agora preparo a refeição maior. Se encontrar ervas pelo caminho, elas sempre são bem-vindas.',
+        evening:'No fim do dia a cozinha fica cheia. Todo mundo aparece quando sente o cheiro da panela.',
+        night:'A cozinha está quase fechando. Amanhã começamos tudo de novo antes do nascer do sol.'
+      },
+      guard:{
+        morning:'A entrada está tranquila. Pela manhã chegam trabalhadores, pastores e mensageiros.',
+        afternoon:'O calor aumenta e a patrulha se espalha pelas laterais do setor.',
+        evening:'No entardecer reforçamos os postos. É quando todos começam a retornar ao acampamento.',
+        night:'À noite ninguém entra sem ser visto. As tochas ficam acesas até o primeiro clarão da manhã.'
+      },
+      elder:{
+        morning:'A manhã é hora de ouvir pedidos, distribuir tarefas e lembrar a todos por que seguimos juntos.',
+        afternoon:'Durante a tarde trato de decisões do conselho e assuntos das famílias.',
+        evening:'Ao entardecer, procuro encerrar os assuntos do dia antes que as tendas silenciem.',
+        night:'Há decisões que esperam o amanhecer. À noite, também precisamos descansar.'
+      },
+      eliabe:{
+        morning:'De manhã o trabalho rende mais. Madeira, couro e metal passam pelas minhas mãos antes do calor apertar.',
+        afternoon:'À tarde faço os reparos mais pesados dentro da oficina.',
+        evening:'Estou guardando as ferramentas. Amanhã haverá outra carroça, outra dobradiça e outra lâmina.',
+        night:'A forja descansa. Volte pela manhã e certamente haverá algo para fazer.'
+      }
+    };
+    return table[key]?.[phase] || '';
+  }
+
+  function enterScene(scene) {
+    lastOutdoorPosition = {x:state.x,y:state.y};
+    currentScene = scene;
+    world.classList.add('hidden');
+    standardInterior.classList.toggle('hidden', scene !== 'standard');
+    workshopInterior.classList.toggle('hidden', scene !== 'workshop');
+    const target = scene === 'standard' ? standardInterior : workshopInterior;
+    target.appendChild(player);
+    indoorPos.x = 500;
+    indoorPos.y = 585;
+    player.style.left = indoorPos.x + 'px';
+    player.style.top = indoorPos.y + 'px';
+  }
+
+  function exitInterior() {
+    const scene = currentScene;
+    currentScene = 'outdoor';
+    standardInterior.classList.add('hidden');
+    workshopInterior.classList.add('hidden');
+    world.classList.remove('hidden');
+    world.appendChild(player);
+    if (scene === 'standard') { state.x = 900; state.y = 350; }
+    else { state.x = 1325; state.y = 875; }
+    save();
+  }
 
   const ambientInteractions = [
-    { id:'miria', npc:'miria', r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora','As famílias chegaram cedo hoje. Um acampamento cresce quando cada pessoa cuida um pouco do outro.') },
-    { id:'hanan', npc:'hanan', r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro','O cheiro do pão traz gente para perto. Volte mais tarde e talvez eu precise de algumas ervas.') },
-    { id:'guard', npc:'guard', r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá','A entrada está tranquila. O estandarte no alto indica o coração do nosso setor.') },
+    { id:'miria', npc:'miria', r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora',contextualNpcText('miria')) },
+    { id:'hanan', npc:'hanan', r:105, action:'Falar com Hanan', run:()=>dialogue('Hanan — o cozinheiro',contextualNpcText('hanan')) },
+    { id:'guard', npc:'guard', r:105, action:'Falar com o Guarda', run:()=>dialogue('Guarda de Judá',contextualNpcText('guard')) },
     { id:'standard', x:900,y:205,r:150, action:'Observar Tenda do Estandarte', run:()=>dialogue('Tenda do Estandarte','O vermelho e o dourado destacam o setor de Judá. O estandarte do leão marca o ponto de liderança da tribo.') },
     { id:'workshop', x:1325,y:735,r:150, action:'Examinar oficina', run:()=>dialogue('Oficina de Judá','Madeira, metal, couro e ferramentas ocupam cada bancada. O trabalho de Eliabe mantém o acampamento em movimento.') },
     { id:'warehouse', x:380,y:505,r:145, action:'Examinar armazém', run:()=>dialogue('Armazéns','Mantimentos, tecidos, jarros e peças de reposição são organizados para atender as famílias do setor.') },
     { id:'corral-look', x:420,y:820,r:165, action:'Observar rebanho', run:()=>dialogue('Currais','Ovelhas e cabras descansam entre cercas, cochos e recipientes de água. O rebanho sustenta parte importante da vida cotidiana.') },
-    { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') }
+    { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') },
+    { id:'enter-standard', x:900,y:330,r:95, action:'Entrar na Tenda do Estandarte', run:()=>enterScene('standard') },
+    { id:'enter-workshop', x:1325,y:835,r:105, action:'Entrar na oficina', run:()=>enterScene('workshop') }
   ];
 
   const npcAgents = {
@@ -278,14 +376,21 @@ function game() {
 
   const npcSchedules = {
     elder:[
-      {from:480,to:600,tag:'estandarte',route:[[890,292],[850,320],[930,322]]},
+      {from:480,to:510,tag:'estandarte',route:[[890,292],[850,320],[930,322]]},
+      {from:510,to:525,tag:'porta-estandarte',route:[[900,338]]},
+      {from:525,to:570,tag:'interior-estandarte',inside:'standard',route:[[500,330]]},
+      {from:570,to:600,tag:'saindo-estandarte',route:[[900,338],[690,360],[540,330]]},
       {from:600,to:720,tag:'conselho',route:[[540,330],[500,355],[565,350]]},
       {from:720,to:1440,tag:'estandarte',route:[[890,292],[850,320],[930,322]]}
     ],
     eliabe:[
-      {from:480,to:720,tag:'oficina',route:[[1320,745],[1370,780],[1275,790]]},
-      {from:720,to:780,tag:'armazem',route:[[575,560],[530,590],[610,585]]},
-      {from:780,to:1440,tag:'oficina',route:[[1320,745],[1370,780],[1275,790]]}
+      {from:480,to:510,tag:'oficina',route:[[1320,745],[1370,780],[1275,790]]},
+      {from:510,to:525,tag:'porta-oficina',route:[[1325,835]]},
+      {from:525,to:690,tag:'interior-oficina',inside:'workshop',route:[[650,430]]},
+      {from:690,to:705,tag:'saindo-oficina',route:[[1325,835],[980,650],[575,560]]},
+      {from:705,to:750,tag:'armazem',route:[[575,560],[530,590],[610,585]]},
+      {from:750,to:1080,tag:'interior-oficina-2',inside:'workshop',route:[[650,430]]},
+      {from:1080,to:1440,tag:'oficina-fim',route:[[1320,745],[1370,780],[1275,790]]}
     ],
     child:[
       {from:480,to:690,tag:'curral',route:[[445,780],[360,825],[510,835],[420,745]]},
@@ -324,11 +429,14 @@ function game() {
       agent.scheduleTag = block.tag;
       agent.route = block.route;
       agent.target = 0;
+      agent.inside = block.inside || null;
+      agent.el.classList.toggle('hidden', Boolean(agent.inside));
     }
   }
 
   function moveNpc(key, agent, dt) {
     syncNpcSchedule(key, agent);
+    if (agent.inside) return;
     const target = agent.route[agent.target];
     const dx = target[0]-agent.x, dy = target[1]-agent.y;
     const dist = Math.hypot(dx,dy);
@@ -475,8 +583,32 @@ function game() {
     }
     for (const item of ambientInteractions) {
       const npc = item.npc ? npcAgents[item.npc] : null;
+      if (npc?.inside) continue;
       const tx = npc ? npc.x : item.x, ty = npc ? npc.y : item.y;
       if (Math.hypot(state.x-tx,state.y-ty) < item.r) return item;
+    }
+    return null;
+  }
+
+  function getInteriorInteraction() {
+    if (Math.hypot(indoorPos.x-500,indoorPos.y-625) < 90) return {action:'Sair',run:exitInterior};
+    if (currentScene === 'standard') {
+      const elder = npcAgents.elder;
+      if (elder.inside === 'standard' && Math.hypot(indoorPos.x-500,indoorPos.y-330) < 130) {
+        return {action:'Falar com o Ancião',run:()=>dialogue('Ancião do Conselho',contextualNpcText('elder'))};
+      }
+      if (Math.hypot(indoorPos.x-500,indoorPos.y-375) < 120) {
+        return {action:'Examinar mesa do conselho',run:()=>dialogue('Mesa do conselho','Mapas, anotações e registros de famílias estão organizados sobre a mesa. Aqui são tratadas decisões do setor de Judá.')};
+      }
+    }
+    if (currentScene === 'workshop') {
+      const eliabe = npcAgents.eliabe;
+      if (eliabe.inside === 'workshop' && Math.hypot(indoorPos.x-650,indoorPos.y-430) < 135) {
+        return {action:'Falar com Eliabe',run:()=>dialogue('Eliabe — o artesão',contextualNpcText('eliabe'))};
+      }
+      if (Math.hypot(indoorPos.x-840,indoorPos.y-300) < 110) {
+        return {action:'Observar forja',run:()=>dialogue('Forja','O calor é intenso. Carvão, metal aquecido e ferramentas pesadas ocupam o canto da oficina.')};
+      }
     }
     return null;
   }
@@ -485,19 +617,44 @@ function game() {
     activeInteraction?.run?.();
   }
 
+  function updateInteriorNpcs() {
+    const elderInside = $('#elderInteriorNpc');
+    const eliabeInside = $('#eliabeInteriorNpc');
+    const elder = npcAgents.elder;
+    const eliabe = npcAgents.eliabe;
+    elderInside.classList.toggle('hidden', elder.inside !== 'standard');
+    eliabeInside.classList.toggle('hidden', eliabe.inside !== 'workshop');
+  }
+
+  function applyLighting() {
+    const phase = timePhase();
+    dayPhase.textContent = phaseLabel();
+    daylight.className = 'daylight ' + phase;
+  }
+
   function draw() {
-    player.style.left = state.x + 'px';
-    player.style.top = state.y + 'px';
+    applyLighting();
+    updateInteriorNpcs();
 
-    const baseZoom = isTouch() ? (innerWidth > innerHeight ? 0.78 : 0.62) : 0.9;
-    const zoom = Math.min(1.15, Math.max(baseZoom, innerWidth / 1800, innerHeight / 1200));
-    const viewW = innerWidth / zoom;
-    const viewH = innerHeight / zoom;
-    const cameraX = viewW >= 1800 ? 900 : Math.max(viewW / 2, Math.min(1800 - viewW / 2, state.x));
-    const cameraY = viewH >= 1200 ? 600 : Math.max(viewH / 2, Math.min(1200 - viewH / 2, state.y));
-    world.style.transform = `translate(${innerWidth / 2}px,${innerHeight / 2}px) scale(${zoom}) translate(${-cameraX}px,${-cameraY}px)`;
-
-    activeInteraction = getActiveInteraction();
+    if (currentScene === 'outdoor') {
+      player.style.left = state.x + 'px';
+      player.style.top = state.y + 'px';
+      const baseZoom = isTouch() ? (innerWidth > innerHeight ? 0.78 : 0.62) : 0.9;
+      const zoom = Math.min(1.15, Math.max(baseZoom, innerWidth / 1800, innerHeight / 1200));
+      const viewW = innerWidth / zoom;
+      const viewH = innerHeight / zoom;
+      const cameraX = viewW >= 1800 ? 900 : Math.max(viewW / 2, Math.min(1800 - viewW / 2, state.x));
+      const cameraY = viewH >= 1200 ? 600 : Math.max(viewH / 2, Math.min(1200 - viewH / 2, state.y));
+      world.style.transform = `translate(${innerWidth / 2}px,${innerHeight / 2}px) scale(${zoom}) translate(${-cameraX}px,${-cameraY}px)`;
+      activeInteraction = getActiveInteraction();
+    } else {
+      player.style.left = indoorPos.x + 'px';
+      player.style.top = indoorPos.y + 'px';
+      const activeInterior = currentScene === 'standard' ? standardInterior : workshopInterior;
+      const scale = Math.min(innerWidth / 1000, innerHeight / 700);
+      activeInterior.style.transform = `translate(${innerWidth/2}px,${innerHeight/2}px) scale(${scale}) translate(-500px,-350px)`;
+      activeInteraction = getInteriorInteraction();
+    }
     prompt.classList.toggle('hidden', !activeInteraction);
     actionButton.classList.toggle('hidden', !activeInteraction || !isTouch());
     if (activeInteraction) prompt.textContent = isTouch() ? `AÇÃO — ${activeInteraction.action}` : `E — ${activeInteraction.action}`;
@@ -573,7 +730,7 @@ function game() {
     updatePlayerSprite(dx,dy,now);
     if (!dialogOpen) {
       Object.entries(npcAgents).forEach(([key,agent]) => moveNpc(key,agent,dt));
-      animalAgents.forEach(agent => moveAnimal(agent,dt));
+      if (currentScene === 'outdoor') animalAgents.forEach(agent => moveAnimal(agent,dt));
       state.time += .018 * dt;
     }
     updateDepth();
@@ -581,11 +738,15 @@ function game() {
       const length = Math.hypot(dx,dy);
       const stepX = (dx/length)*4.2*dt;
       const stepY = (dy/length)*4.2*dt;
-      const nextX = state.x + stepX;
-      const nextY = state.y + stepY;
-      if (canStand(nextX,state.y)) state.x = nextX;
-      if (canStand(state.x,nextY)) state.y = nextY;
-      // O relógio avança continuamente; deslocar-se não acelera o tempo.
+      if (currentScene === 'outdoor') {
+        const nextX = state.x + stepX;
+        const nextY = state.y + stepY;
+        if (canStand(nextX,state.y)) state.x = nextX;
+        if (canStand(state.x,nextY)) state.y = nextY;
+      } else {
+        indoorPos.x = Math.max(80,Math.min(920,indoorPos.x+stepX*1.15));
+        indoorPos.y = Math.max(120,Math.min(635,indoorPos.y+stepY*1.15));
+      }
     }
     draw();
     requestAnimationFrame(tick);
