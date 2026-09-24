@@ -60,7 +60,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.7</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.8</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -82,7 +82,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.7 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.8 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -158,7 +158,7 @@ function game() {
         <img class="scenic-asset tower-asset tower-ne" src="./assets/art/judah/watchtower.svg" alt="">
         <img class="scenic-asset tower-asset tower-sw" src="./assets/art/judah/watchtower.svg" alt="">
         <img class="scenic-asset tower-asset tower-se" src="./assets/art/judah/watchtower.svg" alt="">
-        <div class="gate"><span></span><span></span></div>
+        <img class="scenic-asset gate-asset" style="left:770px;top:940px" src="./assets/art/judah/gate.svg" alt="Entrada de Judá">
 
         <div class="path main-v"></div><div class="path main-h"></div><div class="court"></div>
 
@@ -172,7 +172,10 @@ function game() {
         <img class="scenic-asset warehouse-asset warehouse-small" style="left:445px;top:480px" src="./assets/art/judah/warehouse.svg" alt="Armazém">
         <img class="scenic-asset workshop-asset" style="left:1190px;top:650px" src="./assets/art/judah/workshop.svg" alt="Oficina">
         <div class="corral" style="left:245px;top:690px">
-          <i class="animal sheep a1"></i><i class="animal sheep a2"></i><i class="animal goat a3"></i><i class="trough"></i>
+          <img class="animal-sprite sheep-one" src="./assets/art/animals/sheep.svg" alt="Ovelha">
+          <img class="animal-sprite sheep-two" src="./assets/art/animals/sheep.svg" alt="Ovelha">
+          <img class="animal-sprite goat-one" src="./assets/art/animals/goat.svg" alt="Cabra">
+          <i class="trough"></i>
         </div>
 
         <img class="scenic-asset campfire-asset" style="left:842px;top:520px" src="./assets/art/judah/campfire.svg" alt="Fogueira central">
@@ -187,6 +190,8 @@ function game() {
         <img class="scenic-asset flora-asset shrub-asset" style="left:1465px;top:555px" src="./assets/art/judah/desert_shrub.svg" alt="">
         <img class="scenic-asset flora-asset shrub-asset mini-flora" style="left:675px;top:930px" src="./assets/art/judah/desert_shrub.svg" alt="">
         <img class="scenic-asset flora-asset shrub-asset mini-flora" style="left:1050px;top:945px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset mini-flora" style="left:330px;top:420px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset mini-flora" style="left:1415px;top:690px" src="./assets/art/judah/desert_shrub.svg" alt="">
         <img class="scenic-asset prop-art rock-art" style="left:585px;top:245px" src="./assets/art/judah/rock_cluster.svg" alt="">
         <img class="scenic-asset prop-art rock-art small-rock" style="left:1050px;top:830px" src="./assets/art/judah/rock_cluster.svg" alt="">
         <img class="scenic-asset prop-art supply-art" style="left:470px;top:560px" src="./assets/art/judah/supply_stack.svg" alt="">
@@ -232,7 +237,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.7</div>
+      <div class="badge">Web Alpha 0.8</div>
     </main>`;
 
   const world = $('#world');
@@ -263,15 +268,67 @@ function game() {
   ];
 
   const npcAgents = {
-    elder: { el:$('.npc-elder'), x:890, y:292, route:[[890,292],[835,325],[930,330]], target:1, speed:.34 },
-    eliabe:{ el:$('.npc-eliabe'),x:1320,y:745,route:[[1320,745],[1370,780],[1275,790]],target:1,speed:.42 },
-    child: { el:$('.npc-child'), x:445, y:780, route:[[445,780],[360,825],[510,835],[420,745]], target:1, speed:.45 },
-    miria: { el:$('.npc-miria'), x:1245,y:420,route:[[1245,420],[1325,445],[1190,470],[1270,390]],target:1,speed:.38 },
-    hanan: { el:$('.npc-hanan'), x:520,y:535,route:[[520,535],[455,560],[570,575]],target:1,speed:.30 },
-    guard: { el:$('.npc-guard'), x:820,y:1015,route:[[820,1015],[980,1015],[900,965]],target:1,speed:.48 }
+    elder: { el:$('.npc-elder'), x:890, y:292, route:[[890,292]], target:0, speed:.34, scheduleTag:'' },
+    eliabe:{ el:$('.npc-eliabe'),x:1320,y:745,route:[[1320,745]],target:0,speed:.42, scheduleTag:'' },
+    child: { el:$('.npc-child'), x:445, y:780, route:[[445,780]], target:0, speed:.45, scheduleTag:'' },
+    miria: { el:$('.npc-miria'), x:1245,y:420,route:[[1245,420]],target:0,speed:.38, scheduleTag:'' },
+    hanan: { el:$('.npc-hanan'), x:520,y:535,route:[[520,535]],target:0,speed:.30, scheduleTag:'' },
+    guard: { el:$('.npc-guard'), x:820,y:1015,route:[[820,1015]],target:0,speed:.48, scheduleTag:'' }
   };
 
-  function moveNpc(agent, dt) {
+  const npcSchedules = {
+    elder:[
+      {from:480,to:600,tag:'estandarte',route:[[890,292],[850,320],[930,322]]},
+      {from:600,to:720,tag:'conselho',route:[[540,330],[500,355],[565,350]]},
+      {from:720,to:1440,tag:'estandarte',route:[[890,292],[850,320],[930,322]]}
+    ],
+    eliabe:[
+      {from:480,to:720,tag:'oficina',route:[[1320,745],[1370,780],[1275,790]]},
+      {from:720,to:780,tag:'armazem',route:[[575,560],[530,590],[610,585]]},
+      {from:780,to:1440,tag:'oficina',route:[[1320,745],[1370,780],[1275,790]]}
+    ],
+    child:[
+      {from:480,to:690,tag:'curral',route:[[445,780],[360,825],[510,835],[420,745]]},
+      {from:690,to:750,tag:'poco',route:[[760,835],[820,850],[735,860]]},
+      {from:750,to:1440,tag:'curral',route:[[445,780],[360,825],[510,835],[420,745]]}
+    ],
+    miria:[
+      {from:480,to:600,tag:'familias',route:[[1245,420],[1325,445],[1190,470],[1270,390]]},
+      {from:600,to:690,tag:'poco',route:[[1015,815],[975,850],[1040,845]]},
+      {from:690,to:1440,tag:'familias',route:[[1245,420],[1325,445],[1190,470],[1270,390]]}
+    ],
+    hanan:[
+      {from:480,to:660,tag:'cozinha',route:[[520,535],[455,560],[570,575]]},
+      {from:660,to:750,tag:'patio',route:[[735,610],[700,640],[770,645]]},
+      {from:750,to:1440,tag:'cozinha',route:[[520,535],[455,560],[570,575]]}
+    ],
+    guard:[
+      {from:480,to:600,tag:'entrada',route:[[820,1015],[980,1015],[900,965]]},
+      {from:600,to:720,tag:'leste',route:[[1510,760],[1510,620],[1460,700]]},
+      {from:720,to:840,tag:'norte',route:[[820,125],[980,125],[900,170]]},
+      {from:840,to:1440,tag:'entrada',route:[[820,1015],[980,1015],[900,965]]}
+    ]
+  };
+
+  function scheduleForNpc(key) {
+    if (key === 'eliabe' && state.questStep === 1) return {tag:'quest-oficina',route:[[1320,745],[1360,770],[1285,785]]};
+    if (key === 'child' && state.questStep === 3) return {tag:'quest-curral',route:[[445,780],[400,815],[495,825]]};
+    if (key === 'elder' && state.questStep === 4) return {tag:'quest-estandarte',route:[[890,292],[855,318],[925,320]]};
+    const minute = ((state.time % 1440) + 1440) % 1440;
+    return npcSchedules[key].find(block => minute >= block.from && minute < block.to) || npcSchedules[key][0];
+  }
+
+  function syncNpcSchedule(key, agent) {
+    const block = scheduleForNpc(key);
+    if (block.tag !== agent.scheduleTag) {
+      agent.scheduleTag = block.tag;
+      agent.route = block.route;
+      agent.target = 0;
+    }
+  }
+
+  function moveNpc(key, agent, dt) {
+    syncNpcSchedule(key, agent);
     const target = agent.route[agent.target];
     const dx = target[0]-agent.x, dy = target[1]-agent.y;
     const dist = Math.hypot(dx,dy);
@@ -288,6 +345,44 @@ function game() {
     agent.el.classList.add('npc-walking');
     agent.el.classList.toggle('face-left', dx < -1);
     agent.el.classList.toggle('face-right', dx > 1);
+  }
+
+  const animalAgents = [
+    { el:$('.sheep-one'), x:72,y:70, route:[[72,70],[155,90],[105,155],[58,128]], target:1, speed:.28 },
+    { el:$('.sheep-two'), x:210,y:155, route:[[210,155],[300,170],[265,88],[190,105]], target:1, speed:.24 },
+    { el:$('.goat-one'), x:292,y:72, route:[[292,72],[325,130],[245,170],[235,80]], target:1, speed:.31 }
+  ];
+
+  function moveAnimal(agent, dt) {
+    const target = agent.route[agent.target];
+    const dx = target[0]-agent.x, dy = target[1]-agent.y;
+    const dist = Math.hypot(dx,dy);
+    if (dist < 3) {
+      agent.target = (agent.target + 1) % agent.route.length;
+      agent.el.classList.remove('animal-walking');
+      return;
+    }
+    const step = Math.min(dist,agent.speed*dt);
+    agent.x += dx/dist*step;
+    agent.y += dy/dist*step;
+    agent.el.style.left = agent.x + 'px';
+    agent.el.style.top = agent.y + 'px';
+    agent.el.classList.add('animal-walking');
+    agent.el.classList.toggle('face-left',dx < 0);
+  }
+
+  const ySortedScenery = [
+    ['.standard-tent-asset',300],['.council-tent-asset',385],['.family-tent-asset:not(.family-small)',355],
+    ['.family-tent-asset.family-small:nth-of-type(2)',438],['.workshop-asset',846],
+    ['.warehouse-asset:not(.warehouse-small)',575],['.warehouse-small',596],
+    ['.campfire-asset',635],['.well-asset',858],['.gate-asset',1080],
+    ['.acacia-asset',330],['.rock-art',350],['.supply-art',665]
+  ];
+  ySortedScenery.forEach(([selector,y]) => document.querySelectorAll(selector).forEach(el => el.style.zIndex = String(100 + y)));
+
+  function updateDepth() {
+    player.style.zIndex = String(100 + Math.floor(state.y));
+    Object.values(npcAgents).forEach(agent => agent.el.style.zIndex = String(100 + Math.floor(agent.y)));
   }
 
   const PLAYER_RADIUS = 20;
@@ -476,7 +571,12 @@ function game() {
     }
     player.classList.toggle('walking', Boolean(dx || dy));
     updatePlayerSprite(dx,dy,now);
-    if (!dialogOpen) Object.values(npcAgents).forEach(agent => moveNpc(agent,dt));
+    if (!dialogOpen) {
+      Object.entries(npcAgents).forEach(([key,agent]) => moveNpc(key,agent,dt));
+      animalAgents.forEach(agent => moveAnimal(agent,dt));
+      state.time += .018 * dt;
+    }
+    updateDepth();
     if (dx||dy) {
       const length = Math.hypot(dx,dy);
       const stepX = (dx/length)*4.2*dt;
@@ -485,7 +585,7 @@ function game() {
       const nextY = state.y + stepY;
       if (canStand(nextX,state.y)) state.x = nextX;
       if (canStand(state.x,nextY)) state.y = nextY;
-      state.time += .04*dt;
+      // O relógio avança continuamente; deslocar-se não acelera o tempo.
     }
     draw();
     requestAnimationFrame(tick);
