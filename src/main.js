@@ -71,7 +71,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.10</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.11</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -93,7 +93,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.10 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.11 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -269,7 +269,26 @@ function game() {
       <div class="daily-task" id="dailyTask"></div>
       <div class="inventory-mini" id="inventoryMini"></div>
       <div class="prompt hidden" id="prompt"></div>
+      <button class="map-button" id="mapButton" aria-label="Abrir mapa do acampamento" title="Mapa (M)">MAPA</button>
       <button class="game-menu" id="gameMenu">☰</button>
+      <div class="map-overlay hidden" id="mapOverlay" role="dialog" aria-modal="true" aria-label="Mapa do acampamento">
+        <div class="map-panel">
+          <div class="map-heading"><h2>Acampamento de Judá</h2><button id="closeMap" aria-label="Fechar mapa">Fechar ×</button></div>
+          <p id="mapObjective"></p>
+          <div class="camp-map" id="campMap">
+            <div class="map-path map-path-vertical"></div><div class="map-path map-path-horizontal"></div>
+            <div class="map-place" style="left:50%;top:48%">Fogueira</div>
+            <div class="map-place" style="left:50%;top:25%">Estandarte</div>
+            <div class="map-place" style="left:74%;top:63%">Oficina</div>
+            <div class="map-place" style="left:50%;top:69%">Poço</div>
+            <div class="map-place" style="left:25%;top:66%">Curral</div>
+            <div class="map-place" style="left:37%;top:84%">Sua tenda</div>
+            <div class="map-quest hidden" id="mapQuest" aria-label="Destino da missão"></div>
+            <div class="map-player" id="mapPlayer" aria-label="Sua posição"></div>
+          </div>
+          <div class="map-legend"><span>● Você</span><span>◆ Próximo objetivo</span></div>
+        </div>
+      </div>
 
       <div class="touch hidden" id="touchControls">
         <button data-k="w">▲</button>
@@ -278,7 +297,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.10</div>
+      <div class="badge">Web Alpha 0.11</div>
     </main>`;
 
   const world = $('#world');
@@ -302,6 +321,8 @@ function game() {
   const objective = $('#objective');
   const inventoryMini = $('#inventoryMini');
   const menuButton = $('#gameMenu');
+  const mapOverlay = $('#mapOverlay');
+  const mapButton = $('#mapButton');
   const keys = new Set();
 
   if (isTouch()) touchControls.classList.remove('hidden');
@@ -641,9 +662,23 @@ function game() {
     return !Object.values(npcAgents).some(npc => !npc.inside && Math.hypot(px-npc.x,py-npc.y) < PLAYER_RADIUS + 24);
   }
 
+  function questGuidance() {
+    const quest = QUESTS[state.questStep];
+    if (!quest?.target) return quest.label;
+    if (currentScene !== 'outdoor') return `${quest.label} Saia da tenda para seguir a missão.`;
+    const npc = quest.id === 'eliabe' ? npcAgents.eliabe : quest.id === 'corral' ? npcAgents.child : quest.id === 'elder' ? npcAgents.elder : null;
+    const destination = npc?.inside === 'workshop' ? {x:1325,y:835} : npc?.inside === 'standard' ? {x:900,y:330} : npc || quest.target;
+    const dx = destination.x - state.x, dy = destination.y - state.y;
+    const distance = Math.round(Math.hypot(dx,dy));
+    if (distance < (quest.target.r || 110)) return quest.label;
+    const direction = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'leste' : 'oeste') : (dy > 0 ? 'sul' : 'norte');
+    const place = npc?.inside ? 'Entre na tenda indicada. ' : '';
+    return `${quest.label} ${place}Siga para ${direction} (${distance} passos).`;
+  }
+
   function refreshHud() {
     const quest = QUESTS[Math.min(state.questStep, QUESTS.length - 1)];
-    objective.textContent = quest.label;
+    objective.textContent = questGuidance();
     rep.textContent = state.reputation;
     calendarDay.textContent = calendarLabel();
     energyBar.style.width = state.energy.toFixed(0) + '%';
@@ -657,6 +692,29 @@ function game() {
     if (state.inventory.lenha) items.push(`Lenha ×${state.inventory.lenha}`);
     if (state.inventory.agua) items.push(`Água ×${state.inventory.agua}`);
     inventoryMini.textContent = items.length ? items.join(' • ') : 'Bolsa vazia';
+  }
+
+  function updateMap() {
+    const quest = QUESTS[state.questStep];
+    const npc = quest?.id === 'eliabe' ? npcAgents.eliabe : quest?.id === 'corral' ? npcAgents.child : quest?.id === 'elder' ? npcAgents.elder : null;
+    const target = npc?.inside === 'workshop' ? {x:1325,y:835} : npc?.inside === 'standard' ? {x:900,y:330} : npc || quest?.target;
+    const marker = $('#mapQuest');
+    marker.classList.toggle('hidden', !target);
+    if (target) {
+      marker.style.left = `${target.x / 18}%`;
+      marker.style.top = `${target.y / 12}%`;
+    }
+    const playerMarker = $('#mapPlayer');
+    playerMarker.style.left = `${state.x / 18}%`;
+    playerMarker.style.top = `${state.y / 12}%`;
+    $('#mapObjective').textContent = questGuidance();
+  }
+
+  function toggleMap(force) {
+    const open = force ?? mapOverlay.classList.contains('hidden');
+    mapOverlay.classList.toggle('hidden', !open);
+    if (open) updateMap();
+    else keys.clear();
   }
 
   function advanceQuest(reward=0) {
@@ -765,7 +823,7 @@ function game() {
     if (timed) return timed;
     const quest = QUESTS[state.questStep];
     const questNpc = quest?.id === 'eliabe' ? npcAgents.eliabe : quest?.id === 'corral' ? npcAgents.child : quest?.id === 'elder' ? npcAgents.elder : null;
-    if (quest?.target || questNpc) {
+    if ((quest?.target || questNpc) && !questNpc?.inside) {
       const tx = questNpc ? questNpc.x : quest.target.x;
       const ty = questNpc ? questNpc.y : quest.target.y;
       const tr = questNpc ? 105 : quest.target.r;
@@ -788,6 +846,7 @@ function game() {
     if (currentScene === 'standard') {
       const elder = npcAgents.elder;
       if (elder.inside === 'standard' && Math.hypot(indoorPos.x-500,indoorPos.y-330) < 130) {
+        if (state.questStep === 4) return {action:QUESTS[4].action,run:runQuestInteraction};
         return {action:'Falar com o Ancião',run:()=>dialogue('Ancião do Conselho',contextualNpcText('elder'))};
       }
       if (Math.hypot(indoorPos.x-500,indoorPos.y-375) < 120) {
@@ -809,6 +868,7 @@ function game() {
     if (currentScene === 'workshop') {
       const eliabe = npcAgents.eliabe;
       if (eliabe.inside === 'workshop' && Math.hypot(indoorPos.x-650,indoorPos.y-430) < 135) {
+        if (state.questStep === 1) return {action:QUESTS[1].action,run:runQuestInteraction};
         return {action:'Falar com Eliabe',run:()=>dialogue('Eliabe — o artesão',contextualNpcText('eliabe'))};
       }
       if (Math.hypot(indoorPos.x-840,indoorPos.y-300) < 110) {
@@ -830,6 +890,7 @@ function game() {
   }
 
   function interact() {
+    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden')) return;
     activeInteraction?.run?.();
   }
 
@@ -882,15 +943,29 @@ function game() {
   }
 
   function onKeyDown(event) {
+    if (event.key.toLowerCase() === 'm' && !event.repeat) {
+      if ($('#dialogue').classList.contains('hidden')) toggleMap();
+      return;
+    }
+    if (!mapOverlay.classList.contains('hidden')) {
+      if (event.key === 'Escape') toggleMap(false);
+      return;
+    }
     keys.add(event.key.toLowerCase());
-    if (event.key.toLowerCase() === 'e') interact();
-    if (event.key === 'Escape') { save(); menu(); }
+    if (event.key.toLowerCase() === 'e' && !event.repeat) interact();
+    if (event.key === 'Escape') {
+      const modal = $('#dialogue');
+      if (!modal.classList.contains('hidden')) modal.classList.add('hidden');
+      else { save(); menu(); }
+    }
   }
   function onKeyUp(event) { keys.delete(event.key.toLowerCase()); }
 
   addEventListener('keydown', onKeyDown);
   addEventListener('keyup', onKeyUp);
   actionButton.addEventListener('click', interact);
+  mapButton.addEventListener('click', () => toggleMap());
+  $('#closeMap').addEventListener('click', () => toggleMap(false));
   menuButton.addEventListener('click', () => { save(); menu(); });
 
   touchControls.querySelectorAll('button').forEach(button => {
@@ -936,7 +1011,7 @@ function game() {
       return;
     }
     const dt = Math.min((now-last)/16.67,2); last = now;
-    const dialogOpen = !$('#dialogue').classList.contains('hidden');
+    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden');
     let dx=0,dy=0;
     if (!dialogOpen) {
       if (keys.has('a')||keys.has('arrowleft')) dx--;
