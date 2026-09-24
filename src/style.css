@@ -215,3 +215,24 @@
  .rock-art{width:92px}.small-rock{width:68px}.supply-art{width:112px}
  .zone-label{opacity:.58}
 }
+
+/* Web Alpha 0.8 — horários, rebanho móvel e profundidade Y */
+.gate-asset{width:260px;height:auto;z-index:1180;filter:drop-shadow(0 12px 8px #2c1c1455)}
+.animal-sprite{position:absolute;width:78px;height:auto;z-index:18;filter:drop-shadow(0 6px 4px #34231855);transform-origin:50% 100%;transition:transform .12s linear}
+.animal-sprite.face-left{transform:scaleX(-1)}
+.animal-sprite.animal-walking{animation:herdStep .42s ease-in-out infinite alternate}
+@keyframes herdStep{from{translate:0 0}to{translate:0 -2px}}
+.sheep-one{left:72px;top:70px}.sheep-two{left:210px;top:155px}.goat-one{left:292px;top:72px}
+.player-art,.npc,.scenic-asset{will-change:transform,left,top}
+.player-art:after{left:13px;bottom:2px;width:46px;height:13px;background:radial-gradient(ellipse,#2d20176b 0 25%,#2d201732 55%,transparent 72%);filter:blur(1px)}
+.npc:after{content:"";position:absolute;left:16px;bottom:4px;width:42px;height:12px;border-radius:50%;background:radial-gradient(ellipse,#2d20175d 0 28%,#2d201727 58%,transparent 74%);z-index:-1}
+.scenic-asset{filter:drop-shadow(0 11px 8px #2d1f1655)}
+.zone-label{z-index:2500!important}
+.tribe-banner,.torch,.jar,.crate,.clay-cluster,.supply-pile,.rug,.bench,.cook-area{z-index:760}
+.corral{z-index:780}
+.objective,.hud,.inventory-mini,.prompt,.touch,.action,.game-menu,.badge{z-index:5000}
+.dialogue{z-index:9000}
+@media(max-width:700px){
+ .gate-asset{width:225px}
+ .animal-sprite{width:68px}
+}
