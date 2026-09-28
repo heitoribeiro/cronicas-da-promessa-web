@@ -112,3 +112,16 @@ A escala dos NPCs foi revisada a partir das capturas reais da gameplay. Todos os
 - setores permanecem legíveis, mas com marcação mais discreta.
 
 Os elementos adicionados nesta fase são decorativos e não modificam colisões, rotinas, missões ou navegação.
+
+
+## Aplicação — Fase 6
+
+A linguagem pixel art aprovada passa a abranger os últimos elementos ainda visivelmente ligados ao estilo anterior:
+
+- Criança do Rebanho redesenhada em pixel art, mantendo proporção infantil.
+- Ovelhas e cabra convertidas para sprites com bordas rígidas, paleta limitada e escala compatível com os personagens.
+- Interior da Tenda do Estandarte redesenhado em grade visual de 16 px.
+- Interior da Oficina redesenhado, preservando a forja próxima da coordenada de interação existente.
+- Interior da tenda do jogador redesenhado, preservando cama, baú e saída nas áreas usadas pela mecânica.
+
+Os interiores permanecem em canvas lógico de **1000×700**, portanto câmera, colisões e coordenadas de interação existentes não precisam ser alteradas. A versão visual passa a **Web Alpha 0.24**.
