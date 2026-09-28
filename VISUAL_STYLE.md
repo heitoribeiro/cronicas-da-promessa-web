@@ -43,3 +43,23 @@ A segunda etapa de integração aproxima o gameplay diretamente do mockup aprova
 - atualização da interface para Web Alpha 0.20.
 
 A estrutura continua usando os sistemas mecânicos já existentes. A próxima fase visual é a substituição progressiva dos SVGs temporários do cenário por sprites/tiles pixel art definitivos.
+
+
+## Aplicação — Fase 3
+
+A terceira etapa substitui os principais assets vetoriais de aparência suave por versões de **pixel art de paleta limitada e bordas duras**, preservando as mesmas dimensões lógicas usadas pela gameplay:
+
+- Tenda do Estandarte;
+- Tendas familiares;
+- Torres de vigia;
+- Portão;
+- Fogueira;
+- Poço;
+- Oficina;
+- Armazém;
+- Acácia;
+- Arbustos;
+- Rochas;
+- Pilhas de suprimentos.
+
+Os novos SVGs usam `shape-rendering="crispEdges"`, formas geométricas em grade e ausência de gradientes/blur, reduzindo a aparência de paper art. A mecânica, posições, colisões e dimensões do mapa permanecem inalteradas.
