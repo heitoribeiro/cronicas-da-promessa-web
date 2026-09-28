@@ -853,3 +853,167 @@ img{user-select:none;-webkit-user-drag:none}
   .quick-actions .inventory-button:before{content:"I";font:700 13px Arial}
   .quick-actions .map-button:before{content:"M";font:700 13px Arial}
 }
+
+
+/* === OFFICIAL PIXEL RPG VISUAL THEME v2 — HUD/MINIMAP/HOTBAR === */
+
+/* Reorganização para reproduzir o mockup aprovado: personagem + missões à esquerda, minimapa à direita */
+.status-stack{z-index:5100!important}
+.task-stack{
+  z-index:5090!important;
+  left:14px!important;right:auto!important;top:220px!important;
+  width:min(318px,38vw)!important;
+  display:grid!important;gap:6px!important;
+  pointer-events:none
+}
+.task-stack:before{
+  content:"✦  MISSÕES";
+  display:block;
+  padding:8px 10px;
+  border:2px solid #a97f35;
+  border-bottom:0;
+  background:linear-gradient(#111e29,#08121a);
+  color:#f2c84d;
+  font:700 12px Georgia;
+  letter-spacing:.6px;
+  box-shadow:0 0 0 1px #171009,0 5px 16px #0006
+}
+.task-stack .objective,.task-stack .daily-task,.task-stack .vocation-task{
+  margin:0!important;padding:9px 10px!important;min-height:0!important;
+  font-size:11px!important;line-height:1.38!important
+}
+.task-stack .daily-task:empty,.task-stack .vocation-task:empty{display:none!important}
+
+/* Minimapa de gameplay */
+.mini-map-hud{
+  position:fixed;z-index:5120;right:14px;top:14px;
+  width:218px;
+  border:2px solid #b38735;
+  border-radius:3px;
+  overflow:hidden;
+  background:linear-gradient(#0c1720f7,#071019f7);
+  color:#f7e7bd;
+  box-shadow:0 0 0 2px #171009,0 8px 28px #0009,inset 0 0 22px #c9952b10;
+  pointer-events:none
+}
+.mini-map-brand{
+  padding:8px 10px 7px;
+  border-bottom:1px solid #71572e;
+  text-align:center;
+  color:#f4d56e;
+  font:700 14px Georgia;
+  text-shadow:0 1px #000;
+  letter-spacing:.35px
+}
+.mini-map-board{
+  position:relative;height:150px;margin:7px;
+  overflow:hidden;
+  border:1px solid #7b5c2e;
+  background:
+    radial-gradient(circle at 50% 50%,#d6a45c 0 7%,transparent 7.5%),
+    radial-gradient(circle at 28% 30%,#8c9455 0 4%,transparent 4.5%),
+    radial-gradient(circle at 76% 68%,#6f8745 0 5%,transparent 5.5%),
+    radial-gradient(circle at 78% 26%,#9a7441 0 3%,transparent 3.5%),
+    repeating-linear-gradient(0deg,rgba(102,72,31,.12) 0 1px,transparent 1px 14px),
+    repeating-linear-gradient(90deg,rgba(102,72,31,.10) 0 1px,transparent 1px 14px),
+    linear-gradient(#d4ab66,#b87839);
+  box-shadow:inset 0 0 26px #40250f66
+}
+.mini-map-board:after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,transparent 0 60%,rgba(49,25,12,.24) 100%)
+}
+.mini-map-north{
+  position:absolute;z-index:4;left:50%;top:3px;transform:translateX(-50%);
+  color:#1b1711;font:700 9px Georgia
+}
+.mini-map-path{position:absolute;z-index:1;background:#e0bf7a99;border:1px solid #b17b3a55}
+.mini-map-path.path-v{left:47%;top:9%;width:8%;height:86%;border-radius:8px}
+.mini-map-path.path-h{left:10%;top:47%;width:80%;height:9%;border-radius:8px}
+.mini-map-landmark{
+  position:absolute;z-index:3;display:grid;place-items:center;width:18px;height:18px;
+  transform:translate(-50%,-50%);
+  border:1px solid #3e2a14;background:#111b21dd;color:#f1cd59;
+  font:700 10px Arial;box-shadow:0 1px 3px #0008
+}
+.landmark-standard{left:50%;top:20%}.landmark-fire{left:50%;top:49%}
+.landmark-well{left:50%;top:72%}.landmark-workshop{left:76%;top:68%}.landmark-corral{left:25%;top:67%}
+.mini-map-player,.mini-map-quest{
+  position:absolute;z-index:8;width:13px;height:13px;
+  transform:translate(-50%,-50%) rotate(45deg)
+}
+.mini-map-player{
+  border:2px solid #fff2b0;background:#f2a91e;
+  box-shadow:0 0 0 2px #6d3f0d,0 0 9px #ffd047
+}
+.mini-map-quest{
+  width:10px;height:10px;border:2px solid #ffe9a0;background:#c42b31;
+  box-shadow:0 0 0 2px #68181d,0 0 10px #ff4d4d
+}
+.mini-map-footer{
+  display:flex;align-items:center;justify-content:space-between;gap:7px;
+  padding:6px 8px 8px;border-top:1px solid #72572c;background:#09131bdc
+}
+.mini-map-footer b{color:#ead8ab;font:700 10px Georgia}
+.mini-map-footer small{color:#9d8a6a;font:8px Arial;white-space:nowrap}
+
+/* Hotbar visual no canto inferior esquerdo */
+.hotbar{
+  position:fixed;z-index:5130;left:14px;bottom:14px;
+  display:flex;gap:4px;padding:5px;
+  border:2px solid #9f762e;border-radius:3px;
+  background:#061019eb;
+  box-shadow:0 0 0 2px #171009,0 8px 24px #000a
+}
+.hotbar-slot{
+  position:relative;width:50px;height:50px;display:grid;place-items:center;
+  border:1px solid #67502e;border-radius:2px;
+  background:linear-gradient(#111d26,#081119);
+  color:#e3c98d;
+  box-shadow:inset 0 0 0 2px #0e161c
+}
+.hotbar-slot.active{border-color:#e0ad38;box-shadow:inset 0 0 0 2px #20180e,0 0 8px #f3bc3933}
+.hotbar-slot kbd{
+  position:absolute;left:3px;top:2px;color:#c8b28d;background:transparent;
+  font:700 8px Arial
+}
+.hotbar-icon{font:700 22px/1 Arial;color:#f0c95d;text-shadow:0 2px #000}
+.hotbar-slot em{
+  position:absolute;right:3px;bottom:2px;min-width:13px;text-align:right;
+  color:#fff0c5;font:700 9px Arial;font-style:normal;text-shadow:0 1px #000
+}
+
+/* Botões à direita usam pictogramas/atalhos mais compactos */
+.quick-actions .journal-button:before{content:"J  "}
+.quick-actions .inventory-button:before{content:"I  "}
+.quick-actions .map-button:before{content:"M  "}
+.quick-actions .game-menu:after{content:" ESC";font-size:8px;color:#bba57b}
+
+/* Melhor leitura do personagem em 1280x720 */
+@media(min-width:900px) and (max-height:820px){
+  .status-stack{width:292px!important}
+  .task-stack{width:292px!important;top:205px!important}
+  .mini-map-hud{width:202px!important}
+  .mini-map-board{height:132px!important}
+  .character-titlebar{height:23px!important}
+  .character-core{padding-top:5px!important;padding-bottom:5px!important}
+  .character-clock{font-size:8px!important}
+}
+
+/* Celular horizontal: mantém HUD essencial e minimapa, reduz elementos secundários */
+@media(max-width:900px){
+  .mini-map-hud{right:7px;top:7px;width:170px}
+  .mini-map-brand{font-size:10px;padding:5px}
+  .mini-map-board{height:108px;margin:5px}
+  .mini-map-footer{padding:4px 5px 5px}.mini-map-footer b{font-size:8px}.mini-map-footer small{font-size:7px}
+  .task-stack{left:7px!important;top:188px!important;width:min(55vw,250px)!important}
+  .hotbar{left:7px;bottom:7px;padding:4px;gap:3px}
+  .hotbar-slot{width:40px;height:40px}.hotbar-icon{font-size:17px}
+}
+@media(max-width:700px){
+  .task-stack{display:none!important}
+  .mini-map-hud{width:145px}
+  .mini-map-board{height:88px}
+  .mini-map-brand{display:none}
+  .hotbar-slot:nth-child(n+5){display:none}
+}
