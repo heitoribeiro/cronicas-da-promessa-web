@@ -206,14 +206,14 @@ func _run_navigation_self_tests() -> void:
 
 	var kitchen := _compute_navigation_path(Vector2(315, 430), Vector2(315, 105))
 	var kitchen_path: PackedVector2Array = kitchen["path"]
-	var kitchen_detours := bool(kitchen["ok"]) and _path_world_length(kitchen_path) > Vector2(315, 430).distance_to(Vector2(315, 105)) * 1.08
+	var kitchen_detours := kitchen["ok"] == true and _path_world_length(kitchen_path) > Vector2(315, 430).distance_to(Vector2(315, 105)) * 1.08
 	if kitchen_detours:
 		passed += 1
 	lines.append("Cozinha:%s" % ("OK" if kitchen_detours else "FALHA"))
 
 	var workshop := _compute_navigation_path(Vector2(920, 650), Vector2(920, 285))
 	var workshop_path: PackedVector2Array = workshop["path"]
-	var workshop_detours := bool(workshop["ok"]) and _path_world_length(workshop_path) > Vector2(920, 650).distance_to(Vector2(920, 285)) * 1.08
+	var workshop_detours := workshop["ok"] == true and _path_world_length(workshop_path) > Vector2(920, 650).distance_to(Vector2(920, 285)) * 1.08
 	if workshop_detours:
 		passed += 1
 	lines.append("Oficina:%s" % ("OK" if workshop_detours else "FALHA"))
@@ -221,12 +221,12 @@ func _run_navigation_self_tests() -> void:
 	var well := _compute_navigation_path(Vector2(640, 620), Vector2(640, 500))
 	var well_path: PackedVector2Array = well["path"]
 	var resolved_well: Vector2 = well["resolved_target"]
-	var well_resolves := bool(well["ok"]) and not navigation_grid.is_point_solid(_world_to_grid(resolved_well)) and resolved_well.distance_to(Vector2(640, 500)) > 20.0
+	var well_resolves := well["ok"] == true and not navigation_grid.is_point_solid(_world_to_grid(resolved_well)) and resolved_well.distance_to(Vector2(640, 500)) > 20.0
 	if well_resolves and not well_path.is_empty():
 		passed += 1
 	lines.append("Poço:%s" % ("OK" if well_resolves else "FALHA"))
 
-	navigation_self_test_summary = "NAV %d/%d • %s" % [passed, total, " • ".join(lines)]
+	navigation_self_test_summary = "NAV %d/%d • %s" % [passed, total, " • ".join(PackedStringArray(lines))]
 	print("[NAVTEST] ", navigation_self_test_summary)
 
 func _create_navigation_debug_line() -> void:
