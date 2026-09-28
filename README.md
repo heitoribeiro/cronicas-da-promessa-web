@@ -24,3 +24,15 @@ A arquitetura inicial é deliberadamente estática e compatível com GitHub Page
 - cada entrega gera uma ração de viagem utilizável fora do horário da cozinha
 - mapa e marcador orientam a entrega quando houver produção disponível
 - save anterior continua compatível por normalização automática do estado
+
+
+## Web Alpha 0.17
+- interface refinada com HUD agrupado e painel de tarefas sem informações duplicadas
+- clique com o mouse no cenário para caminhar até o destino
+- cálculo de rota em grade para contornar obstáculos básicos
+- WASD/setas continuam disponíveis e cancelam a rota do mouse
+- marcador visual de destino no chão
+- autosave periódico, por eventos e ao ocultar/fechar a página
+- menu do jogo com Salvar agora, Exportar save e Importar save
+- saves exportados em JSON podem ser transferidos entre computador e celular
+- botão ☰ agora abre o menu do jogo em vez de sair imediatamente
