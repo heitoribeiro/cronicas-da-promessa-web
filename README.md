@@ -59,3 +59,15 @@ A arquitetura inicial é deliberadamente estática e compatível com GitHub Page
 - marcador da missão de Eliabe atualizado para a área externa da Oficina
 - proteção de zona impede que os dois NPCs derivem para dentro da construção durante suas rotinas de trabalho
 - deslocamentos de Eliabe entre Oficina e Armazém continuam livres e independentes da proteção da zona de trabalho
+
+
+## Web Alpha 0.18.2
+- Hanan passa a contornar a pilha de caixas e suprimentos, sem atravessar esses objetos
+- opção `Exibir FPS` adicionada ao Menu do jogo e persistida no save
+- contador mostra FPS e tempo médio por quadro em milissegundos
+- indicador visual muda de estado abaixo de 50 FPS e abaixo de 30 FPS
+- iluminação noturna deixou de usar `mix-blend-mode: multiply`, reduzindo custo de composição
+- animação da fogueira deixou de animar `filter: drop-shadow` e passou a usar pulso de opacidade mais leve
+- assets estáticos não usam mais `will-change` desnecessariamente
+- câmera usa `translate3d` para aproveitar melhor a composição do navegador
+- atualização da classe de iluminação ocorre somente quando muda o período do dia
