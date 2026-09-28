@@ -1164,3 +1164,136 @@ img{user-select:none;-webkit-user-drag:none}
   .npc-child img{width:45px!important;height:62px!important}
   .npc-child b{top:55px!important}
 }
+
+
+/* === PIXEL RPG VISUAL PHASE 5 — NPC SCALE + MAP DENSITY === */
+
+/* Escala oficial dos humanoides: um único quadro lógico 64×88 e pés na mesma linha-base. */
+.npc{
+  width:64px!important;
+  height:88px!important;
+  transform:translate(-50%,-78%)!important;
+  transform-origin:50% 100%!important;
+  overflow:visible!important;
+  --npc-scale:1;
+  --npc-shift-y:0px;
+}
+.npc img{
+  width:64px!important;
+  height:88px!important;
+  object-fit:contain!important;
+  transform:translateY(var(--npc-shift-y)) scale(var(--npc-scale))!important;
+  transform-origin:50% 100%!important;
+}
+.npc.face-left img{
+  transform:translateY(var(--npc-shift-y)) scaleX(-1) scale(var(--npc-scale))!important;
+}
+.npc.face-right img{
+  transform:translateY(var(--npc-shift-y)) scaleX(1) scale(var(--npc-scale))!important;
+}
+
+/* Correções ópticas para que o corpo — e não acessórios como lança/cajado — determine a escala percebida. */
+.npc-elder{width:64px!important;height:88px!important;--npc-scale:.96;--npc-shift-y:1px}
+.npc-eliabe{--npc-scale:1.00}
+.npc-miria{--npc-scale:1.10;--npc-shift-y:0px}
+.npc-hanan{--npc-scale:1.00}
+.npc-guard{width:64px!important;height:88px!important;--npc-scale:.88;--npc-shift-y:3px}
+.npc-child{
+  width:48px!important;
+  height:66px!important;
+  --npc-scale:1;
+  transform:translate(-50%,-78%)!important;
+}
+.npc-child img{width:48px!important;height:66px!important}
+.npc-child b{top:59px!important}
+
+.npc:after{
+  left:50%!important;
+  bottom:1px!important;
+  width:34px!important;
+  height:10px!important;
+  transform:translateX(-50%)!important;
+}
+.npc b{
+  top:79px!important;
+  font-size:9px!important;
+}
+
+/* O jogador usa a mesma proporção de corpo dos NPCs adultos. */
+.player-art{
+  width:64px!important;
+  height:88px!important;
+  transform:translate(-50%,-78%)!important;
+}
+.player-art:after{
+  left:50%!important;
+  bottom:1px!important;
+  width:36px!important;
+  height:10px!important;
+  transform:translateX(-50%)!important;
+}
+
+/* Praça central menos vazia e caminhos mais próximos do mockup aprovado. */
+.main-v{
+  left:856px!important;
+  top:80px!important;
+  width:88px!important;
+  height:1040px!important;
+  border-radius:26px!important;
+}
+.main-h{
+  left:225px!important;
+  top:556px!important;
+  width:1350px!important;
+  height:88px!important;
+  border-radius:26px!important;
+}
+.court{
+  left:735px!important;
+  top:454px!important;
+  width:330px!important;
+  height:292px!important;
+  background:
+    radial-gradient(circle at 50% 50%,#d7bd80 0 29%,#c7aa6e 30% 48%,#b08e55 49% 61%,transparent 62%)!important;
+  box-shadow:inset 0 0 24px #72532f5a,0 5px 12px #49351d20!important;
+}
+
+/* Textura do solo mais orgânica, mantendo leitura da grade 16 px. */
+.world{
+  background:
+    radial-gradient(ellipse at 14% 20%,rgba(119,92,50,.11) 0 4%,transparent 4.5%),
+    radial-gradient(ellipse at 84% 28%,rgba(128,94,50,.10) 0 3.5%,transparent 4%),
+    radial-gradient(ellipse at 78% 80%,rgba(106,78,43,.10) 0 4.5%,transparent 5%),
+    radial-gradient(ellipse at 28% 78%,rgba(124,88,45,.08) 0 4%,transparent 4.5%),
+    repeating-linear-gradient(0deg,rgba(107,72,34,.075) 0 1px,transparent 1px 16px),
+    repeating-linear-gradient(90deg,rgba(107,72,34,.065) 0 1px,transparent 1px 16px),
+    linear-gradient(#d1a15e,#b77839)!important;
+}
+
+/* Objetos puramente ambientais adicionados na fase 5. */
+.visual-filler{
+  opacity:.94;
+  pointer-events:none;
+}
+.visual-filler.shrub-asset{width:86px!important}
+.visual-filler.rock-art{width:70px!important}
+.visual-filler.supply-art{width:96px!important}
+
+/* Setores discretos: mais leitura sem voltar ao aspecto de diagrama. */
+.district{
+  border:1px dashed rgba(92,62,31,.12)!important;
+  box-shadow:inset 0 0 30px rgba(89,56,27,.05)!important;
+}
+
+/* Mantém a mesma escala relativa em celular horizontal. */
+@media(max-width:700px){
+  .player-art{width:58px!important;height:80px!important}
+  .player-sprite{transform:scale(.90625);transform-origin:50% 100%}
+  .npc{width:58px!important;height:80px!important}
+  .npc img{width:58px!important;height:80px!important}
+  .npc b{top:71px!important}
+  .npc-elder,.npc-guard{width:58px!important;height:80px!important}
+  .npc-child{width:44px!important;height:61px!important}
+  .npc-child img{width:44px!important;height:61px!important}
+  .npc-child b{top:54px!important}
+}
