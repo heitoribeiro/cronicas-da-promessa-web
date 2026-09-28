@@ -12,6 +12,10 @@ var dialogue_panel: PanelContainer
 var dialogue_title: Label
 var dialogue_text: Label
 var destination_marker: Node2D
+var navigation_debug_line: Line2D
+var navigation_debug_label: Label
+var navigation_debug_visible := true
+var navigation_self_test_summary := "NAV: aguardando autoteste"
 
 const NAV_CELL_SIZE := 24.0
 const NAV_AGENT_PADDING := 22.0
@@ -24,10 +28,12 @@ var quest_completed := false
 func _ready() -> void:
 	_build_world()
 	_build_navigation_grid()
+	_run_navigation_self_tests()
 	_build_ui()
 	_spawn_player()
 	_spawn_hanan()
 	_create_destination_marker()
+	_create_navigation_debug_line()
 
 func _process(_delta: float) -> void:
 	if player == null or hanan == null:
@@ -54,6 +60,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F3:
+			navigation_debug_visible = not navigation_debug_visible
+			if navigation_debug_line != null:
+				navigation_debug_line.visible = navigation_debug_visible
+			if navigation_debug_label != null:
+				navigation_debug_label.visible = navigation_debug_visible
+			get_viewport().set_input_as_handled()
+			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_E:
 			if player.global_position.distance_to(hanan.global_position) <= 82.0:
 				_interact_with_hanan()
@@ -156,16 +170,97 @@ func _nearest_walkable_cell(origin: Vector2i) -> Vector2i:
 
 	return Vector2i(-1, -1)
 
+func _compute_navigation_path(start_world: Vector2, requested_world: Vector2) -> Dictionary:
+	if not navigation_ready:
+		return {"path": PackedVector2Array(), "resolved_target": requested_world, "ok": false}
+
+	var start_cell := _nearest_walkable_cell(_world_to_grid(start_world))
+	var destination_cell := _nearest_walkable_cell(_world_to_grid(requested_world))
+	if start_cell == Vector2i(-1, -1) or destination_cell == Vector2i(-1, -1):
+		return {"path": PackedVector2Array(), "resolved_target": requested_world, "ok": false}
+
+	var cell_path := navigation_grid.get_id_path(start_cell, destination_cell, true)
+	if cell_path.is_empty():
+		return {"path": PackedVector2Array(), "resolved_target": requested_world, "ok": false}
+
+	var point_path := PackedVector2Array()
+	for cell in cell_path:
+		point_path.append(navigation_grid.get_point_position(cell))
+
+	return {
+		"path": point_path,
+		"resolved_target": navigation_grid.get_point_position(destination_cell),
+		"ok": true
+	}
+
+func _path_world_length(path: PackedVector2Array) -> float:
+	var total := 0.0
+	for i in range(1, path.size()):
+		total += path[i - 1].distance_to(path[i])
+	return total
+
+func _run_navigation_self_tests() -> void:
+	var passed := 0
+	var total := 3
+	var lines: Array[String] = []
+
+	var kitchen := _compute_navigation_path(Vector2(315, 430), Vector2(315, 105))
+	var kitchen_path: PackedVector2Array = kitchen["path"]
+	var kitchen_detours := bool(kitchen["ok"]) and _path_world_length(kitchen_path) > Vector2(315, 430).distance_to(Vector2(315, 105)) * 1.08
+	if kitchen_detours:
+		passed += 1
+	lines.append("Cozinha:%s" % ("OK" if kitchen_detours else "FALHA"))
+
+	var workshop := _compute_navigation_path(Vector2(920, 650), Vector2(920, 285))
+	var workshop_path: PackedVector2Array = workshop["path"]
+	var workshop_detours := bool(workshop["ok"]) and _path_world_length(workshop_path) > Vector2(920, 650).distance_to(Vector2(920, 285)) * 1.08
+	if workshop_detours:
+		passed += 1
+	lines.append("Oficina:%s" % ("OK" if workshop_detours else "FALHA"))
+
+	var well := _compute_navigation_path(Vector2(640, 620), Vector2(640, 500))
+	var well_path: PackedVector2Array = well["path"]
+	var resolved_well: Vector2 = well["resolved_target"]
+	var well_resolves := bool(well["ok"]) and not navigation_grid.is_point_solid(_world_to_grid(resolved_well)) and resolved_well.distance_to(Vector2(640, 500)) > 20.0
+	if well_resolves and not well_path.is_empty():
+		passed += 1
+	lines.append("Poço:%s" % ("OK" if well_resolves else "FALHA"))
+
+	navigation_self_test_summary = "NAV %d/%d • %s" % [passed, total, " • ".join(lines)]
+	print("[NAVTEST] ", navigation_self_test_summary)
+
+func _create_navigation_debug_line() -> void:
+	navigation_debug_line = Line2D.new()
+	navigation_debug_line.width = 3.0
+	navigation_debug_line.default_color = Color("#58d6ff")
+	navigation_debug_line.visible = navigation_debug_visible
+	navigation_debug_line.z_index = 20
+	add_child(navigation_debug_line)
+
+func _on_navigation_path_updated(path: PackedVector2Array, _resolved_target: Vector2) -> void:
+	if navigation_debug_line == null:
+		return
+	navigation_debug_line.points = path
+	navigation_debug_line.visible = navigation_debug_visible and not path.is_empty()
+
 func _build_ui() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
 
 	var instructions := Label.new()
-	instructions.text = "Clique para mover com pathfinding • WASD/setas • E para interagir"
+	instructions.text = "Clique para mover com pathfinding • WASD/setas • E interagir • F3 debug"
 	instructions.position = Vector2(24, 675)
 	instructions.add_theme_font_size_override("font_size", 14)
 	instructions.add_theme_color_override("font_color", Color.WHITE)
 	canvas.add_child(instructions)
+
+	navigation_debug_label = Label.new()
+	navigation_debug_label.text = navigation_self_test_summary
+	navigation_debug_label.position = Vector2(24, 642)
+	navigation_debug_label.add_theme_font_size_override("font_size", 13)
+	navigation_debug_label.add_theme_color_override("font_color", Color("#7ee0ff"))
+	navigation_debug_label.visible = navigation_debug_visible
+	canvas.add_child(navigation_debug_label)
 
 	prompt_panel = PanelContainer.new()
 	prompt_panel.position = Vector2(455, 635)
@@ -212,6 +307,7 @@ func _spawn_player() -> void:
 	player.name = "Player"
 	player.global_position = Vector2(640, 595)
 	player.navigation_requested.connect(_on_navigation_requested)
+	player.navigation_path_updated.connect(_on_navigation_path_updated)
 	player.destination_changed.connect(_on_destination_changed)
 	player.destination_reached.connect(_on_destination_reached)
 	player.destination_failed.connect(_on_destination_failed)
@@ -255,28 +351,10 @@ func _on_navigation_requested(world_position: Vector2) -> void:
 	if not navigation_ready or player == null:
 		return
 
-	var requested_cell := _world_to_grid(world_position)
-	var destination_cell := _nearest_walkable_cell(requested_cell)
-	if destination_cell == Vector2i(-1, -1):
-		player.set_navigation_path(PackedVector2Array(), world_position)
-		return
-
-	var start_cell := _nearest_walkable_cell(_world_to_grid(player.global_position))
-	if start_cell == Vector2i(-1, -1):
-		player.set_navigation_path(PackedVector2Array(), world_position)
-		return
-
-	var cell_path := navigation_grid.get_id_path(start_cell, destination_cell, true)
-	if cell_path.is_empty():
-		player.set_navigation_path(PackedVector2Array(), world_position)
-		return
-
-	var point_path := PackedVector2Array()
-	for cell in cell_path:
-		point_path.append(navigation_grid.get_point_position(cell))
-
-	var resolved_target := navigation_grid.get_point_position(destination_cell)
-	player.set_navigation_path(point_path, resolved_target)
+	var result := _compute_navigation_path(player.global_position, world_position)
+	var path: PackedVector2Array = result["path"]
+	var resolved_target: Vector2 = result["resolved_target"]
+	player.set_navigation_path(path, resolved_target)
 
 func _on_destination_changed(world_position: Vector2) -> void:
 	destination_marker.global_position = world_position
