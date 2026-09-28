@@ -62,3 +62,21 @@ Correções posteriores ao primeiro diagnóstico:
 - destino alcançado remove o marcador normalmente
 
 Próxima etapa mecânica: substituir o deslocamento direto por clique por navegação 2D com pathfinding real.
+
+
+## Pathfinding por clique
+
+O protótipo agora usa `AStarGrid2D` para movimentação por clique.
+
+Comportamento esperado:
+
+- o clique é convertido em uma célula navegável do mapa
+- Cozinha, Oficina, Tenda do Estandarte, Curral e Poço são tratados como obstáculos
+- a área bloqueada é expandida para considerar o raio físico do personagem
+- se o clique cair dentro de um obstáculo, o sistema procura a célula navegável mais próxima
+- o personagem percorre os waypoints calculados em vez de andar em linha reta
+- WASD/setas cancelam imediatamente a rota automática
+- o mecanismo de detecção de personagem preso permanece como fallback de segurança
+- limites físicos continuam ativos nos quatro lados do mapa
+
+Objetivo desta etapa: aproximar o controle por mouse do comportamento de MMORPGs como Ragnarok Online, em que o personagem contorna obstáculos para alcançar o ponto clicado.
