@@ -125,3 +125,27 @@ Validação:
 - cada NPC recebe uma rota A* própria quando sua rotina muda
 - logs `[ROUTINE]`, `[NPCRoutine]` e `[NPCNAV]` identificam o NPC pelo nome
 - a interação de diálogo com Hanan permanece independente das agendas dos demais
+
+
+## Estados de comportamento dos NPCs
+
+As agendas por horário agora também definem um estado de comportamento reutilizável.
+
+Estados suportados:
+- `work`: trabalho normal
+- `travel`: deslocamento mais rápido
+- `wait`: espera estacionária
+- `meal`: refeição com pausa prolongada
+- `socialize`: socialização com deslocamento mais lento e pausas maiores
+- `rest`: repouso; ao alcançar um único destino o NPC permanece no local
+
+Mapeamento atual:
+- Hanan: trabalho -> trabalho -> socialização -> repouso
+- Eliabe: trabalho -> deslocamento -> socialização -> repouso
+- Miriã: trabalho -> deslocamento -> socialização -> repouso
+
+Validação:
+- `[BEHAVIORTEST] ESTADOS 12/12` confirma o mapeamento dos estados
+- logs `[ACTIVITY]` registram mudanças de comportamento
+- o HUD mostra rotina + estado ativo
+- o diálogo de Hanan também exibe o estado atual
