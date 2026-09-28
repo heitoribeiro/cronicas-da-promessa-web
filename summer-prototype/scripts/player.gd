@@ -2,14 +2,19 @@ extends CharacterBody2D
 class_name PrototypePlayer
 
 signal destination_changed(world_position: Vector2)
+signal destination_reached(world_position: Vector2)
+signal destination_failed(world_position: Vector2)
 
 @export var move_speed: float = 190.0
 
 var target_position: Vector2
 var has_target := false
+var _stuck_time := 0.0
+var _last_position := Vector2.ZERO
 
 func _ready() -> void:
 	target_position = global_position
+	_last_position = global_position
 	collision_layer = 1
 	collision_mask = 2 | 4
 
@@ -27,9 +32,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
 			target_position = get_global_mouse_position()
 			has_target = true
+			_stuck_time = 0.0
+			_last_position = global_position
 			destination_changed.emit(target_position)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	var manual := Vector2(
 		float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT)) - float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT)),
 		float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)) - float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))
@@ -37,6 +44,7 @@ func _physics_process(_delta: float) -> void:
 
 	if manual.length() > 0.05:
 		has_target = false
+		_stuck_time = 0.0
 		velocity = manual.normalized() * move_speed
 	elif has_target:
 		var offset := target_position - global_position
@@ -44,11 +52,28 @@ func _physics_process(_delta: float) -> void:
 			velocity = offset.normalized() * move_speed
 		else:
 			has_target = false
+			_stuck_time = 0.0
 			velocity = Vector2.ZERO
+			destination_reached.emit(target_position)
 	else:
 		velocity = Vector2.ZERO
 
+	var before_move := global_position
 	move_and_slide()
+
+	if has_target:
+		var moved := global_position.distance_to(before_move)
+		if moved < 0.35 and velocity.length() > 1.0:
+			_stuck_time += delta
+			if _stuck_time >= 0.45:
+				has_target = false
+				velocity = Vector2.ZERO
+				_stuck_time = 0.0
+				destination_failed.emit(target_position)
+		else:
+			_stuck_time = 0.0
+
+	_last_position = global_position
 
 func _draw() -> void:
 	# Temporary technical representation. Final sprite comes from the visual pipeline.
