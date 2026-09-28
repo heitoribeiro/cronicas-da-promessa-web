@@ -1044,3 +1044,123 @@ img{user-select:none;-webkit-user-drag:none}
   .vocation-benefits{grid-template-columns:1fr}
   .vocation-progress-main{align-items:flex-start}
 }
+
+
+/* === PIXEL CHARACTERS v4 — approved proportions === */
+/* Sprites aprovados: frame 64x88; sheet 128x352; 2 frames x 4 direções. */
+.player-art{
+  width:64px!important;
+  height:88px!important;
+  transform:translate(-50%,-78%)!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+.player-art:after{
+  left:10px!important;
+  bottom:1px!important;
+  width:44px!important;
+  height:9px!important;
+  background:#25170f42!important;
+}
+.player-sprite{
+  display:block;
+  width:64px;
+  height:88px;
+  background-repeat:no-repeat;
+  background-size:128px 352px;
+  background-position:0 0;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+  transform-origin:50% 100%;
+  filter:drop-shadow(0 5px 1px #20130b88);
+}
+.player-art.walking .player-sprite{
+  animation:pixelWalkBob .26s steps(2,end) infinite alternate;
+}
+@keyframes pixelWalkBob{
+  from{transform:translateY(0)}
+  to{transform:translateY(-2px)}
+}
+
+.npc{
+  width:64px!important;
+  height:88px!important;
+  transform:translate(-50%,-76%)!important;
+  filter:drop-shadow(0 5px 1px #21140c88)!important;
+}
+.npc img{
+  width:64px!important;
+  height:88px!important;
+  object-fit:contain!important;
+  image-rendering:pixelated!important;
+  image-rendering:crisp-edges!important;
+}
+.npc b{
+  top:78px!important;
+  padding:2px 5px!important;
+  border-radius:2px!important;
+  font-size:9px!important;
+}
+.npc-elder{width:66px!important;height:91px!important}
+.npc-guard{width:68px!important;height:93px!important}
+.npc-child{width:50px!important;height:69px!important}
+.npc-child img{width:50px!important;height:69px!important}
+.npc-child b{top:61px!important}
+
+.character-portrait{
+  position:relative!important;
+  overflow:hidden!important;
+}
+.portrait-sprite{
+  position:absolute;
+  left:50%;
+  top:-8px;
+  width:64px;
+  height:88px;
+  transform:translateX(-50%) scale(.72);
+  transform-origin:50% 0;
+  background-repeat:no-repeat;
+  background-size:128px 352px;
+  background-position:0 0;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+  filter:drop-shadow(0 3px 1px #1b100a70);
+}
+
+.dialogue-portrait img{
+  width:96px!important;
+  height:132px!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  image-rendering:pixelated!important;
+  image-rendering:crisp-edges!important;
+  filter:drop-shadow(0 4px 1px #0008)!important;
+}
+.dialogue-portrait{
+  width:124px!important;
+  min-height:132px!important;
+}
+
+.interior-npc img{
+  width:64px!important;
+  height:88px!important;
+  object-fit:contain!important;
+  image-rendering:pixelated!important;
+  image-rendering:crisp-edges!important;
+}
+
+@media(max-width:700px){
+  .player-art{width:58px!important;height:80px!important}
+  .player-sprite{
+    transform:scale(.90625);
+    transform-origin:50% 100%;
+  }
+  .npc{width:58px!important;height:80px!important}
+  .npc img{width:58px!important;height:80px!important}
+  .npc b{top:71px!important}
+  .npc-child{width:45px!important;height:62px!important}
+  .npc-child img{width:45px!important;height:62px!important}
+  .npc-child b{top:55px!important}
+}
