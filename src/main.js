@@ -10,17 +10,24 @@ const VOCATION_GEAR = {
 };
 
 const ITEM_DEFS = {
-  lenha:{label:'Lenha',load:2},
-  agua:{label:'Água',load:1.5},
-  'lã':{label:'Lã',load:.7},
-  graos:{label:'Grãos',load:.4},
-  ervas:{label:'Ervas',load:.2},
-  registros:{label:'Registros',load:.4},
-  racao:{label:'Ração de viagem',load:.8},
-  agua_hanan:{label:'Jarro para Hanan',load:1.5,transferable:false,quest:true}
+  lenha:{label:'Lenha',load:2,category:'material',description:'Madeira seca útil para fogueiras, reparos e tarefas do acampamento.'},
+  agua:{label:'Água',load:1.5,category:'material',description:'Água retirada do poço e transportada em recipiente.'},
+  'lã':{label:'Lã',load:.7,category:'material',description:'Fibra obtida no cuidado do rebanho.'},
+  graos:{label:'Grãos',load:.4,category:'material',description:'Produção do trabalho agrícola e provisão do acampamento.'},
+  ervas:{label:'Ervas',load:.2,category:'material',description:'Ervas e fibras coletadas no entorno do setor.'},
+  registros:{label:'Registros',load:.4,category:'material',description:'Anotações e registros organizados durante o serviço comunitário.'},
+  racao:{label:'Ração de viagem',load:.8,category:'consumable',description:'Refeição simples para recuperar fome e um pouco de energia.'},
+  agua_hanan:{label:'Jarro para Hanan',load:1.5,category:'quest',description:'Jarro destinado aos preparativos da cozinha.',transferable:false,quest:true}
+};
+const ITEM_CATEGORY_LABELS = {
+  material:'Materiais',
+  consumable:'Consumíveis',
+  quest:'Itens de missão'
 };
 const BAG_CAPACITY = 16;
 const CHEST_CAPACITY = 80;
+const VOCATION_LEVEL_THRESHOLDS = [0,20,50,90,140];
+const VOCATION_MAX_LEVEL = VOCATION_LEVEL_THRESHOLDS.length;
 
 const QUESTS = [
   { id:'fire', label:'Vá até a fogueira central.', target:{x:900,y:590,r:110}, action:'Examinar fogueira' },
@@ -65,6 +72,7 @@ let state = {
   lastDaySummary: null,
   tools: {},
   equippedTool: null,
+  vocationProgress: {},
   warehouseTrades: 0,
   lastSavedAt: null,
   settings: { showFps:false }
@@ -80,6 +88,7 @@ function normalizeState() {
   state.dailyCompleted ||= {};
   state.workCompleted ||= {};
   state.tools ||= {};
+  state.vocationProgress ||= {};
   if (!('workProgress' in state)) state.workProgress = null;
   if (!('lastDaySummary' in state)) state.lastDaySummary = null;
   if (!('equippedTool' in state)) state.equippedTool = null;
@@ -129,7 +138,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.20.1</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.21</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -163,7 +172,7 @@ function menu() {
           <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle pixel-version">Web Alpha 0.20.1 • Direção visual Pixel RPG bíblico-desértico</p>
+        <p class="subtitle pixel-version">Web Alpha 0.21 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -208,7 +217,7 @@ function createCharacter() {
       inventory: {}, storage: {}, reputation: 0, questStep: 0, visited: {},
       energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {},
       workCompleted: {}, workProgress: null, lastDaySummary: null,
-      tools: {}, equippedTool: null, warehouseTrades: 0, lastSavedAt: null,
+      tools: {}, equippedTool: null, vocationProgress: {}, warehouseTrades: 0, lastSavedAt: null,
       settings: { showFps:false }
     };
     save();
@@ -504,7 +513,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.20.1</div>
+      <div class="badge">Web Alpha 0.21</div>
     </main>`;
 
   const world = $('#world');
@@ -630,6 +639,65 @@ function game() {
       }
     };
     return configs[state.profile.vocation] || configs.Pastor;
+  }
+
+  function vocationProgress() {
+    const key=state.profile.vocation;
+    const current=state.vocationProgress[key] || {};
+    const totalXp=Math.max(0,Number(current.totalXp)||0);
+    const turns=Math.max(0,Number(current.turns)||0);
+    const level=vocationLevelFromXp(totalXp);
+    const normalized={totalXp,turns,level};
+    state.vocationProgress[key]=normalized;
+    return normalized;
+  }
+
+  function vocationLevelFromXp(totalXp) {
+    let level=1;
+    for(let i=1;i<VOCATION_LEVEL_THRESHOLDS.length;i++){
+      if(totalXp >= VOCATION_LEVEL_THRESHOLDS[i]) level=i+1;
+      else break;
+    }
+    return Math.min(VOCATION_MAX_LEVEL,level);
+  }
+
+  function vocationRankLabel(level) {
+    return ['Aprendiz','Praticante','Experiente','Hábil','Mestre'][Math.max(1,Math.min(VOCATION_MAX_LEVEL,level))-1];
+  }
+
+  function vocationNextThreshold(level) {
+    return level >= VOCATION_MAX_LEVEL ? null : VOCATION_LEVEL_THRESHOLDS[level];
+  }
+
+  function vocationBenefits(level=vocationProgress().level) {
+    return {
+      energyReduction: level >= 5 ? 2 : level >= 2 ? 1 : 0,
+      rewardBonus: level >= 5 ? 2 : level >= 3 ? 1 : 0,
+      reputationBonus: level >= 4 ? 1 : 0
+    };
+  }
+
+  function addVocationXp(amount) {
+    const progress=vocationProgress();
+    const oldLevel=progress.level;
+    progress.totalXp += amount;
+    progress.turns += 1;
+    progress.level=vocationLevelFromXp(progress.totalXp);
+    state.vocationProgress[state.profile.vocation]=progress;
+    return {
+      oldLevel,
+      newLevel:progress.level,
+      leveledUp:progress.level>oldLevel,
+      totalXp:progress.totalXp
+    };
+  }
+
+  function vocationProgressText() {
+    const progress=vocationProgress();
+    const next=vocationNextThreshold(progress.level);
+    return next === null
+      ? `Nível ${progress.level} • ${vocationRankLabel(progress.level)} • nível máximo`
+      : `Nível ${progress.level} • ${vocationRankLabel(progress.level)} • ${progress.totalXp}/${next} XP`;
   }
 
   function workKey() {
@@ -805,6 +873,15 @@ function game() {
     return true;
   }
 
+  function itemRowsMarkup(rows) {
+    if(!rows.length) return '<div class="inventory-empty">Nenhum item nesta categoria.</div>';
+    return rows.map(item => `<div class="inventory-row">
+      <span><b>${item.label}</b><small>${item.description || ''} • ${item.load} carga cada</small></span>
+      <strong>×${item.qty}</strong>
+      ${item.id === 'racao' ? '<button class="inventory-use" id="useRation">USAR</button>' : ''}
+    </div>`).join('');
+  }
+
   function renderInventory() {
     const rows = inventoryRows();
     const cfg = vocationConfig();
@@ -812,24 +889,52 @@ function game() {
     const ownsGear = Boolean(state.tools[gear.id]);
     const equipped = state.equippedTool === gear.id;
     const currentLoad=bagLoad();
-    const resources = rows.length
-      ? rows.map(item => `<div class="inventory-row"><span>${item.label}<small>${item.load} carga cada</small></span><b>×${item.qty}</b>${item.id === 'racao' ? '<button class="inventory-use" id="useRation">USAR</button>' : ''}</div>`).join('')
-      : '<div class="inventory-empty">Sua bolsa está vazia.</div>';
+    const progress=vocationProgress();
+    const next=vocationNextThreshold(progress.level);
+    const progressStart=VOCATION_LEVEL_THRESHOLDS[progress.level-1] || 0;
+    const progressPct=next === null ? 100 : Math.max(0,Math.min(100,((progress.totalXp-progressStart)/(next-progressStart))*100));
+    const benefits=vocationBenefits(progress.level);
+
+    const categorySections=Object.entries(ITEM_CATEGORY_LABELS).map(([category,label])=>{
+      const categoryRows=rows.filter(item=>(item.category || 'material')===category);
+      if(!categoryRows.length && category==='quest') return '';
+      return `<section class="inventory-section inventory-category">
+        <div class="inventory-section-heading"><h3>${label}</h3><span>${categoryRows.reduce((sum,item)=>sum+item.qty,0)}</span></div>
+        ${itemRowsMarkup(categoryRows)}
+      </section>`;
+    }).join('');
+
     inventoryContent.innerHTML = `
       <div class="inventory-capacity ${currentLoad > BAG_CAPACITY ? 'overloaded' : ''}">
-        <span><b>Carga da bolsa</b><small>Ferramentas equipáveis não entram neste limite nesta fase.</small></span>
+        <span><b>Carga da bolsa</b><small>Materiais e consumíveis ocupam capacidade. Ferramentas equipáveis ficam fora do limite nesta fase.</small></span>
         <strong>${loadLabel(currentLoad,BAG_CAPACITY)}</strong>
       </div>
-      <section class="inventory-section">
-        <h3>Recursos</h3>
-        ${resources}
-      </section>
-      <section class="inventory-section">
-        <h3>Ferramenta da vocação</h3>
+
+      ${categorySections}
+
+      <section class="inventory-section equipment-section">
+        <div class="inventory-section-heading"><h3>Equipamento</h3><span>1 slot</span></div>
         ${ownsGear
-          ? `<div class="inventory-gear"><span><b>${gear.label}</b><small>${equipped ? 'Equipada • reduz o gasto de energia no trabalho.' : 'Na bolsa • equipe para ganhar eficiência no trabalho.'}</small></span><button id="toggleGear">${equipped ? 'DESEQUIPAR' : 'EQUIPAR'}</button></div>`
+          ? `<div class="inventory-gear"><span><b>${gear.label}</b><small>${equipped ? 'Equipada • bônus ativo durante o trabalho.' : 'Disponível • equipe para ganhar eficiência.'}</small></span><button id="toggleGear">${equipped ? 'DESEQUIPAR' : 'EQUIPAR'}</button></div>`
           : `<div class="inventory-empty">Fale com Eliabe depois da missão inicial para receber: <b>${gear.label}</b>.</div>`}
       </section>
+
+      <section class="inventory-section vocation-progress-card">
+        <div class="inventory-section-heading"><h3>Progressão — ${state.profile.vocation}</h3><span>Nv. ${progress.level}</span></div>
+        <div class="vocation-progress-main">
+          <div><b>${vocationRankLabel(progress.level)}</b><small>${progress.turns} turno${progress.turns===1?'':'s'} concluído${progress.turns===1?'':'s'}</small></div>
+          <strong>${next === null ? 'MÁX.' : `${progress.totalXp}/${next} XP`}</strong>
+        </div>
+        <div class="vocation-xp-bar"><i style="width:${progressPct}%"></i></div>
+        <div class="vocation-benefits">
+          <span class="${progress.level>=2?'unlocked':''}">Nv.2: −1 energia/etapa</span>
+          <span class="${progress.level>=3?'unlocked':''}">Nv.3: +1 recurso/turno</span>
+          <span class="${progress.level>=4?'unlocked':''}">Nv.4: +1 reputação/turno</span>
+          <span class="${progress.level>=5?'unlocked':''}">Nv.5: bônus ampliados</span>
+        </div>
+        <small class="vocation-active-bonus">Bônus atual: −${benefits.energyReduction} energia • +${benefits.rewardBonus} recurso • +${benefits.reputationBonus} reputação.</small>
+      </section>
+
       <div class="inventory-foot">Entregas ao armazém: ${state.warehouseTrades}</div>
     `;
     $('#useRation')?.addEventListener('click', useRation);
@@ -1510,6 +1615,8 @@ function game() {
     items.unshift(`Carga ${loadLabel(bagLoad(),BAG_CAPACITY)}`);
     const cfg = vocationConfig();
     if (state.equippedTool === cfg.toolId) items.push(`⚒ ${cfg.toolLabel}`);
+    const vocation=vocationProgress();
+    items.push(`${state.profile.vocation} Nv.${vocation.level}`);
     inventoryMini.textContent = items.length ? items.join(' • ') : 'Bolsa vazia';
 
     if (hotbarTool) hotbarTool.textContent = state.equippedTool === cfg.toolId ? 'E' : '—';
@@ -1559,7 +1666,10 @@ function game() {
     if (workDoneToday()) {
       return dialogue(cfg.label,'Seu trabalho desta jornada já foi concluído. Agora você pode cuidar de outras tarefas.');
     }
-    const workEnergyCost = Math.max(6,cfg.energyCost - (state.equippedTool === cfg.toolId ? 3 : 0));
+    const progress=vocationProgress();
+    const benefits=vocationBenefits(progress.level);
+    const toolReduction=state.equippedTool === cfg.toolId ? 3 : 0;
+    const workEnergyCost = Math.max(5,cfg.energyCost - toolReduction - benefits.energyReduction);
     if (state.energy < workEnergyCost) {
       return dialogue('Cansaço','Você está sem energia suficiente para continuar este trabalho. Coma algo ou descanse.');
     }
@@ -1572,8 +1682,10 @@ function game() {
 
     const stepIndex = state.workProgress.step;
     const finishingWork = state.workProgress.step >= cfg.steps.length - 1;
-    if (finishingWork && !canCarryItem(cfg.rewardItem,cfg.rewardQty)) {
-      return dialogue('Bolsa cheia',`Você precisa de espaço para receber ${cfg.rewardQty} × ${cfg.rewardLabel}. Guarde alguns recursos no baú da sua tenda e volte para concluir o turno.`);
+    const workRewardQty=cfg.rewardQty + benefits.rewardBonus;
+    const workRepReward=cfg.rep + benefits.reputationBonus;
+    if (finishingWork && !canCarryItem(cfg.rewardItem,workRewardQty)) {
+      return dialogue('Bolsa cheia',`Você precisa de espaço para receber ${workRewardQty} × ${cfg.rewardLabel}. Guarde alguns recursos no baú da sua tenda e volte para concluir o turno.`);
     }
     state.energy = Math.max(0,state.energy - workEnergyCost);
     state.hunger = Math.max(0,state.hunger - 5);
@@ -1582,12 +1694,16 @@ function game() {
 
     if (state.workProgress.step >= cfg.steps.length) {
       state.workCompleted[workKey()] = true;
-      addInventoryItem(cfg.rewardItem,cfg.rewardQty);
-      state.reputation += cfg.rep;
+      addInventoryItem(cfg.rewardItem,workRewardQty);
+      state.reputation += workRepReward;
+      const xpResult=addVocationXp(10);
       state.workProgress = null;
       save();
       refreshHud();
-      return dialogue('Turno concluído',`${cfg.label} concluído. Você recebe ${cfg.rewardQty} × ${cfg.rewardLabel} e ganha ${cfg.rep} de reputação.`);
+      const levelMessage=xpResult.leveledUp
+        ? ` Você alcançou o Nível ${xpResult.newLevel} — ${vocationRankLabel(xpResult.newLevel)} na vocação ${state.profile.vocation}.`
+        : ` Você recebe 10 XP de ${state.profile.vocation}.`;
+      return dialogue('Turno concluído',`${cfg.label} concluído. Você recebe ${workRewardQty} × ${cfg.rewardLabel} e ganha ${workRepReward} de reputação.${levelMessage}`);
     }
 
     save();
