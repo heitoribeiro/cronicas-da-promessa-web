@@ -98,3 +98,19 @@ O projeto adota agora o **estilo Pixel RPG bíblico-desértico**, com HUD escura
 - corrige falha que ocultava a janela do baú imediatamente após a interação
 - o prompt `CLIQUE / E — Abrir baú` agora abre corretamente o armazenamento pessoal
 - mantém intactos o sistema de capacidade, transferências e compatibilidade de saves da 0.19
+
+
+## Web Alpha 0.21 — mecânica
+- mantém a direção visual Pixel RPG aplicada na série 0.20.x
+- inventário passa a classificar itens como Materiais, Consumíveis e Itens de missão
+- ferramenta da vocação fica em seção própria de Equipamento
+- progressão independente por vocação adicionada ao save
+- cinco níveis de proficiência: Aprendiz, Praticante, Experiente, Hábil e Mestre
+- cada turno completo concede 10 XP da vocação
+- Nível 2 reduz em 1 o custo de energia por etapa de trabalho
+- Nível 3 acrescenta 1 unidade à produção de cada turno
+- Nível 4 acrescenta 1 ponto de reputação por turno
+- Nível 5 amplia redução de energia e bônus de produção
+- Bolsa exibe nível, XP, turnos concluídos, barra de progresso e benefícios desbloqueados
+- HUD compacto exibe o nível atual da vocação
+- saves anteriores são migrados automaticamente com progressão iniciada no Nível 1
