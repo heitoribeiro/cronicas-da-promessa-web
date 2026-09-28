@@ -87,3 +87,8 @@ A arquitetura inicial é deliberadamente estática e compatível com GitHub Page
 - itens de missão obtidos no cenário respeitam a capacidade da bolsa
 - armazenamento é persistido no autosave e também nos saves exportados em JSON
 - saves anteriores são migrados automaticamente com baú vazio, sem perda de progresso
+
+
+## Direção visual oficial
+
+O projeto adota agora o **estilo Pixel RPG bíblico-desértico**, com HUD escura/dourada e interfaces inspiradas nos mockups aprovados. Consulte [VISUAL_STYLE.md](VISUAL_STYLE.md) para a especificação.
