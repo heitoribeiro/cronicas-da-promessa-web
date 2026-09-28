@@ -14,3 +14,13 @@ Jogo 2D/2.5D para navegador, ambientado no acampamento dos israelitas no deserto
 - save local no navegador
 
 A arquitetura inicial é deliberadamente estática e compatível com GitHub Pages. Supabase/Railway não são necessários nesta fase.
+
+
+## Web Alpha 0.16
+- bolsa funcional acessível pelo botão BOLSA ou tecla `I`
+- ferramenta específica da vocação entregue por Eliabe
+- ferramenta equipada reduz o consumo de energia durante o trabalho
+- produção das vocações pode ser entregue no Armazém de Judá
+- cada entrega gera uma ração de viagem utilizável fora do horário da cozinha
+- mapa e marcador orientam a entrega quando houver produção disponível
+- save anterior continua compatível por normalização automática do estado
