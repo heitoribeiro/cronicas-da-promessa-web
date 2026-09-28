@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 210"><defs><filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="6" flood-opacity=".35"/></filter><linearGradient id="c"><stop stop-color="#fff0ce"/><stop offset="1" stop-color="#d2b27d"/></linearGradient></defs><g filter="url(#s)"><path d="M28 166 55 62 144 35 250 65 274 166Z" fill="url(#c)" stroke="#69442c" stroke-width="5"/><g stroke="#5b3826" stroke-width="8"><path d="M48 57v126M146 31v153M253 61v122"/></g><g fill="#8c5a36" stroke="#5a3927" stroke-width="4"><rect x="32" y="132" width="54" height="48"/><rect x="91" y="115" width="52" height="65"/><rect x="149" y="130" width="52" height="50"/><rect x="207" y="121" width="54" height="59"/></g><g fill="#6e452e"><circle cx="61" cy="160" r="19"/><circle cx="233" cy="155" r="21"/></g><g fill="#a67a4e"><path d="M106 89h33v24h-33zM146 86h29v27h-29zM180 94h32v22h-32z"/></g><path d="M55 66h195" stroke="#8c623f" stroke-width="6"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 210" shape-rendering="crispEdges">
+<rect width="300" height="210" fill="none"/>
+<polygon points="27,165 54,63 144,36 250,66 275,165" fill="#e2ca98"/>
+<rect x="47" y="57" width="9" height="126" fill="#50311e"/><rect x="142" y="31" width="9" height="153" fill="#50311e"/><rect x="249" y="61" width="9" height="122" fill="#50311e"/>
+<rect x="53" y="62" width="198" height="8" fill="#7b5436"/>
+<rect x="32" y="132" width="54" height="49" fill="#865431"/><rect x="91" y="115" width="53" height="66" fill="#9a6637"/><rect x="149" y="130" width="53" height="51" fill="#765035"/><rect x="207" y="121" width="55" height="60" fill="#94613a"/>
+<rect x="38" y="138" width="42" height="7" fill="#b17c45"/><rect x="97" y="122" width="41" height="7" fill="#b37b43"/><rect x="155" y="137" width="41" height="7" fill="#a56d3f"/><rect x="213" y="128" width="43" height="7" fill="#ad7542"/>
+<rect x="43" y="154" width="36" height="22" fill="#65412a"/><rect x="102" y="141" width="36" height="34" fill="#74492d"/><rect x="159" y="148" width="38" height="28" fill="#5e3e2c"/><rect x="217" y="142" width="39" height="33" fill="#6d452b"/>
+<rect x="53" y="84" width="38" height="27" fill="#ac7f4d"/><rect x="97" y="86" width="31" height="25" fill="#c09159"/><rect x="134" y="82" width="34" height="29" fill="#a87a49"/><rect x="174" y="88" width="33" height="25" fill="#bd8b52"/>
+<rect x="37" y="178" width="227" height="7" fill="#3c2619"/>
+</svg>
