@@ -33,8 +33,6 @@ func _process(_delta: float) -> void:
 	if nearby:
 		prompt_label.text = "CLIQUE / E — Falar com Hanan"
 
-	if Input.is_action_just_pressed("interact") and nearby and not dialogue_panel.visible:
-		_interact_with_hanan()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if dialogue_panel.visible:
@@ -47,11 +45,27 @@ func _unhandled_input(event: InputEvent) -> void:
 			hanan.paused = false
 			return
 
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_E:
+			if player.global_position.distance_to(hanan.global_position) <= 82.0:
+				_interact_with_hanan()
+				get_viewport().set_input_as_handled()
+				return
+
 	if prompt_panel.visible and event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
 			var prompt_rect := prompt_panel.get_global_rect()
 			if prompt_rect.has_point(mouse_event.position):
+				_interact_with_hanan()
+				get_viewport().set_input_as_handled()
+
+func _on_prompt_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+			if player != null and hanan != null and player.global_position.distance_to(hanan.global_position) <= 82.0:
 				_interact_with_hanan()
 				get_viewport().set_input_as_handled()
 
@@ -97,6 +111,8 @@ func _build_ui() -> void:
 	prompt_panel.position = Vector2(455, 635)
 	prompt_panel.size = Vector2(370, 44)
 	prompt_panel.visible = false
+	prompt_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	prompt_panel.gui_input.connect(_on_prompt_gui_input)
 	canvas.add_child(prompt_panel)
 
 	prompt_label = Label.new()
@@ -162,6 +178,14 @@ func _spawn_hanan() -> void:
 func _create_destination_marker() -> void:
 	destination_marker = Node2D.new()
 	destination_marker.visible = false
+
+	var diamond := Polygon2D.new()
+	diamond.polygon = PackedVector2Array([
+		Vector2(0, -10), Vector2(14, 0), Vector2(0, 10), Vector2(-14, 0)
+	])
+	diamond.color = Color("#f2ce58")
+	destination_marker.add_child(diamond)
+
 	add_child(destination_marker)
 
 func _on_destination_changed(world_position: Vector2) -> void:
