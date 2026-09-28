@@ -4,6 +4,7 @@ class_name PrototypeNPC
 signal navigation_requested(world_position: Vector2)
 signal navigation_path_updated(path: PackedVector2Array, resolved_target: Vector2)
 signal patrol_point_reached(index: int, world_position: Vector2)
+signal routine_changed(routine_id: String)
 
 @export var npc_name := "Hanan"
 @export var patrol_speed := 42.0
@@ -12,6 +13,7 @@ signal patrol_point_reached(index: int, world_position: Vector2)
 var patrol_points: Array[Vector2] = []
 var patrol_index := 0
 var paused := false
+var active_routine_id := "default"
 
 var _navigation_path: PackedVector2Array = PackedVector2Array()
 var _path_index := 0
@@ -30,6 +32,13 @@ func _ready() -> void:
 	shape.shape = capsule
 	add_child(shape)
 	queue_redraw()
+
+func apply_routine(routine_id: String, points: Array[Vector2], pause_seconds: float = -1.0) -> void:
+	active_routine_id = routine_id
+	if pause_seconds >= 0.0:
+		patrol_pause_seconds = pause_seconds
+	set_patrol(points)
+	routine_changed.emit(active_routine_id)
 
 func set_patrol(points: Array[Vector2]) -> void:
 	patrol_points = points
