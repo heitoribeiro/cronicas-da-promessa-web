@@ -1431,9 +1431,10 @@ function game() {
         state=incoming;
         normalizeState();
         save();
-        gameMenuOverlay.classList.add('hidden');
-        dialogue('Save importado',`Progresso de ${state.profile.name}, Dia ${state.day}, carregado com sucesso.`,'Continuar');
-        setTimeout(()=>game(),0);
+        const importedName=state.profile.name;
+        const importedDay=state.day;
+        game();
+        setTimeout(()=>dialogue('Save importado',`Progresso de ${importedName}, Dia ${importedDay}, carregado com sucesso.`,'Continuar'),0);
       }catch(error){
         console.warn('Falha ao importar save:',error);
         dialogue('Não foi possível importar','O arquivo selecionado não parece ser um save válido de Crônicas da Promessa.');
