@@ -2,6 +2,12 @@ const app = document.querySelector('#app');
 const SAVE = 'cronicas-promessa-save-v3';
 const tribes = ['Rúben','Simeão','Levi','Judá','Dã','Naftali','Gade','Aser','Issacar','Zebulom','José','Benjamim'];
 const vocations = ['Pastor','Agricultor','Coletor','Levita'];
+const VOCATION_GEAR = {
+  Pastor: { id:'cajado', label:'Cajado de pastor' },
+  Agricultor: { id:'enxada', label:'Enxada de madeira' },
+  Coletor: { id:'cesto', label:'Cesto de coleta' },
+  Levita: { id:'bolsa_registros', label:'Bolsa de registros' }
+};
 
 const QUESTS = [
   { id:'fire', label:'Vá até a fogueira central.', target:{x:900,y:590,r:110}, action:'Examinar fogueira' },
@@ -29,7 +35,10 @@ let state = {
   dailyCompleted: {},
   workCompleted: {},
   workProgress: null,
-  lastDaySummary: null
+  lastDaySummary: null,
+  tools: {},
+  equippedTool: null,
+  warehouseTrades: 0
 };
 
 function $(selector) { return document.querySelector(selector); }
@@ -40,8 +49,12 @@ function normalizeState() {
   state.meals ||= {};
   state.dailyCompleted ||= {};
   state.workCompleted ||= {};
+  state.tools ||= {};
   if (!('workProgress' in state)) state.workProgress = null;
   if (!('lastDaySummary' in state)) state.lastDaySummary = null;
+  if (!('equippedTool' in state)) state.equippedTool = null;
+  if (!Number.isInteger(state.warehouseTrades)) state.warehouseTrades = 0;
+  if (state.equippedTool && !state.tools[state.equippedTool]) state.equippedTool = null;
   if (!Number.isFinite(state.energy)) state.energy = 100;
   if (!Number.isFinite(state.hunger)) state.hunger = 82;
   state.energy = Math.max(0,Math.min(100,state.energy));
@@ -77,7 +90,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.15</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.16</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -99,7 +112,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.15 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.16 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -143,7 +156,8 @@ function createCharacter() {
       x: 900, y: 980, day: 1, time: 480,
       inventory: {}, reputation: 0, questStep: 0, visited: {},
       energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {},
-      workCompleted: {}, workProgress: null, lastDaySummary: null
+      workCompleted: {}, workProgress: null, lastDaySummary: null,
+      tools: {}, equippedTool: null, warehouseTrades: 0
     };
     save();
     game();
@@ -285,8 +299,16 @@ function game() {
       <div class="daily-task" id="dailyTask"></div>
       <div class="inventory-mini" id="inventoryMini"></div>
       <div class="prompt hidden" id="prompt"></div>
+      <button class="inventory-button" id="inventoryButton" aria-label="Abrir bolsa" title="Bolsa (I)">BOLSA</button>
       <button class="map-button" id="mapButton" aria-label="Abrir mapa do acampamento" title="Mapa (M)">MAPA</button>
       <button class="game-menu" id="gameMenu">☰</button>
+      <div class="inventory-overlay hidden" id="inventoryOverlay" role="dialog" aria-modal="true" aria-label="Bolsa e equipamento">
+        <div class="inventory-panel">
+          <div class="inventory-heading"><h2>Bolsa e equipamento</h2><button id="closeInventory" aria-label="Fechar bolsa">Fechar ×</button></div>
+          <p class="inventory-note">Recursos do trabalho podem ser entregues no Armazém de Judá. Rações podem ser usadas em qualquer lugar.</p>
+          <div id="inventoryContent"></div>
+        </div>
+      </div>
       <div class="map-overlay hidden" id="mapOverlay" role="dialog" aria-modal="true" aria-label="Mapa do acampamento">
         <div class="map-panel">
           <div class="map-heading"><h2>Acampamento de Judá</h2><button id="closeMap" aria-label="Fechar mapa">Fechar ×</button></div>
@@ -314,7 +336,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.15</div>
+      <div class="badge">Web Alpha 0.16</div>
     </main>`;
 
   const world = $('#world');
@@ -341,6 +363,9 @@ function game() {
   const menuButton = $('#gameMenu');
   const mapOverlay = $('#mapOverlay');
   const mapButton = $('#mapButton');
+  const inventoryOverlay = $('#inventoryOverlay');
+  const inventoryButton = $('#inventoryButton');
+  const inventoryContent = $('#inventoryContent');
   const worldQuest = $('#worldQuest');
   const keys = new Set();
 
@@ -379,24 +404,28 @@ function game() {
       Pastor: {
         id:'pastor', label:'Cuidado do rebanho', x:420, y:825, radius:150,
         rewardItem:'lã', rewardLabel:'Lã', rewardQty:2, rep:3, energyCost:13,
+        toolId:'cajado', toolLabel:'Cajado de pastor',
         intro:'O rebanho precisa ser contado, os cochos verificados e os animais observados antes do calor aumentar.',
         steps:['Contar o rebanho','Verificar cochos e água','Separar os animais que precisam de atenção']
       },
       Agricultor: {
         id:'agricultor', label:'Canteiro comunitário', x:1080, y:920, radius:150,
         rewardItem:'graos', rewardLabel:'Grãos', rewardQty:3, rep:3, energyCost:14,
+        toolId:'enxada', toolLabel:'Enxada de madeira',
         intro:'O pequeno canteiro precisa ser revolvido, irrigado e preparado para o próximo plantio.',
         steps:['Revolver a terra','Distribuir água','Organizar sementes e ferramentas']
       },
       Coletor: {
         id:'coletor', label:'Coleta do entorno', x:1505, y:895, radius:160,
         rewardItem:'ervas', rewardLabel:'Ervas', rewardQty:3, rep:3, energyCost:12,
+        toolId:'cesto', toolLabel:'Cesto de coleta',
         intro:'O entorno do acampamento oferece gravetos, fibras e ervas úteis. É preciso coletar sem se afastar demais.',
         steps:['Examinar a vegetação','Separar ervas e fibras','Levar a coleta de volta ao setor']
       },
       Levita: {
         id:'levita', label:'Serviço comunitário', x:900, y:410, radius:145,
         rewardItem:'registros', rewardLabel:'Registros', rewardQty:1, rep:4, energyCost:10,
+        toolId:'bolsa_registros', toolLabel:'Bolsa de registros',
         intro:'Há registros, recados e tarefas de serviço a organizar junto ao centro do setor.',
         steps:['Organizar os registros','Ajudar na distribuição de tarefas','Revisar os recados do dia']
       }
@@ -533,6 +562,117 @@ function game() {
     save();
   }
 
+  function inventoryRows() {
+    const labels = {
+      lenha:'Lenha',
+      agua:'Água',
+      'lã':'Lã',
+      graos:'Grãos',
+      ervas:'Ervas',
+      registros:'Registros',
+      racao:'Ração de viagem'
+    };
+    return Object.entries(labels)
+      .map(([id,label]) => ({id,label,qty:Math.max(0,state.inventory[id] || 0)}))
+      .filter(item => item.qty > 0);
+  }
+
+  function renderInventory() {
+    const rows = inventoryRows();
+    const cfg = vocationConfig();
+    const gear = VOCATION_GEAR[state.profile.vocation];
+    const ownsGear = Boolean(state.tools[gear.id]);
+    const equipped = state.equippedTool === gear.id;
+    const resources = rows.length
+      ? rows.map(item => `<div class="inventory-row"><span>${item.label}</span><b>×${item.qty}</b>${item.id === 'racao' ? '<button class="inventory-use" id="useRation">USAR</button>' : ''}</div>`).join('')
+      : '<div class="inventory-empty">Sua bolsa está vazia.</div>';
+    inventoryContent.innerHTML = `
+      <section class="inventory-section">
+        <h3>Recursos</h3>
+        ${resources}
+      </section>
+      <section class="inventory-section">
+        <h3>Ferramenta da vocação</h3>
+        ${ownsGear
+          ? `<div class="inventory-gear"><span><b>${gear.label}</b><small>${equipped ? 'Equipada • reduz o gasto de energia no trabalho.' : 'Guardada • equipe para ganhar eficiência no trabalho.'}</small></span><button id="toggleGear">${equipped ? 'GUARDAR' : 'EQUIPAR'}</button></div>`
+          : `<div class="inventory-empty">Fale com Eliabe depois da missão inicial para receber: <b>${gear.label}</b>.</div>`}
+      </section>
+      <div class="inventory-foot">Entregas ao armazém: ${state.warehouseTrades}</div>
+    `;
+    $('#useRation')?.addEventListener('click', useRation);
+    $('#toggleGear')?.addEventListener('click', () => {
+      state.equippedTool = equipped ? null : gear.id;
+      save();
+      refreshHud();
+      renderInventory();
+    });
+  }
+
+  function useRation() {
+    if ((state.inventory.racao || 0) <= 0) return;
+    state.inventory.racao -= 1;
+    state.hunger = Math.min(100,state.hunger + 30);
+    state.energy = Math.min(100,state.energy + 6);
+    state.time += 10;
+    save();
+    refreshHud();
+    toggleInventory(false);
+    dialogue('Ração de viagem','Você faz uma refeição simples fora do horário da cozinha. A fome diminui e parte da energia retorna.');
+  }
+
+  function toggleInventory(force) {
+    const open = force ?? inventoryOverlay.classList.contains('hidden');
+    inventoryOverlay.classList.toggle('hidden', !open);
+    if (open) {
+      mapOverlay.classList.add('hidden');
+      renderInventory();
+    } else {
+      keys.clear();
+    }
+  }
+
+  function claimVocationTool() {
+    const cfg = vocationConfig();
+    if (state.tools[cfg.toolId]) {
+      return dialogue('Eliabe — o artesão',`Seu ${cfg.toolLabel.toLowerCase()} já está com você. Abra a Bolsa para equipar ou guardar a ferramenta.`);
+    }
+    state.tools[cfg.toolId] = true;
+    state.equippedTool = cfg.toolId;
+    save();
+    refreshHud();
+    dialogue('Eliabe — o artesão',`Para o seu trabalho como ${state.profile.vocation.toLowerCase()}, leve este ${cfg.toolLabel.toLowerCase()}. Enquanto estiver equipado, o trabalho consumirá menos energia.`);
+  }
+
+  function canTurnInWork() {
+    const cfg = vocationConfig();
+    return (state.inventory[cfg.rewardItem] || 0) >= cfg.rewardQty;
+  }
+
+  function warehouseInteraction() {
+    if (state.questStep < QUESTS.length - 1) {
+      return dialogue('Armazéns','Mantimentos, tecidos, jarros e peças de reposição são organizados para atender as famílias do setor.');
+    }
+    const cfg = vocationConfig();
+    if (!canTurnInWork()) {
+      return dialogue('Armazém de Judá',`Entregue ${cfg.rewardQty} × ${cfg.rewardLabel} produzidos no seu turno para retirar 1 ração de viagem. Você ainda não tem a quantidade necessária.`);
+    }
+    state.inventory[cfg.rewardItem] -= cfg.rewardQty;
+    state.inventory.racao = (state.inventory.racao || 0) + 1;
+    state.warehouseTrades += 1;
+    save();
+    refreshHud();
+    dialogue('Armazém de Judá',`Você entrega ${cfg.rewardQty} × ${cfg.rewardLabel} e recebe 1 ração de viagem. Ela pode ser usada pela Bolsa quando não houver refeição disponível na cozinha.`);
+  }
+
+  function getToolInteraction() {
+    if (state.questStep < QUESTS.length - 1 || currentScene !== 'outdoor') return null;
+    const cfg = vocationConfig();
+    if (state.tools[cfg.toolId]) return null;
+    const eliabe = npcAgents.eliabe;
+    if (eliabe.inside || Math.hypot(state.x-eliabe.x,state.y-eliabe.y) >= 110) return null;
+    return {action:`Receber ${cfg.toolLabel}`,run:claimVocationTool};
+  }
+
   const ambientInteractions = [
     { id:'meal', x:489,y:570,r:95, action:()=>canEatNow() ? `${mealWindow().label} na cozinha` : 'Consultar cozinha', run:eatMeal },
     { id:'miria', npc:'miria', r:105, action:'Falar com Miriã', run:()=>dialogue('Miriã — a cuidadora',contextualNpcText('miria')) },
@@ -543,7 +683,7 @@ function game() {
     { id:'enter-workshop', x:1325,y:835,r:105, action:'Entrar na oficina', run:()=>enterScene('workshop') },
     { id:'standard', x:900,y:205,r:150, action:'Observar Tenda do Estandarte', run:()=>dialogue('Tenda do Estandarte','O vermelho e o dourado destacam o setor de Judá. O estandarte do leão marca o ponto de liderança da tribo.') },
     { id:'workshop', x:1325,y:735,r:150, action:'Examinar oficina', run:()=>dialogue('Oficina de Judá','Madeira, metal, couro e ferramentas ocupam cada bancada. O trabalho de Eliabe mantém o acampamento em movimento.') },
-    { id:'warehouse', x:380,y:505,r:145, action:'Examinar armazém', run:()=>dialogue('Armazéns','Mantimentos, tecidos, jarros e peças de reposição são organizados para atender as famílias do setor.') },
+    { id:'warehouse', x:380,y:505,r:145, action:()=>state.questStep < QUESTS.length - 1 ? 'Examinar armazém' : (canTurnInWork() ? 'Entregar produção no armazém' : 'Consultar armazém'), run:warehouseInteraction },
     { id:'corral-look', x:420,y:820,r:165, action:'Observar rebanho', run:()=>dialogue('Currais','Ovelhas e cabras descansam entre cercas, cochos e recipientes de água. O rebanho sustenta parte importante da vida cotidiana.') },
     { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') }
   ];
@@ -811,6 +951,9 @@ function game() {
     if (state.inventory.graos) items.push(`Grãos ×${state.inventory.graos}`);
     if (state.inventory.ervas) items.push(`Ervas ×${state.inventory.ervas}`);
     if (state.inventory.registros) items.push(`Registros ×${state.inventory.registros}`);
+    if (state.inventory.racao) items.push(`Ração ×${state.inventory.racao}`);
+    const cfg = vocationConfig();
+    if (state.equippedTool === cfg.toolId) items.push(`⚒ ${cfg.toolLabel}`);
     inventoryMini.textContent = items.length ? items.join(' • ') : 'Bolsa vazia';
   }
 
@@ -864,7 +1007,8 @@ function game() {
     }
 
     const stepIndex = state.workProgress.step;
-    state.energy = Math.max(0,state.energy - cfg.energyCost);
+    const energyCost = Math.max(6,cfg.energyCost - (state.equippedTool === cfg.toolId ? 3 : 0));
+    state.energy = Math.max(0,state.energy - energyCost);
     state.hunger = Math.max(0,state.hunger - 5);
     state.time += 35;
     state.workProgress.step += 1;
@@ -992,6 +1136,8 @@ function game() {
     if (timed) return timed;
     const work = getWorkInteraction();
     if (work) return work;
+    const tool = getToolInteraction();
+    if (tool) return tool;
     const quest = QUESTS[state.questStep];
     const questNpc = quest?.id === 'eliabe' ? npcAgents.eliabe : quest?.id === 'corral' ? npcAgents.child : quest?.id === 'elder' ? npcAgents.elder : null;
     if ((quest?.target || questNpc) && !questNpc?.inside) {
@@ -1040,6 +1186,8 @@ function game() {
       const eliabe = npcAgents.eliabe;
       if (eliabe.inside === 'workshop' && Math.hypot(indoorPos.x-650,indoorPos.y-430) < 135) {
         if (state.questStep === 1) return {action:QUESTS[1].action,run:runQuestInteraction};
+        const cfg = vocationConfig();
+        if (state.questStep >= QUESTS.length - 1 && !state.tools[cfg.toolId]) return {action:`Receber ${cfg.toolLabel}`,run:claimVocationTool};
         return {action:'Falar com Eliabe',run:()=>dialogue('Eliabe — o artesão',contextualNpcText('eliabe'))};
       }
       if (Math.hypot(indoorPos.x-840,indoorPos.y-300) < 110) {
@@ -1073,7 +1221,7 @@ function game() {
   }
 
   function interact() {
-    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden')) return;
+    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden')) return;
     activeInteraction?.run?.();
   }
 
@@ -1134,8 +1282,16 @@ function game() {
   }
 
   function onKeyDown(event) {
+    if (event.key.toLowerCase() === 'i' && !event.repeat) {
+      if ($('#dialogue').classList.contains('hidden')) toggleInventory();
+      return;
+    }
     if (event.key.toLowerCase() === 'm' && !event.repeat) {
-      if ($('#dialogue').classList.contains('hidden')) toggleMap();
+      if ($('#dialogue').classList.contains('hidden') && inventoryOverlay.classList.contains('hidden')) toggleMap();
+      return;
+    }
+    if (!inventoryOverlay.classList.contains('hidden')) {
+      if (event.key === 'Escape') toggleInventory(false);
       return;
     }
     if (!mapOverlay.classList.contains('hidden')) {
@@ -1155,6 +1311,8 @@ function game() {
   addEventListener('keydown', onKeyDown);
   addEventListener('keyup', onKeyUp);
   actionButton.addEventListener('click', interact);
+  inventoryButton.addEventListener('click', () => toggleInventory());
+  $('#closeInventory').addEventListener('click', () => toggleInventory(false));
   mapButton.addEventListener('click', () => toggleMap());
   $('#closeMap').addEventListener('click', () => toggleMap(false));
   menuButton.addEventListener('click', () => { save(); menu(); });
@@ -1207,7 +1365,7 @@ function game() {
       return;
     }
     const dt = Math.min((now-last)/16.67,2); last = now;
-    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden');
+    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden');
     let dx=0,dy=0;
     if (!dialogOpen) {
       if (keys.has('a')||keys.has('arrowleft')) dx--;
