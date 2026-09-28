@@ -13,11 +13,17 @@ var dialogue_title: Label
 var dialogue_text: Label
 var destination_marker: Node2D
 
+const NAV_CELL_SIZE := 24.0
+const NAV_AGENT_PADDING := 22.0
+var navigation_grid := AStarGrid2D.new()
+var navigation_ready := false
+
 var quest_started := false
 var quest_completed := false
 
 func _ready() -> void:
 	_build_world()
+	_build_navigation_grid()
 	_build_ui()
 	_spawn_player()
 	_spawn_hanan()
@@ -98,12 +104,64 @@ func _build_world() -> void:
 	title.add_theme_color_override("font_color", Color("#3a271a"))
 	add_child(title)
 
+func _build_navigation_grid() -> void:
+	navigation_grid.region = Rect2i(0, 0, int(ceil(1280.0 / NAV_CELL_SIZE)), int(ceil(720.0 / NAV_CELL_SIZE)))
+	navigation_grid.cell_size = Vector2(NAV_CELL_SIZE, NAV_CELL_SIZE)
+	navigation_grid.offset = Vector2(NAV_CELL_SIZE * 0.5, NAV_CELL_SIZE * 0.5)
+	navigation_grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	navigation_grid.update()
+
+	_mark_rect_blocked(Vector2(315, 245), Vector2(210, 105), NAV_AGENT_PADDING)
+	_mark_rect_blocked(Vector2(920, 455), Vector2(220, 120), NAV_AGENT_PADDING)
+	_mark_rect_blocked(Vector2(520, 65), Vector2(250, 125), NAV_AGENT_PADDING)
+	_mark_rect_blocked(Vector2(165, 455), Vector2(300, 150), NAV_AGENT_PADDING)
+	_mark_circle_blocked(Vector2(640, 500), 38.0 + NAV_AGENT_PADDING)
+
+	navigation_ready = true
+
+func _mark_rect_blocked(center: Vector2, size: Vector2, padding: float) -> void:
+	var blocked_rect := Rect2(center - size * 0.5, size).grow(padding)
+	for y in range(navigation_grid.region.position.y, navigation_grid.region.end.y):
+		for x in range(navigation_grid.region.position.x, navigation_grid.region.end.x):
+			var cell := Vector2i(x, y)
+			if blocked_rect.has_point(navigation_grid.get_point_position(cell)):
+				navigation_grid.set_point_solid(cell, true)
+
+func _mark_circle_blocked(center: Vector2, radius: float) -> void:
+	for y in range(navigation_grid.region.position.y, navigation_grid.region.end.y):
+		for x in range(navigation_grid.region.position.x, navigation_grid.region.end.x):
+			var cell := Vector2i(x, y)
+			if navigation_grid.get_point_position(cell).distance_to(center) <= radius:
+				navigation_grid.set_point_solid(cell, true)
+
+func _world_to_grid(world_position: Vector2) -> Vector2i:
+	var x := int(floor(world_position.x / NAV_CELL_SIZE))
+	var y := int(floor(world_position.y / NAV_CELL_SIZE))
+	x = clampi(x, navigation_grid.region.position.x, navigation_grid.region.end.x - 1)
+	y = clampi(y, navigation_grid.region.position.y, navigation_grid.region.end.y - 1)
+	return Vector2i(x, y)
+
+func _nearest_walkable_cell(origin: Vector2i) -> Vector2i:
+	if navigation_grid.is_in_boundsv(origin) and not navigation_grid.is_point_solid(origin):
+		return origin
+
+	for radius in range(1, 7):
+		for y_offset in range(-radius, radius + 1):
+			for x_offset in range(-radius, radius + 1):
+				if abs(x_offset) != radius and abs(y_offset) != radius:
+					continue
+				var candidate := origin + Vector2i(x_offset, y_offset)
+				if navigation_grid.is_in_boundsv(candidate) and not navigation_grid.is_point_solid(candidate):
+					return candidate
+
+	return Vector2i(-1, -1)
+
 func _build_ui() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
 
 	var instructions := Label.new()
-	instructions.text = "Clique no chão para mover • WASD/setas • E para interagir"
+	instructions.text = "Clique para mover com pathfinding • WASD/setas • E para interagir"
 	instructions.position = Vector2(24, 675)
 	instructions.add_theme_font_size_override("font_size", 14)
 	instructions.add_theme_color_override("font_color", Color.WHITE)
@@ -153,6 +211,7 @@ func _spawn_player() -> void:
 	player = PlayerScript.new()
 	player.name = "Player"
 	player.global_position = Vector2(640, 595)
+	player.navigation_requested.connect(_on_navigation_requested)
 	player.destination_changed.connect(_on_destination_changed)
 	player.destination_reached.connect(_on_destination_reached)
 	player.destination_failed.connect(_on_destination_failed)
@@ -191,6 +250,33 @@ func _create_destination_marker() -> void:
 	destination_marker.add_child(diamond)
 
 	add_child(destination_marker)
+
+func _on_navigation_requested(world_position: Vector2) -> void:
+	if not navigation_ready or player == null:
+		return
+
+	var requested_cell := _world_to_grid(world_position)
+	var destination_cell := _nearest_walkable_cell(requested_cell)
+	if destination_cell == Vector2i(-1, -1):
+		player.set_navigation_path(PackedVector2Array(), world_position)
+		return
+
+	var start_cell := _nearest_walkable_cell(_world_to_grid(player.global_position))
+	if start_cell == Vector2i(-1, -1):
+		player.set_navigation_path(PackedVector2Array(), world_position)
+		return
+
+	var cell_path := navigation_grid.get_id_path(start_cell, destination_cell, true)
+	if cell_path.is_empty():
+		player.set_navigation_path(PackedVector2Array(), world_position)
+		return
+
+	var point_path := PackedVector2Array()
+	for cell in cell_path:
+		point_path.append(navigation_grid.get_point_position(cell))
+
+	var resolved_target := navigation_grid.get_point_position(destination_cell)
+	player.set_navigation_path(point_path, resolved_target)
 
 func _on_destination_changed(world_position: Vector2) -> void:
 	destination_marker.global_position = world_position
