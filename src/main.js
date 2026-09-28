@@ -38,7 +38,8 @@ let state = {
   lastDaySummary: null,
   tools: {},
   equippedTool: null,
-  warehouseTrades: 0
+  warehouseTrades: 0,
+  lastSavedAt: null
 };
 
 function $(selector) { return document.querySelector(selector); }
@@ -54,6 +55,10 @@ function normalizeState() {
   if (!('lastDaySummary' in state)) state.lastDaySummary = null;
   if (!('equippedTool' in state)) state.equippedTool = null;
   if (!Number.isInteger(state.warehouseTrades)) state.warehouseTrades = 0;
+  if (!('lastSavedAt' in state)) state.lastSavedAt = null;
+  if (!Number.isFinite(state.x)) state.x = 900;
+  if (!Number.isFinite(state.y)) state.y = 980;
+  if (!Number.isInteger(state.day) || state.day < 1) state.day = 1;
   if (state.equippedTool && !state.tools[state.equippedTool]) state.equippedTool = null;
   if (!Number.isFinite(state.energy)) state.energy = 100;
   if (!Number.isFinite(state.hunger)) state.hunger = 82;
@@ -75,7 +80,10 @@ function load() {
 }
 
 function save() {
-  try { localStorage.setItem(SAVE, JSON.stringify(state)); }
+  try {
+    state.lastSavedAt = Date.now();
+    localStorage.setItem(SAVE, JSON.stringify(state));
+  }
   catch (error) { console.warn('Falha ao salvar progresso:', error); }
 }
 
@@ -90,7 +98,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.16.1</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.17</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -112,7 +120,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.16.1 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.17 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -157,7 +165,7 @@ function createCharacter() {
       inventory: {}, reputation: 0, questStep: 0, visited: {},
       energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {},
       workCompleted: {}, workProgress: null, lastDaySummary: null,
-      tools: {}, equippedTool: null, warehouseTrades: 0
+      tools: {}, equippedTool: null, warehouseTrades: 0, lastSavedAt: null
     };
     save();
     game();
@@ -260,6 +268,7 @@ function game() {
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
         <div class="zone-label corral-zone">Currais</div><div class="zone-label workshop-zone">Oficinas</div>
 
+        <div class="move-target hidden" id="moveTarget" aria-hidden="true"><i></i></div>
         <div class="player player-art" id="player"><img src="${playerAsset}" alt="Personagem"></div>
       </div>
 
@@ -284,24 +293,29 @@ function game() {
 
       <div class="daylight" id="daylight"></div>
 
-      <div class="hud">
-        <b>${state.profile.name}</b> • Tribo de ${state.profile.tribe} • ${state.profile.vocation}<br>
-        Dia ${state.day} • <span id="calendarDay"></span> • <span id="clock"></span> • <span id="dayPhase"></span> • Rep. <span id="rep">${state.reputation}</span>
+      <div class="status-stack">
+        <div class="hud">
+          <b>${state.profile.name}</b><span class="hud-role">Tribo de ${state.profile.tribe} • ${state.profile.vocation}</span>
+          <small>Dia ${state.day} • <span id="calendarDay"></span> • <span id="clock"></span> • <span id="dayPhase"></span> • Rep. <span id="rep">${state.reputation}</span></small>
+        </div>
+        <div class="inventory-mini" id="inventoryMini"></div>
+        <div class="needs-hud" id="needsHud">
+          <span>Energia <i class="need-bar"><b id="energyBar"></b></i><em id="energyText"></em></span>
+          <span>Fome <i class="need-bar"><b id="hungerBar"></b></i><em id="hungerText"></em></span>
+        </div>
+        <div class="meal-hint" id="mealHint"></div>
       </div>
-
-      <div class="needs-hud" id="needsHud">
-        <span>Energia <i class="need-bar"><b id="energyBar"></b></i><em id="energyText"></em></span>
-        <span>Fome <i class="need-bar"><b id="hungerBar"></b></i><em id="hungerText"></em></span>
+      <div class="task-stack">
+        <div class="objective" id="objective"></div>
+        <div class="daily-task" id="dailyTask"></div>
+        <div class="vocation-task" id="vocationTask"></div>
       </div>
-      <div class="meal-hint" id="mealHint"></div>
-      <div class="objective" id="objective"></div>
-      <div class="vocation-task" id="vocationTask"></div>
-      <div class="daily-task" id="dailyTask"></div>
-      <div class="inventory-mini" id="inventoryMini"></div>
       <div class="prompt hidden" id="prompt"></div>
-      <button class="inventory-button" id="inventoryButton" aria-label="Abrir bolsa" title="Bolsa (I)">BOLSA</button>
-      <button class="map-button" id="mapButton" aria-label="Abrir mapa do acampamento" title="Mapa (M)">MAPA</button>
-      <button class="game-menu" id="gameMenu">☰</button>
+      <div class="quick-actions">
+        <button class="inventory-button" id="inventoryButton" aria-label="Abrir bolsa" title="Bolsa (I)">BOLSA</button>
+        <button class="map-button" id="mapButton" aria-label="Abrir mapa do acampamento" title="Mapa (M)">MAPA</button>
+        <button class="game-menu" id="gameMenu" aria-label="Abrir menu do jogo" title="Menu (Esc)">☰</button>
+      </div>
       <div class="inventory-overlay hidden" id="inventoryOverlay" role="dialog" aria-modal="true" aria-label="Bolsa e equipamento">
         <div class="inventory-panel">
           <div class="inventory-heading"><h2>Bolsa e equipamento</h2><button id="closeInventory" aria-label="Fechar bolsa">Fechar ×</button></div>
@@ -330,6 +344,21 @@ function game() {
         </div>
       </div>
 
+      <div class="game-menu-overlay hidden" id="gameMenuOverlay" role="dialog" aria-modal="true" aria-label="Menu do jogo">
+        <div class="game-menu-panel">
+          <div class="game-menu-heading"><div><small>CRÔNICAS DA PROMESSA</small><h2>Menu do jogo</h2></div><button id="closeGameMenu">Fechar ×</button></div>
+          <div class="save-status"><span>Salvamento automático ativo</span><b id="saveStatusText"></b></div>
+          <div class="game-menu-actions">
+            <button id="saveNowButton"><b>SALVAR AGORA</b><small>Grava imediatamente neste navegador.</small></button>
+            <button id="exportSaveButton"><b>EXPORTAR SAVE</b><small>Baixa um arquivo para usar em outro aparelho.</small></button>
+            <button id="importSaveButton"><b>IMPORTAR SAVE</b><small>Carrega um arquivo exportado anteriormente.</small></button>
+            <button id="returnMainMenuButton" class="secondary"><b>MENU PRINCIPAL</b><small>O progresso será salvo antes de sair.</small></button>
+          </div>
+          <p class="save-help">Dica: no outro computador ou celular, abra o jogo e escolha <b>Importar save</b>.</p>
+          <input class="hidden" type="file" id="saveFileInput" accept=".json,application/json">
+        </div>
+      </div>
+
       <div class="touch hidden" id="touchControls">
         <button data-k="w">▲</button>
         <div><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div>
@@ -337,7 +366,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.16.1</div>
+      <div class="badge">Web Alpha 0.17</div>
     </main>`;
 
   const world = $('#world');
@@ -367,7 +396,11 @@ function game() {
   const inventoryOverlay = $('#inventoryOverlay');
   const inventoryButton = $('#inventoryButton');
   const inventoryContent = $('#inventoryContent');
+  const gameMenuOverlay = $('#gameMenuOverlay');
+  const saveStatusText = $('#saveStatusText');
+  const saveFileInput = $('#saveFileInput');
   const worldQuest = $('#worldQuest');
+  const moveTargetEl = $('#moveTarget');
   const keys = new Set();
 
   if (isTouch()) touchControls.classList.remove('hidden');
@@ -376,6 +409,9 @@ function game() {
   let currentScene = 'outdoor';
   const indoorPos = { x:500, y:585 };
   let lastOutdoorPosition = { x:state.x, y:state.y };
+  let clickPath = [];
+  let clickDestination = null;
+  let lastAutoSave = performance.now();
 
   function timePhase() {
     const minute = ((state.time % 1440) + 1440) % 1440;
@@ -543,6 +579,8 @@ function game() {
     playerInterior.classList.toggle('hidden', scene !== 'home');
     const target = scene === 'standard' ? standardInterior : scene === 'workshop' ? workshopInterior : playerInterior;
     target.appendChild(player);
+    target.appendChild(moveTargetEl);
+    cancelClickMove();
     indoorPos.x = 500;
     indoorPos.y = 585;
     player.style.left = indoorPos.x + 'px';
@@ -557,6 +595,8 @@ function game() {
     playerInterior.classList.add('hidden');
     world.classList.remove('hidden');
     world.appendChild(player);
+    world.appendChild(moveTargetEl);
+    cancelClickMove();
     if (scene === 'standard') { state.x = 900; state.y = 350; }
     else if (scene === 'workshop') { state.x = 1325; state.y = 875; }
     else { state.x = 660; state.y = 1020; }
@@ -885,9 +925,129 @@ function game() {
     return !Object.values(npcAgents).some(npc => !npc.inside && Math.hypot(px-npc.x,py-npc.y) < PLAYER_RADIUS + 24);
   }
 
+  function currentPosition() {
+    return currentScene === 'outdoor' ? {x:state.x,y:state.y} : {x:indoorPos.x,y:indoorPos.y};
+  }
+
+  function canStandScene(x,y) {
+    return currentScene === 'outdoor' ? canStand(x,y) : canStandInterior(currentScene,x,y);
+  }
+
+  function sceneBounds() {
+    return currentScene === 'outdoor'
+      ? {minX:135,maxX:1665,minY:95,maxY:1085,step:36}
+      : {minX:85,maxX:915,minY:135,maxY:630,step:32};
+  }
+
+  function cancelClickMove() {
+    clickPath = [];
+    clickDestination = null;
+    moveTargetEl.classList.add('hidden');
+  }
+
+  function nearestWalkable(x,y) {
+    const b = sceneBounds();
+    const tx = Math.max(b.minX,Math.min(b.maxX,x));
+    const ty = Math.max(b.minY,Math.min(b.maxY,y));
+    if (canStandScene(tx,ty)) return {x:tx,y:ty};
+    for (let radius=b.step; radius<=b.step*5; radius+=b.step) {
+      for (let angle=0; angle<Math.PI*2; angle+=Math.PI/8) {
+        const px=Math.max(b.minX,Math.min(b.maxX,tx+Math.cos(angle)*radius));
+        const py=Math.max(b.minY,Math.min(b.maxY,ty+Math.sin(angle)*radius));
+        if (canStandScene(px,py)) return {x:px,y:py};
+      }
+    }
+    return null;
+  }
+
+  function buildClickPath(targetX,targetY) {
+    const b=sceneBounds();
+    const start=currentPosition();
+    const target=nearestWalkable(targetX,targetY);
+    if (!target) return [];
+    const cols=Math.floor((b.maxX-b.minX)/b.step)+1;
+    const rows=Math.floor((b.maxY-b.minY)/b.step)+1;
+    const toGrid=(p,min,max)=>Math.max(0,Math.min(max,Math.round((p-min)/b.step)));
+    const sx=toGrid(start.x,b.minX,cols-1), sy=toGrid(start.y,b.minY,rows-1);
+    const gx=toGrid(target.x,b.minX,cols-1), gy=toGrid(target.y,b.minY,rows-1);
+    const key=(x,y)=>x+','+y;
+    const point=(x,y)=>({x:b.minX+x*b.step,y:b.minY+y*b.step});
+    const walkable=(x,y)=>{
+      if(x<0||x>=cols||y<0||y>=rows) return false;
+      const p=point(x,y);
+      return canStandScene(p.x,p.y);
+    };
+    const open=[{x:sx,y:sy,g:0,f:Math.hypot(gx-sx,gy-sy)}];
+    const records=new Map([[key(sx,sy),{g:0,parent:null}]]);
+    const closed=new Set();
+    const dirs=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    let reached=null;
+    while(open.length){
+      let bestIndex=0;
+      for(let i=1;i<open.length;i++) if(open[i].f<open[bestIndex].f) bestIndex=i;
+      const node=open.splice(bestIndex,1)[0];
+      const nodeKey=key(node.x,node.y);
+      if(closed.has(nodeKey)) continue;
+      closed.add(nodeKey);
+      if(node.x===gx&&node.y===gy){reached=node;break;}
+      for(const [dx,dy] of dirs){
+        const nx=node.x+dx, ny=node.y+dy;
+        if(!walkable(nx,ny)) continue;
+        if(dx&&dy && (!walkable(node.x+dx,node.y)||!walkable(node.x,node.y+dy))) continue;
+        const nk=key(nx,ny);
+        if(closed.has(nk)) continue;
+        const ng=node.g+(dx&&dy?1.414:1);
+        const prev=records.get(nk);
+        if(prev&&prev.g<=ng) continue;
+        records.set(nk,{g:ng,parent:nodeKey});
+        open.push({x:nx,y:ny,g:ng,f:ng+Math.hypot(gx-nx,gy-ny)});
+      }
+    }
+    if(!reached) return [target];
+    const nodes=[];
+    let cursor=key(reached.x,reached.y);
+    while(cursor){
+      const [x,y]=cursor.split(',').map(Number);
+      nodes.push(point(x,y));
+      cursor=records.get(cursor)?.parent || null;
+    }
+    nodes.reverse();
+    nodes.shift();
+    if(canStandScene(target.x,target.y)) nodes.push(target);
+    return nodes;
+  }
+
+  function setClickDestination(x,y) {
+    const target=nearestWalkable(x,y);
+    if(!target) return;
+    const path=buildClickPath(target.x,target.y);
+    if(!path.length && Math.hypot(currentPosition().x-target.x,currentPosition().y-target.y)>10) return;
+    clickPath=path;
+    clickDestination=target;
+    moveTargetEl.style.left=target.x+'px';
+    moveTargetEl.style.top=target.y+'px';
+    moveTargetEl.classList.remove('hidden');
+  }
+
+  function scenePointerPosition(container,event) {
+    const rect=container.getBoundingClientRect();
+    const scaleX=rect.width/container.offsetWidth;
+    const scaleY=rect.height/container.offsetHeight;
+    return {x:(event.clientX-rect.left)/scaleX,y:(event.clientY-rect.top)/scaleY};
+  }
+
+  function handleScenePointer(event) {
+    if(event.button!==0 || isTouch()) return;
+    if(!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
+    const container=currentScene==='outdoor' ? world : currentScene==='standard' ? standardInterior : currentScene==='workshop' ? workshopInterior : playerInterior;
+    if(event.currentTarget!==container) return;
+    const p=scenePointerPosition(container,event);
+    setClickDestination(p.x,p.y);
+  }
+
   function questGuidance() {
     const quest = QUESTS[state.questStep];
-    if (!quest?.target) return getDailyTaskText();
+    if (!quest?.target) return '';
     if (currentScene !== 'outdoor') return `${quest.label} Saia da tenda para seguir a missão.`;
     const npc = quest.id === 'eliabe' ? npcAgents.eliabe : quest.id === 'corral' ? npcAgents.child : quest.id === 'elder' ? npcAgents.elder : null;
     if (npc?.inside === 'rest') return `${quest.label} O personagem está descansando. Volte pela manhã.`;
@@ -970,7 +1130,7 @@ function game() {
     const playerMarker = $('#mapPlayer');
     playerMarker.style.left = `${state.x / 18}%`;
     playerMarker.style.top = `${state.y / 12}%`;
-    $('#mapObjective').textContent = questGuidance();
+    $('#mapObjective').textContent = questGuidance() || getDailyTaskText();
   }
 
   function toggleMap(force) {
@@ -1223,8 +1383,81 @@ function game() {
     dialogue('Amanhecer',`Dia ${oldDay} encerrado. Trabalho: ${worked ? 'concluído' : 'não realizado'} • rotinas comunitárias: ${routines}. Começa o Dia ${state.day} com a energia restaurada.${tomorrow}`,'Levantar');
   }
 
+  function saveTimeLabel() {
+    if (!state.lastSavedAt) return 'Ainda não salvo nesta sessão.';
+    const d = new Date(state.lastSavedAt);
+    return 'Último save: ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+
+  function refreshSaveStatus() {
+    if (saveStatusText) saveStatusText.textContent = saveTimeLabel();
+  }
+
+  function manualSave() {
+    save();
+    refreshSaveStatus();
+    dialogue('Jogo salvo','Seu progresso foi gravado neste navegador.');
+  }
+
+  function exportSave() {
+    save();
+    const payload = {
+      game:'cronicas-da-promessa',
+      format:1,
+      exportedAt:new Date().toISOString(),
+      state
+    };
+    const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName=(state.profile?.name || 'jornada').replace(/[^a-z0-9_-]+/gi,'_');
+    link.href=url;
+    link.download=`cronicas-da-promessa_${safeName}_dia-${state.day}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    refreshSaveStatus();
+  }
+
+  function importSaveFile(file) {
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const payload=JSON.parse(String(reader.result||''));
+        const incoming=payload?.game==='cronicas-da-promessa' ? payload.state : payload;
+        if(!incoming?.profile?.name || !Number.isFinite(Number(incoming.day))) throw new Error('Arquivo incompatível');
+        state=incoming;
+        normalizeState();
+        save();
+        gameMenuOverlay.classList.add('hidden');
+        dialogue('Save importado',`Progresso de ${state.profile.name}, Dia ${state.day}, carregado com sucesso.`,'Continuar');
+        setTimeout(()=>game(),0);
+      }catch(error){
+        console.warn('Falha ao importar save:',error);
+        dialogue('Não foi possível importar','O arquivo selecionado não parece ser um save válido de Crônicas da Promessa.');
+      }finally{
+        saveFileInput.value='';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function toggleGameMenu(force) {
+    const open=force ?? gameMenuOverlay.classList.contains('hidden');
+    gameMenuOverlay.classList.toggle('hidden',!open);
+    if(open){
+      mapOverlay.classList.add('hidden');
+      inventoryOverlay.classList.add('hidden');
+      cancelClickMove();
+      save();
+      refreshSaveStatus();
+    } else keys.clear();
+  }
+
   function interact() {
-    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden')) return;
+    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
     activeInteraction?.run?.();
   }
 
@@ -1285,12 +1518,18 @@ function game() {
   }
 
   function onKeyDown(event) {
-    if (event.key.toLowerCase() === 'i' && !event.repeat) {
-      if ($('#dialogue').classList.contains('hidden')) toggleInventory();
+    const key=event.key.toLowerCase();
+    if (['w','a','s','d','arrowleft','arrowright','arrowup','arrowdown'].includes(key)) cancelClickMove();
+    if (key === 'i' && !event.repeat) {
+      if ($('#dialogue').classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleInventory();
       return;
     }
-    if (event.key.toLowerCase() === 'm' && !event.repeat) {
-      if ($('#dialogue').classList.contains('hidden') && inventoryOverlay.classList.contains('hidden')) toggleMap();
+    if (key === 'm' && !event.repeat) {
+      if ($('#dialogue').classList.contains('hidden') && inventoryOverlay.classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleMap();
+      return;
+    }
+    if (!gameMenuOverlay.classList.contains('hidden')) {
+      if (event.key === 'Escape') toggleGameMenu(false);
       return;
     }
     if (!inventoryOverlay.classList.contains('hidden')) {
@@ -1301,12 +1540,12 @@ function game() {
       if (event.key === 'Escape') toggleMap(false);
       return;
     }
-    keys.add(event.key.toLowerCase());
-    if (event.key.toLowerCase() === 'e' && !event.repeat) interact();
+    keys.add(key);
+    if (key === 'e' && !event.repeat) interact();
     if (event.key === 'Escape') {
       const modal = $('#dialogue');
       if (!modal.classList.contains('hidden')) modal.classList.add('hidden');
-      else { save(); menu(); }
+      else toggleGameMenu(true);
     }
   }
   function onKeyUp(event) { keys.delete(event.key.toLowerCase()); }
@@ -1318,7 +1557,18 @@ function game() {
   $('#closeInventory').addEventListener('click', () => toggleInventory(false));
   mapButton.addEventListener('click', () => toggleMap());
   $('#closeMap').addEventListener('click', () => toggleMap(false));
-  menuButton.addEventListener('click', () => { save(); menu(); });
+  menuButton.addEventListener('click', () => toggleGameMenu());
+  $('#closeGameMenu').addEventListener('click', () => toggleGameMenu(false));
+  $('#saveNowButton').addEventListener('click', manualSave);
+  $('#exportSaveButton').addEventListener('click', exportSave);
+  $('#importSaveButton').addEventListener('click', () => saveFileInput.click());
+  saveFileInput.addEventListener('change', () => importSaveFile(saveFileInput.files?.[0]));
+  $('#returnMainMenuButton').addEventListener('click', () => { save(); menu(); });
+
+  world.addEventListener('pointerdown',handleScenePointer);
+  standardInterior.addEventListener('pointerdown',handleScenePointer);
+  workshopInterior.addEventListener('pointerdown',handleScenePointer);
+  playerInterior.addEventListener('pointerdown',handleScenePointer);
 
   touchControls.querySelectorAll('button').forEach(button => {
     const key = button.dataset.k;
@@ -1359,22 +1609,35 @@ function game() {
 
   let last = performance.now();
   let lastHudRefresh = 0;
+  const persistOnLeave=()=>save();
+  addEventListener('pagehide',persistOnLeave);
+  document.addEventListener('visibilitychange',persistOnLeave);
 
   function tick(now) {
     if (!document.body.contains(player)) {
       removeEventListener('keydown', onKeyDown);
       removeEventListener('keyup', onKeyUp);
       removeEventListener('resize', sortScenery);
+      removeEventListener('pagehide',persistOnLeave);
+      document.removeEventListener('visibilitychange',persistOnLeave);
       return;
     }
     const dt = Math.min((now-last)/16.67,2); last = now;
-    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden');
+    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden');
     let dx=0,dy=0;
     if (!dialogOpen) {
       if (keys.has('a')||keys.has('arrowleft')) dx--;
       if (keys.has('d')||keys.has('arrowright')) dx++;
       if (keys.has('w')||keys.has('arrowup')) dy--;
       if (keys.has('s')||keys.has('arrowdown')) dy++;
+      if (!dx && !dy && clickPath.length) {
+        const pos=currentPosition();
+        while(clickPath.length && Math.hypot(clickPath[0].x-pos.x,clickPath[0].y-pos.y)<8) clickPath.shift();
+        if(clickPath.length){
+          dx=clickPath[0].x-pos.x;
+          dy=clickPath[0].y-pos.y;
+        } else cancelClickMove();
+      }
     }
     player.classList.toggle('walking', Boolean(dx || dy));
     updatePlayerSprite(dx,dy,now);
@@ -1419,6 +1682,10 @@ function game() {
     if (now - lastHudRefresh > 250) {
       refreshHud();
       lastHudRefresh = now;
+    }
+    if (now - lastAutoSave > 8000) {
+      save();
+      lastAutoSave = now;
     }
     draw();
     requestAnimationFrame(tick);
