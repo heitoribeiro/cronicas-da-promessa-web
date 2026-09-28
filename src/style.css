@@ -521,3 +521,5 @@
  .fps-counter{left:8px;bottom:66px;padding:5px 7px;font-size:8px}.fps-counter b{font-size:11px}.fps-counter small{font-size:8px}
  .setting-row{gap:10px}.setting-row small{font-size:9px}
 }
+
+.game[data-phase="night"] .daylight.night{background:linear-gradient(180deg,rgba(22,31,53,.54),rgba(10,14,28,.66));opacity:1}
