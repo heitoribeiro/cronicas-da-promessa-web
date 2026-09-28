@@ -143,15 +143,27 @@ window.addEventListener('unhandledrejection', event => {
 
 function menu() {
   app.innerHTML = `
-    <main class="screen">
-      <section class="panel">
-        <h1 class="title">CRÔNICAS DA PROMESSA</h1>
-        <p class="subtitle">Um povo em caminho. Muitas histórias para viver.</p>
-        <div class="menu">
-          <button class="btn" id="newGame">NOVA JORNADA</button>
-          <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
+    <main class="screen pixel-menu-screen">
+      <div class="menu-scenery" aria-hidden="true">
+        <img class="menu-scene-tower scene-tower-left" src="./assets/art/judah/watchtower.svg" alt="">
+        <img class="menu-scene-tower scene-tower-right" src="./assets/art/judah/watchtower.svg" alt="">
+        <img class="menu-scene-main-tent" src="./assets/art/judah/judah_standard_tent.svg" alt="">
+        <img class="menu-scene-family scene-family-left" src="./assets/art/judah/family_tent.svg" alt="">
+        <img class="menu-scene-family scene-family-right" src="./assets/art/judah/family_tent.svg" alt="">
+        <img class="menu-scene-fire scene-fire-left" src="./assets/art/judah/campfire.svg" alt="">
+        <img class="menu-scene-fire scene-fire-right" src="./assets/art/judah/campfire.svg" alt="">
+        <img class="menu-scene-acacia scene-acacia-left" src="./assets/art/judah/acacia.svg" alt="">
+        <img class="menu-scene-acacia scene-acacia-right" src="./assets/art/judah/acacia.svg" alt="">
+      </div>
+      <section class="panel pixel-menu-panel">
+        <div class="pixel-brand-emblem">✦</div>
+        <h1 class="title pixel-brand">CRÔNICAS DA PROMESSA</h1>
+        <p class="subtitle pixel-tagline">Uma jornada de fé, povo e terra.</p>
+        <div class="menu pixel-menu-actions">
+          <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
+          <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.19 • Judá vivo</p>
+        <p class="subtitle pixel-version">Web Alpha 0.19 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -207,7 +219,24 @@ function createCharacter() {
 function dialogue(title, text, button='Continuar') {
   const modal = $('#dialogue');
   if (!modal) return;
-  modal.innerHTML = `<div class="dialogue-card"><div class="dialogue-name">${title}</div><div class="dialogue-text">${text}</div><button class="dialogue-button">${button}</button></div>`;
+  const speaker = String(title || '').toLowerCase();
+  let portrait = '';
+  if (speaker.includes('ancião')) portrait = './assets/art/npcs/elder.svg';
+  else if (speaker.includes('eliabe')) portrait = './assets/art/npcs/eliabe.svg';
+  else if (speaker.includes('miri')) portrait = './assets/art/npcs/miria.svg';
+  else if (speaker.includes('hanan')) portrait = './assets/art/npcs/hanan.svg';
+  else if (speaker.includes('rebanho') || speaker.includes('criança')) portrait = './assets/art/npcs/herd_child.svg';
+  else if (speaker.includes('guarda')) portrait = './assets/art/npcs/guard.svg';
+
+  modal.innerHTML = `
+    <div class="dialogue-card pixel-dialogue-card">
+      ${portrait ? `<div class="dialogue-portrait"><img src="${portrait}" alt=""></div>` : ''}
+      <div class="dialogue-body">
+        <div class="dialogue-name">${title}</div>
+        <div class="dialogue-text">${text}</div>
+        <div class="dialogue-actions"><button class="dialogue-button">${button}</button></div>
+      </div>
+    </div>`;
   modal.classList.remove('hidden');
   modal.querySelector('button').addEventListener('click', () => modal.classList.add('hidden'), { once:true });
 }
