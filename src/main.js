@@ -1781,6 +1781,7 @@ function game() {
     if(open){
       mapOverlay.classList.add('hidden');
       inventoryOverlay.classList.add('hidden');
+      chestOverlay.classList.add('hidden');
       journalOverlay.classList.add('hidden');
       cancelClickMove();
       save();
