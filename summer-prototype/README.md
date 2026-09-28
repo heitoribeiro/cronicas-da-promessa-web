@@ -80,3 +80,13 @@ Comportamento esperado:
 - limites físicos continuam ativos nos quatro lados do mapa
 
 Objetivo desta etapa: aproximar o controle por mouse do comportamento de MMORPGs como Ragnarok Online, em que o personagem contorna obstáculos para alcançar o ponto clicado.
+
+
+## Debug de navegação
+
+- o jogo executa três autotestes internos de pathfinding ao iniciar
+- os testes validam desvio da Cozinha, desvio da Oficina e resolução de clique dentro do Poço
+- o resultado aparece no canto inferior esquerdo como `NAV 3/3` quando todos passam
+- pressione `F3` para mostrar ou ocultar o debug
+- a rota calculada para o clique é desenhada em azul durante o deslocamento
+- essa validação usa coordenadas do mundo do próprio jogo e não depende de cliques sintéticos externos do Summer/Codex
