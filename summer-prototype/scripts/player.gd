@@ -1,6 +1,7 @@
 extends CharacterBody2D
 class_name PrototypePlayer
 
+signal navigation_requested(world_position: Vector2)
 signal destination_changed(world_position: Vector2)
 signal destination_reached(world_position: Vector2)
 signal destination_failed(world_position: Vector2)
@@ -10,6 +11,8 @@ signal destination_failed(world_position: Vector2)
 var target_position: Vector2
 var has_target := false
 var _stuck_time := 0.0
+var _navigation_path: PackedVector2Array = PackedVector2Array()
+var _path_index := 0
 
 func _ready() -> void:
 	target_position = global_position
@@ -28,10 +31,38 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-			target_position = get_global_mouse_position()
-			has_target = true
-			_stuck_time = 0.0
-			destination_changed.emit(target_position)
+			navigation_requested.emit(get_global_mouse_position())
+
+func set_navigation_path(path: PackedVector2Array, requested_target: Vector2) -> void:
+	target_position = requested_target
+	_navigation_path = path
+	_path_index = 0
+	_stuck_time = 0.0
+
+	if _navigation_path.is_empty():
+		has_target = false
+		velocity = Vector2.ZERO
+		destination_failed.emit(requested_target)
+		return
+
+	while _path_index < _navigation_path.size() and global_position.distance_to(_navigation_path[_path_index]) <= 10.0:
+		_path_index += 1
+
+	if _path_index >= _navigation_path.size():
+		has_target = false
+		velocity = Vector2.ZERO
+		destination_reached.emit(requested_target)
+		return
+
+	has_target = true
+	destination_changed.emit(requested_target)
+
+func cancel_navigation() -> void:
+	has_target = false
+	_navigation_path = PackedVector2Array()
+	_path_index = 0
+	_stuck_time = 0.0
+	velocity = Vector2.ZERO
 
 func _physics_process(delta: float) -> void:
 	var manual := Vector2(
@@ -40,18 +71,10 @@ func _physics_process(delta: float) -> void:
 	)
 
 	if manual.length() > 0.05:
-		has_target = false
-		_stuck_time = 0.0
+		cancel_navigation()
 		velocity = manual.normalized() * move_speed
 	elif has_target:
-		var offset := target_position - global_position
-		if offset.length() > 7.0:
-			velocity = offset.normalized() * move_speed
-		else:
-			has_target = false
-			_stuck_time = 0.0
-			velocity = Vector2.ZERO
-			destination_reached.emit(target_position)
+		_follow_navigation_path()
 	else:
 		velocity = Vector2.ZERO
 
@@ -62,13 +85,34 @@ func _physics_process(delta: float) -> void:
 		var moved := global_position.distance_to(before_move)
 		if moved < 0.35 and velocity.length() > 1.0:
 			_stuck_time += delta
-			if _stuck_time >= 0.45:
-				has_target = false
-				velocity = Vector2.ZERO
-				_stuck_time = 0.0
-				destination_failed.emit(target_position)
+			if _stuck_time >= 0.55:
+				var failed_target := target_position
+				cancel_navigation()
+				destination_failed.emit(failed_target)
 		else:
 			_stuck_time = 0.0
+
+func _follow_navigation_path() -> void:
+	if _path_index >= _navigation_path.size():
+		var reached_target := target_position
+		cancel_navigation()
+		destination_reached.emit(reached_target)
+		return
+
+	var waypoint := _navigation_path[_path_index]
+	var offset := waypoint - global_position
+
+	if offset.length() <= 8.0:
+		_path_index += 1
+		if _path_index >= _navigation_path.size():
+			var reached_target := target_position
+			cancel_navigation()
+			destination_reached.emit(reached_target)
+			return
+		waypoint = _navigation_path[_path_index]
+		offset = waypoint - global_position
+
+	velocity = offset.normalized() * move_speed
 
 func _draw() -> void:
 	# Temporary technical representation. Final sprite comes from the visual pipeline.
