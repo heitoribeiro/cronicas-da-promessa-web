@@ -1688,7 +1688,7 @@ function game() {
       const viewH = innerHeight / zoom;
       const cameraX = viewW >= 1800 ? 900 : Math.max(viewW / 2, Math.min(1800 - viewW / 2, state.x));
       const cameraY = viewH >= 1200 ? 600 : Math.max(viewH / 2, Math.min(1200 - viewH / 2, state.y));
-      world.style.transform = `translate(${innerWidth / 2}px,${innerHeight / 2}px) scale(${zoom}) translate(${-cameraX}px,${-cameraY}px)`;
+      world.style.transform = `translate3d(${innerWidth / 2}px,${innerHeight / 2}px,0) scale(${zoom}) translate3d(${-cameraX}px,${-cameraY}px,0)`;
       activeInteraction = getActiveInteraction();
     } else {
       player.style.left = indoorPos.x + 'px';
