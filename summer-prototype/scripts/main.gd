@@ -146,7 +146,7 @@ func _advance_game_clock(delta: float) -> void:
 
 func _format_game_time() -> String:
 	var total: int = int(floor(game_minutes))
-	var hours: int = int(total / 60)
+	var hours: int = int(float(total) / 60.0)
 	var minutes: int = total % 60
 	return "%02d:%02d" % [hours, minutes]
 
