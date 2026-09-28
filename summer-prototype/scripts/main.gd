@@ -13,6 +13,7 @@ var dialogue_title: Label
 var dialogue_text: Label
 var destination_marker: Node2D
 var navigation_debug_line: Line2D
+var npc_navigation_debug_line: Line2D
 var navigation_debug_label: Label
 var navigation_debug_visible := true
 var navigation_self_test_summary := "NAV: aguardando autoteste"
@@ -63,7 +64,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F3:
 			navigation_debug_visible = not navigation_debug_visible
 			if navigation_debug_line != null:
-				navigation_debug_line.visible = navigation_debug_visible
+				navigation_debug_line.visible = navigation_debug_visible and not navigation_debug_line.points.is_empty()
+			if npc_navigation_debug_line != null:
+				npc_navigation_debug_line.visible = navigation_debug_visible and not npc_navigation_debug_line.points.is_empty()
 			if navigation_debug_label != null:
 				navigation_debug_label.visible = navigation_debug_visible
 			get_viewport().set_input_as_handled()
@@ -233,9 +236,16 @@ func _create_navigation_debug_line() -> void:
 	navigation_debug_line = Line2D.new()
 	navigation_debug_line.width = 3.0
 	navigation_debug_line.default_color = Color("#58d6ff")
-	navigation_debug_line.visible = navigation_debug_visible
+	navigation_debug_line.visible = false
 	navigation_debug_line.z_index = 20
 	add_child(navigation_debug_line)
+
+	npc_navigation_debug_line = Line2D.new()
+	npc_navigation_debug_line.width = 2.0
+	npc_navigation_debug_line.default_color = Color("#ffb454")
+	npc_navigation_debug_line.visible = false
+	npc_navigation_debug_line.z_index = 19
+	add_child(npc_navigation_debug_line)
 
 func _on_navigation_path_updated(path: PackedVector2Array, _resolved_target: Vector2) -> void:
 	if navigation_debug_line == null:
@@ -243,12 +253,30 @@ func _on_navigation_path_updated(path: PackedVector2Array, _resolved_target: Vec
 	navigation_debug_line.points = path
 	navigation_debug_line.visible = navigation_debug_visible and not path.is_empty()
 
+func _on_hanan_navigation_requested(world_position: Vector2) -> void:
+	if hanan == null or not navigation_ready:
+		return
+
+	var result := _compute_navigation_path(hanan.global_position, world_position)
+	var path: PackedVector2Array = result["path"]
+	var resolved_target: Vector2 = result["resolved_target"]
+	hanan.set_navigation_path(path, resolved_target)
+
+func _on_hanan_navigation_path_updated(path: PackedVector2Array, _resolved_target: Vector2) -> void:
+	if npc_navigation_debug_line == null:
+		return
+	npc_navigation_debug_line.points = path
+	npc_navigation_debug_line.visible = navigation_debug_visible and not path.is_empty()
+
+func _on_hanan_patrol_point_reached(index: int, world_position: Vector2) -> void:
+	print("[NPCNAV] Hanan ponto ", index, " alcançado em ", world_position)
+
 func _build_ui() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
 
 	var instructions := Label.new()
-	instructions.text = "Clique para mover com pathfinding • WASD/setas • E interagir • F3 debug"
+	instructions.text = "Clique: pathfinding • WASD/setas • E interagir • F3 rotas jogador/NPC"
 	instructions.position = Vector2(24, 675)
 	instructions.add_theme_font_size_override("font_size", 14)
 	instructions.add_theme_color_override("font_color", Color.WHITE)
@@ -317,15 +345,16 @@ func _spawn_hanan() -> void:
 	hanan = NpcScript.new()
 	hanan.name = "Hanan"
 	hanan.npc_name = "Hanan"
-	hanan.global_position = Vector2(420, 390)
+	hanan.global_position = Vector2(465, 360)
+	hanan.navigation_requested.connect(_on_hanan_navigation_requested)
+	hanan.navigation_path_updated.connect(_on_hanan_navigation_path_updated)
+	hanan.patrol_point_reached.connect(_on_hanan_patrol_point_reached)
 	add_child(hanan)
 	hanan.set_patrol([
-		Vector2(420, 390),
-		Vector2(365, 390),
-		Vector2(350, 420),
-		Vector2(395, 435),
-		Vector2(455, 425),
-		Vector2(480, 390)
+		Vector2(465, 145),
+		Vector2(165, 145),
+		Vector2(165, 360),
+		Vector2(465, 360)
 	])
 
 	var label := Label.new()
