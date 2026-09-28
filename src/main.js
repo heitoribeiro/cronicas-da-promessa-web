@@ -230,12 +230,12 @@ function dialogue(title, text, button='Continuar') {
   if (!modal) return;
   const speaker = String(title || '').toLowerCase();
   let portrait = '';
-  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png?v=0.21';
-  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png?v=0.21';
-  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png?v=0.21';
-  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png?v=0.21';
+  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png?v=0.22';
+  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png?v=0.22';
+  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png?v=0.22';
+  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png?v=0.22';
   else if (speaker.includes('rebanho') || speaker.includes('criança')) portrait = './assets/art/npcs/herd_child.svg';
-  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png?v=0.21';
+  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png?v=0.22';
 
   modal.innerHTML = `
     <div class="dialogue-card pixel-dialogue-card">
@@ -254,7 +254,7 @@ function game() {
   if (!state.profile) return createCharacter();
   normalizeState();
   const playerSexSlug = state.profile.sex === 'Feminino' ? 'female' : 'male';
-  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png?v=0.21`;
+  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png?v=0.22`;
 
   app.innerHTML = `
     <main class="game">
@@ -327,12 +327,12 @@ function game() {
         <div class="work-site gatherer-site" data-job="Coletor" style="left:1490px;top:905px"><b>COLETA</b></div>
         <div class="work-site levite-site" data-job="Levita" style="left:815px;top:390px"><b>SERVIÇO</b></div>
 
-        <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png?v=0.21" alt="Ancião"><b>Ancião</b></div>
-        <div class="npc npc-eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.21" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png?v=0.22" alt="Ancião"><b>Ancião</b></div>
+        <div class="npc npc-eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.22" alt="Eliabe"><b>Eliabe</b></div>
         <div class="npc npc-child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg" alt="Criança do Rebanho"><b>Rebanho</b></div>
-        <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png?v=0.21" alt="Miriã"><b>Miriã</b></div>
-        <div class="npc npc-hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png?v=0.21" alt="Hanan"><b>Hanan</b></div>
-        <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png?v=0.21" alt="Guarda"><b>Guarda</b></div>
+        <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png?v=0.22" alt="Miriã"><b>Miriã</b></div>
+        <div class="npc npc-hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png?v=0.22" alt="Hanan"><b>Hanan</b></div>
+        <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png?v=0.22" alt="Guarda"><b>Guarda</b></div>
 
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
@@ -344,13 +344,13 @@ function game() {
 
       <div class="interior-map hidden" id="standardInterior">
         <img class="interior-bg" src="./assets/art/interiors/judah_standard_interior.svg" alt="Interior da Tenda do Estandarte">
-        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png?v=0.21" alt="Ancião"><b>Ancião</b></div>
+        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png?v=0.22" alt="Ancião"><b>Ancião</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
       <div class="interior-map hidden" id="workshopInterior">
         <img class="interior-bg" src="./assets/art/interiors/workshop_interior.svg" alt="Interior da Oficina">
-        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.21" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.22" alt="Eliabe"><b>Eliabe</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
