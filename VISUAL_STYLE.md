@@ -87,3 +87,28 @@ Foram integrados os sprites pixel art aprovados para personagens e NPCs, preserv
 - Hanan.
 
 Os personagens jogáveis agora utilizam o sprite sheet aprovado diretamente na animação de caminhada. Os NPCs e retratos de diálogo foram substituídos pelos novos PNGs pixel art. O personagem infantil permanece temporariamente no asset anterior até receber modelo próprio na mesma linguagem.
+
+
+## Aplicação — Fase 5
+
+### Normalização de personagens
+
+A escala dos NPCs foi revisada a partir das capturas reais da gameplay. Todos os humanoides adultos agora compartilham a mesma caixa lógica `64×88 px` e a mesma linha-base dos pés. Ajustes ópticos individuais compensam acessórios e margens internas dos PNGs sem alterar colisão ou coordenadas.
+
+- Ancião: correção leve de escala.
+- Eliabe: escala-base.
+- Miriã: ampliação óptica para igualar altura corporal.
+- Hanan: escala-base.
+- Guarda: redução óptica para que a lança não faça o personagem parecer maior que os demais.
+- Criança do Rebanho: permanece propositalmente menor.
+
+### Refinamento do mapa de Judá
+
+- praça central reduzida;
+- caminhos principais mais estreitos;
+- solo com variação sutil de textura mantendo a grade de 16 px;
+- novos agrupamentos ambientais de arbustos, rochas e suprimentos;
+- redução das áreas visualmente vazias, sobretudo nas bordas sul e direita;
+- setores permanecem legíveis, mas com marcação mais discreta.
+
+Os elementos adicionados nesta fase são decorativos e não modificam colisões, rotinas, missões ou navegação.
