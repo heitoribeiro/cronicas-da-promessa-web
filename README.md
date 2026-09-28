@@ -71,3 +71,19 @@ A arquitetura inicial é deliberadamente estática e compatível com GitHub Page
 - assets estáticos não usam mais `will-change` desnecessariamente
 - câmera usa `translate3d` para aproveitar melhor a composição do navegador
 - atualização da classe de iluminação ocorre somente quando muda o período do dia
+
+
+## Web Alpha 0.19
+- baú pessoal da tenda agora é um armazenamento funcional
+- recursos podem ser movidos entre Bolsa e Baú individualmente
+- Bolsa passa a ter capacidade de 16 unidades de carga
+- Baú possui capacidade de 80 unidades de carga
+- cada recurso possui custo de carga próprio
+- itens de missão não podem ser guardados no baú
+- ferramentas equipáveis permanecem fora do cálculo de carga nesta fase
+- HUD da bolsa mostra a carga atual e a capacidade máxima
+- o trabalho não pode ser concluído quando não houver espaço para receber a produção
+- o Armazém não entrega ração quando a bolsa estiver sem espaço
+- itens de missão obtidos no cenário respeitam a capacidade da bolsa
+- armazenamento é persistido no autosave e também nos saves exportados em JSON
+- saves anteriores são migrados automaticamente com baú vazio, sem perda de progresso
