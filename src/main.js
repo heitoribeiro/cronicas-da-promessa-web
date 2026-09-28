@@ -998,7 +998,8 @@ function game() {
     if (workDoneToday()) {
       return dialogue(cfg.label,'Seu trabalho desta jornada já foi concluído. Agora você pode cuidar de outras tarefas.');
     }
-    if (state.energy < cfg.energyCost) {
+    const workEnergyCost = Math.max(6,cfg.energyCost - (state.equippedTool === cfg.toolId ? 3 : 0));
+    if (state.energy < workEnergyCost) {
       return dialogue('Cansaço','Você está sem energia suficiente para continuar este trabalho. Coma algo ou descanse.');
     }
     if (!state.workProgress || state.workProgress.id !== cfg.id || state.workProgress.day !== state.day) {
@@ -1009,8 +1010,7 @@ function game() {
     }
 
     const stepIndex = state.workProgress.step;
-    const energyCost = Math.max(6,cfg.energyCost - (state.equippedTool === cfg.toolId ? 3 : 0));
-    state.energy = Math.max(0,state.energy - energyCost);
+    state.energy = Math.max(0,state.energy - workEnergyCost);
     state.hunger = Math.max(0,state.hunger - 5);
     state.time += 35;
     state.workProgress.step += 1;
