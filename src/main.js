@@ -320,6 +320,7 @@ function game() {
             <div class="map-place" style="left:74%;top:63%">Oficina</div>
             <div class="map-place" style="left:50%;top:69%">Poço</div>
             <div class="map-place" style="left:25%;top:66%">Curral</div>
+            <div class="map-place" style="left:21%;top:42%">Armazém</div>
             <div class="map-place" style="left:27%;top:47%">Cozinha</div>
             <div class="map-place" style="left:37%;top:84%">Sua tenda</div>
             <div class="map-quest hidden" id="mapQuest" aria-label="Destino da missão"></div>
@@ -450,7 +451,7 @@ function game() {
     const cfg = vocationConfig();
     if (state.questStep < QUESTS.length - 1) return '';
     if (isShabbat()) return 'Shabat • sem turno de trabalho. O dia é dedicado ao descanso e à vida comunitária.';
-    if (workDoneToday()) return `${cfg.label} concluído hoje.`;
+    if (workDoneToday()) return canTurnInWork() ? `${cfg.label} concluído hoje • produção pronta para o Armazém.` : `${cfg.label} concluído hoje.`;
     if (state.workProgress?.id === cfg.id && state.workProgress.day === state.day) {
       return `Trabalho: ${cfg.label} • etapa ${state.workProgress.step + 1}/3 — ${cfg.steps[state.workProgress.step]}`;
     }
@@ -924,6 +925,7 @@ function game() {
       return {x:npcAgents.hanan.x,y:npcAgents.hanan.y,label:'Ajude Hanan'};
     if (windowId === 'evening-herd' && !dailyDone(windowId) && !npcAgents.child.inside)
       return {x:npcAgents.child.x,y:npcAgents.child.y,label:'Ajude no rebanho'};
+    if (canTurnInWork()) return {x:380,y:505,label:'Entregue produção no Armazém'};
     return null;
   }
 
@@ -1061,6 +1063,7 @@ function game() {
     const id = timedWindowId();
     if (id === 'morning-water' && !dailyDone(id)) return 'Disponível até 10:00: Preparativos da manhã com Hanan.';
     if (id === 'evening-herd' && !dailyDone(id)) return 'Disponível até 20:00: Recolher o rebanho.';
+    if (canTurnInWork()) return 'Produção pronta: leve os recursos do seu turno ao Armazém de Judá para retirar uma ração.';
     return 'Rotina livre: alimente-se, explore e descanse antes da noite.';
   }
 
