@@ -1088,11 +1088,6 @@ function game() {
       if(npcEl){
         const match=Object.values(npcAgents).find(agent=>agent.el===npcEl);
         if(match && !match.inside){
-          const distance=Math.hypot(state.x-match.x,state.y-match.y);
-          if(distance<120){
-            activeInteraction=getActiveInteraction();
-            if(activeInteraction){ cancelClickMove(); interact(); return; }
-          }
           const vx=state.x-match.x, vy=state.y-match.y;
           const len=Math.hypot(vx,vy)||1;
           setClickDestination(match.x+(vx/len)*78,match.y+(vy/len)*78);
@@ -1252,9 +1247,11 @@ function game() {
     energyText.textContent = Math.round(state.energy);
     hungerText.textContent = Math.round(state.hunger);
     const meal = mealWindow();
-    $('#mealHint').textContent = meal
-      ? (canEatNow() ? `${meal.label} disponível na Cozinha, a oeste da fogueira.` : `${meal.label} já feita. Próxima refeição na Cozinha.`)
-      : 'Coma na Cozinha, a oeste da fogueira: 06:30, 12:00 ou 18:00.';
+    $('#mealHint').textContent = canEatNow()
+      ? `${meal.label} disponível na Cozinha.`
+      : state.hunger <= 42
+        ? 'Você está com fome. Próxima refeição na Cozinha: 06:30, 12:00 ou 18:00.'
+        : '';
     const warning = needWarning();
     document.querySelector('.needs-hud')?.classList.toggle('warning',Boolean(warning));
     dailyTaskEl.textContent = getDailyTaskText();
