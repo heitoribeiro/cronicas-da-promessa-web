@@ -338,3 +338,31 @@
  .work-site{width:92px;height:54px}
  .work-site b{font-size:8px}
 }
+
+
+/* Web Alpha 0.16 — bolsa, equipamento e armazém */
+.inventory-button{position:fixed;right:18px;bottom:126px;z-index:5000;padding:12px 16px;border:1px solid #cfa45d;border-radius:12px;background:#2d2014e8;color:#fff1cd;font:700 13px Georgia;cursor:pointer}
+.inventory-overlay{position:fixed;inset:0;z-index:8200;display:grid;place-items:center;padding:16px;background:#130e0be6}
+.inventory-panel{width:min(620px,96vw);max-height:84vh;overflow:auto;padding:20px;border:2px solid #d5ae6f;border-radius:16px;background:linear-gradient(145deg,#342319,#24170f);color:#f7e8bd;box-shadow:0 25px 80px #000b}
+.inventory-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.inventory-heading h2{margin:0;font-size:clamp(20px,3vw,29px)}
+.inventory-heading button,.inventory-use,.inventory-gear button{padding:9px 12px;border:1px solid #d5ae6f;border-radius:8px;background:#5e3a22;color:#fff1cd;font:700 11px Georgia;cursor:pointer}
+.inventory-note{margin:12px 0 16px;color:#d9c28d;font:13px/1.4 Georgia}
+.inventory-section{margin-top:13px;padding:13px;border:1px solid #9d75496b;border-radius:11px;background:#1d140ed1}
+.inventory-section h3{margin:0 0 10px;color:#e9c77f;font:700 14px Georgia;text-transform:uppercase;letter-spacing:.7px}
+.inventory-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;min-height:39px;padding:7px 8px;border-bottom:1px solid #8b684236;font:14px Georgia}
+.inventory-row:last-child{border-bottom:0}
+.inventory-row b{color:#f2d692}
+.inventory-use{padding:6px 10px;font-size:10px}
+.inventory-empty{padding:8px;color:#cbb891;font:13px/1.4 Georgia}
+.inventory-gear{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px}
+.inventory-gear span{display:grid;gap:4px}.inventory-gear small{color:#c6b28b;font:11px/1.35 Georgia}
+.inventory-foot{margin-top:12px;text-align:right;color:#a99570;font:11px Georgia}
+.hidden.inventory-overlay{display:none}
+@media(max-width:700px){
+ .inventory-button{right:8px;bottom:116px;padding:11px 10px}
+ .inventory-panel{padding:13px;max-height:88vh}
+ .inventory-note{font-size:11px}
+ .inventory-row{font-size:12px}
+ .inventory-gear{align-items:flex-start;flex-direction:column}
+}
