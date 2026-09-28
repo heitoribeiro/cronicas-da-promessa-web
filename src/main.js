@@ -1037,7 +1037,7 @@ function game() {
   }
 
   function handleScenePointer(event) {
-    if(event.button!==0 || isTouch()) return;
+    if(event.button!==0 || event.pointerType==='touch') return;
     if(!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
     const container=currentScene==='outdoor' ? world : currentScene==='standard' ? standardInterior : currentScene==='workshop' ? workshopInterior : playerInterior;
     if(event.currentTarget!==container) return;
