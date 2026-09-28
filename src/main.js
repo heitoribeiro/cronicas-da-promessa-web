@@ -18,6 +18,19 @@ const QUESTS = [
   { id:'complete', label:'Missão concluída: você conheceu o Acampamento de Judá.' }
 ];
 
+const QUEST_BOOK = {
+  main: {
+    id:'judah-arrival',
+    title:'Conhecendo o Acampamento de Judá',
+    type:'Principal',
+    description:'Conheça os pontos essenciais do setor de Judá e apresente-se ao Ancião.'
+  },
+  daily: {
+    'morning-water': {title:'Preparativos da manhã',type:'Rotina',description:'Ajude Hanan com a água necessária para a cozinha.'},
+    'evening-herd': {title:'Recolher o rebanho',type:'Rotina',description:'Ajude a conferir a entrada e recolher os animais antes da noite.'}
+  }
+};
+
 let state = {
   profile: null,
   x: 900,
@@ -98,7 +111,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.17</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.18</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -120,7 +133,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.17 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.18 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -294,15 +307,26 @@ function game() {
       <div class="daylight" id="daylight"></div>
 
       <div class="status-stack">
-        <div class="hud">
-          <b>${state.profile.name}</b><span class="hud-role">Tribo de ${state.profile.tribe} • ${state.profile.vocation}</span>
-          <small>Dia ${state.day} • <span id="calendarDay"></span> • <span id="clock"></span> • <span id="dayPhase"></span> • Rep. <span id="rep">${state.reputation}</span></small>
-        </div>
-        <div class="inventory-mini" id="inventoryMini"></div>
-        <div class="needs-hud" id="needsHud">
-          <span>Energia <i class="need-bar"><b id="energyBar"></b></i><em id="energyText"></em></span>
-          <span>Fome <i class="need-bar"><b id="hungerBar"></b></i><em id="hungerText"></em></span>
-        </div>
+        <section class="character-window">
+          <div class="character-titlebar"><span>INFORMAÇÕES DO PERSONAGEM</span><i></i></div>
+          <div class="character-core">
+            <div class="character-portrait"><img src="${playerAsset}" alt=""></div>
+            <div class="character-identity">
+              <b>${state.profile.name}</b>
+              <span>Tribo de ${state.profile.tribe}</span>
+              <small>${state.profile.vocation}</small>
+            </div>
+            <div class="character-rep">REP <b id="rep">${state.reputation}</b></div>
+          </div>
+          <div class="character-clock">
+            <span>Dia ${state.day}</span><span id="calendarDay"></span><span id="clock"></span><span id="dayPhase"></span>
+          </div>
+          <div class="needs-hud" id="needsHud">
+            <span><strong>ENERGIA</strong><i class="need-bar"><b id="energyBar"></b></i><em id="energyText"></em></span>
+            <span><strong>FOME</strong><i class="need-bar"><b id="hungerBar"></b></i><em id="hungerText"></em></span>
+          </div>
+          <div class="inventory-mini" id="inventoryMini"></div>
+        </section>
         <div class="meal-hint" id="mealHint"></div>
       </div>
       <div class="task-stack">
@@ -310,8 +334,9 @@ function game() {
         <div class="daily-task" id="dailyTask"></div>
         <div class="vocation-task" id="vocationTask"></div>
       </div>
-      <div class="prompt hidden" id="prompt"></div>
+      <button type="button" class="prompt hidden" id="prompt"></button>
       <div class="quick-actions">
+        <button class="journal-button" id="journalButton" aria-label="Abrir diário de quests" title="Diário de quests (J)">DIÁRIO <span id="journalCount"></span></button>
         <button class="inventory-button" id="inventoryButton" aria-label="Abrir bolsa" title="Bolsa (I)">BOLSA</button>
         <button class="map-button" id="mapButton" aria-label="Abrir mapa do acampamento" title="Mapa (M)">MAPA</button>
         <button class="game-menu" id="gameMenu" aria-label="Abrir menu do jogo" title="Menu (Esc)">☰</button>
@@ -344,6 +369,20 @@ function game() {
         </div>
       </div>
 
+      <div class="journal-overlay hidden" id="journalOverlay" role="dialog" aria-modal="true" aria-label="Diário de quests">
+        <div class="journal-panel">
+          <div class="journal-heading">
+            <div><small>REGISTRO DE JORNADA</small><h2>Diário de Quests</h2></div>
+            <button id="closeJournal">Fechar ×</button>
+          </div>
+          <div class="journal-tabs" role="tablist">
+            <button class="active" data-journal-tab="active">EM ANDAMENTO <b id="activeQuestCount">0</b></button>
+            <button data-journal-tab="completed">CONCLUÍDAS <b id="completedQuestCount">0</b></button>
+          </div>
+          <div class="journal-list" id="journalList"></div>
+        </div>
+      </div>
+
       <div class="game-menu-overlay hidden" id="gameMenuOverlay" role="dialog" aria-modal="true" aria-label="Menu do jogo">
         <div class="game-menu-panel">
           <div class="game-menu-heading"><div><small>CRÔNICAS DA PROMESSA</small><h2>Menu do jogo</h2></div><button id="closeGameMenu">Fechar ×</button></div>
@@ -366,7 +405,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.17</div>
+      <div class="badge">Web Alpha 0.18</div>
     </main>`;
 
   const world = $('#world');
@@ -396,6 +435,10 @@ function game() {
   const inventoryOverlay = $('#inventoryOverlay');
   const inventoryButton = $('#inventoryButton');
   const inventoryContent = $('#inventoryContent');
+  const journalOverlay = $('#journalOverlay');
+  const journalButton = $('#journalButton');
+  const journalCount = $('#journalCount');
+  const journalList = $('#journalList');
   const gameMenuOverlay = $('#gameMenuOverlay');
   const saveStatusText = $('#saveStatusText');
   const saveFileInput = $('#saveFileInput');
@@ -486,13 +529,11 @@ function game() {
   function vocationTaskText() {
     const cfg = vocationConfig();
     if (state.questStep < QUESTS.length - 1) return '';
-    if (isShabbat()) return 'Shabat • sem turno de trabalho. O dia é dedicado ao descanso e à vida comunitária.';
-    if (workDoneToday()) return canTurnInWork() ? `${cfg.label} concluído hoje • produção pronta para o Armazém.` : `${cfg.label} concluído hoje.`;
+    if (workDoneToday()) return canTurnInWork() ? 'Produção pronta: entregue seus recursos no Armazém de Judá.' : '';
     if (state.workProgress?.id === cfg.id && state.workProgress.day === state.day) {
       return `Trabalho: ${cfg.label} • etapa ${state.workProgress.step + 1}/3 — ${cfg.steps[state.workProgress.step]}`;
     }
-    if (workWindowOpen()) return `Turno disponível até 16:30: ${cfg.label}.`;
-    return `Próximo turno de ${cfg.label}: 08:30–16:30.`;
+    return '';
   }
 
   function mealWindow() {
@@ -1038,9 +1079,28 @@ function game() {
 
   function handleScenePointer(event) {
     if(event.button!==0 || event.pointerType==='touch') return;
-    if(!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
+    if(!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
     const container=currentScene==='outdoor' ? world : currentScene==='standard' ? standardInterior : currentScene==='workshop' ? workshopInterior : playerInterior;
     if(event.currentTarget!==container) return;
+
+    if(currentScene==='outdoor'){
+      const npcEl=event.target.closest?.('.npc');
+      if(npcEl){
+        const match=Object.values(npcAgents).find(agent=>agent.el===npcEl);
+        if(match && !match.inside){
+          const distance=Math.hypot(state.x-match.x,state.y-match.y);
+          if(distance<120){
+            activeInteraction=getActiveInteraction();
+            if(activeInteraction){ cancelClickMove(); interact(); return; }
+          }
+          const vx=state.x-match.x, vy=state.y-match.y;
+          const len=Math.hypot(vx,vy)||1;
+          setClickDestination(match.x+(vx/len)*78,match.y+(vy/len)*78);
+          return;
+        }
+      }
+    }
+
     const p=scenePointerPosition(container,event);
     setClickDestination(p.x,p.y);
   }
@@ -1089,6 +1149,99 @@ function game() {
     return null;
   }
 
+  function journalData() {
+    const active = [];
+    const completed = [];
+    if (state.questStep < QUESTS.length - 1) {
+      active.push({
+        id:QUEST_BOOK.main.id,
+        type:QUEST_BOOK.main.type,
+        title:QUEST_BOOK.main.title,
+        description:QUEST_BOOK.main.description,
+        objective:QUESTS[state.questStep]?.label || ''
+      });
+    } else {
+      completed.push({
+        id:QUEST_BOOK.main.id,
+        type:QUEST_BOOK.main.type,
+        title:QUEST_BOOK.main.title,
+        description:'Você conheceu os principais pontos de Judá e apresentou-se ao Ancião.',
+        meta:'Jornada principal concluída'
+      });
+    }
+
+    if (state.dailyTask?.id && QUEST_BOOK.daily[state.dailyTask.id]) {
+      const def=QUEST_BOOK.daily[state.dailyTask.id];
+      active.push({
+        id:`${state.day}:${state.dailyTask.id}`,
+        type:def.type,
+        title:def.title,
+        description:def.description,
+        objective:getDailyTaskText()
+      });
+    }
+
+    Object.entries(state.dailyCompleted)
+      .filter(([,done])=>Boolean(done))
+      .forEach(([key])=>{
+        const split=key.indexOf(':');
+        const day=Number(key.slice(0,split));
+        const id=key.slice(split+1);
+        const def=QUEST_BOOK.daily[id];
+        if(!def) return;
+        completed.push({
+          id:key,
+          type:def.type,
+          title:def.title,
+          description:def.description,
+          meta:`Concluída no Dia ${day}`
+        });
+      });
+
+    completed.sort((a,b)=>{
+      const da=Number((a.meta||'').match(/\d+/)?.[0]||0);
+      const db=Number((b.meta||'').match(/\d+/)?.[0]||0);
+      return db-da;
+    });
+    return {active,completed};
+  }
+
+  let journalTab='active';
+
+  function renderJournal() {
+    const data=journalData();
+    $('#activeQuestCount').textContent=data.active.length;
+    $('#completedQuestCount').textContent=data.completed.length;
+    if (journalCount) journalCount.textContent=data.active.length ? data.active.length : '';
+    document.querySelectorAll('[data-journal-tab]').forEach(btn=>btn.classList.toggle('active',btn.dataset.journalTab===journalTab));
+    const list=data[journalTab];
+    journalList.innerHTML=list.length ? list.map(item=>`
+      <article class="journal-entry ${journalTab==='completed' ? 'completed' : ''}">
+        <div class="journal-entry-top"><span>${item.type}</span>${journalTab==='completed' ? '<b>✓ CONCLUÍDA</b>' : '<b>● EM ANDAMENTO</b>'}</div>
+        <h3>${item.title}</h3>
+        <p>${item.description}</p>
+        ${item.objective ? `<div class="journal-objective"><small>OBJETIVO ATUAL</small>${item.objective}</div>` : ''}
+        ${item.meta ? `<div class="journal-meta">${item.meta}</div>` : ''}
+      </article>
+    `).join('') : `<div class="journal-empty">${journalTab==='active' ? 'Nenhuma quest em andamento.' : 'Nenhuma quest concluída ainda.'}</div>`;
+  }
+
+  function toggleJournal(force) {
+    const open=force ?? journalOverlay.classList.contains('hidden');
+    journalOverlay.classList.toggle('hidden',!open);
+    if(open){
+      mapOverlay.classList.add('hidden');
+      inventoryOverlay.classList.add('hidden');
+      gameMenuOverlay.classList.add('hidden');
+      cancelClickMove();
+      renderJournal();
+    } else keys.clear();
+  }
+
+  function dataSafeJournal() {
+    try { return journalData(); } catch { return {active:[],completed:[]}; }
+  }
+
   function refreshHud() {
     const quest = QUESTS[Math.min(state.questStep, QUESTS.length - 1)];
     objective.textContent = questGuidance();
@@ -1106,6 +1259,8 @@ function game() {
     document.querySelector('.needs-hud')?.classList.toggle('warning',Boolean(warning));
     dailyTaskEl.textContent = getDailyTaskText();
     vocationTaskEl.textContent = vocationTaskText();
+    const journal=dataSafeJournal();
+    if (journalCount) journalCount.textContent=journal.active.length ? journal.active.length : '';
     const items = [];
     if (state.inventory.lenha) items.push(`Lenha ×${state.inventory.lenha}`);
     if (state.inventory.agua) items.push(`Água ×${state.inventory.agua}`);
@@ -1220,11 +1375,7 @@ function game() {
         return state.dailyTask.step === 0 ? 'Rotina: confira a entrada antes de recolher o rebanho.' : 'Rotina: volte à Criança do Rebanho.';
       }
     }
-    const id = timedWindowId();
-    if (id === 'morning-water' && !dailyDone(id)) return 'Disponível até 10:00: Preparativos da manhã com Hanan.';
-    if (id === 'evening-herd' && !dailyDone(id)) return 'Disponível até 20:00: Recolher o rebanho.';
-    if (canTurnInWork()) return 'Produção pronta: leve os recursos do seu turno ao Armazém de Judá para retirar uma ração.';
-    return 'Rotina livre: alimente-se, explore e descanse antes da noite.';
+    return '';
   }
 
   function completeDailyTask(id,reward) {
@@ -1451,6 +1602,7 @@ function game() {
     if(open){
       mapOverlay.classList.add('hidden');
       inventoryOverlay.classList.add('hidden');
+      journalOverlay.classList.add('hidden');
       cancelClickMove();
       save();
       refreshSaveStatus();
@@ -1458,7 +1610,7 @@ function game() {
   }
 
   function interact() {
-    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
+    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
     activeInteraction?.run?.();
   }
 
@@ -1511,7 +1663,7 @@ function game() {
     }
     prompt.classList.toggle('hidden', !activeInteraction);
     actionButton.classList.toggle('hidden', !activeInteraction || !isTouch());
-    if (activeInteraction) prompt.textContent = isTouch() ? `AÇÃO — ${activeInteraction.action}` : `E — ${activeInteraction.action}`;
+    if (activeInteraction) prompt.textContent = isTouch() ? `AÇÃO — ${activeInteraction.action}` : `CLIQUE / E — ${activeInteraction.action}`;
 
     const h = Math.floor(state.time / 60) % 24;
     const m = Math.floor(state.time % 60);
@@ -1521,12 +1673,20 @@ function game() {
   function onKeyDown(event) {
     const key=event.key.toLowerCase();
     if (['w','a','s','d','arrowleft','arrowright','arrowup','arrowdown'].includes(key)) cancelClickMove();
+    if (key === 'j' && !event.repeat) {
+      if ($('#dialogue').classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleJournal();
+      return;
+    }
     if (key === 'i' && !event.repeat) {
-      if ($('#dialogue').classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleInventory();
+      if ($('#dialogue').classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden') && journalOverlay.classList.contains('hidden')) toggleInventory();
       return;
     }
     if (key === 'm' && !event.repeat) {
-      if ($('#dialogue').classList.contains('hidden') && inventoryOverlay.classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleMap();
+      if ($('#dialogue').classList.contains('hidden') && inventoryOverlay.classList.contains('hidden') && journalOverlay.classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleMap();
+      return;
+    }
+    if (!journalOverlay.classList.contains('hidden')) {
+      if (event.key === 'Escape') toggleJournal(false);
       return;
     }
     if (!gameMenuOverlay.classList.contains('hidden')) {
@@ -1554,6 +1714,13 @@ function game() {
   addEventListener('keydown', onKeyDown);
   addEventListener('keyup', onKeyUp);
   actionButton.addEventListener('click', interact);
+  prompt.addEventListener('click', interact);
+  journalButton.addEventListener('click', () => toggleJournal());
+  $('#closeJournal').addEventListener('click', () => toggleJournal(false));
+  document.querySelectorAll('[data-journal-tab]').forEach(button=>button.addEventListener('click',()=>{
+    journalTab=button.dataset.journalTab;
+    renderJournal();
+  }));
   inventoryButton.addEventListener('click', () => toggleInventory());
   $('#closeInventory').addEventListener('click', () => toggleInventory(false));
   mapButton.addEventListener('click', () => toggleMap());
@@ -1624,7 +1791,7 @@ function game() {
       return;
     }
     const dt = Math.min((now-last)/16.67,2); last = now;
-    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden');
+    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden');
     let dx=0,dy=0;
     if (!dialogOpen) {
       if (keys.has('a')||keys.has('arrowleft')) dx--;
