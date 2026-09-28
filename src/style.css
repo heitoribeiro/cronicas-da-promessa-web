@@ -1017,3 +1017,30 @@ img{user-select:none;-webkit-user-drag:none}
   .mini-map-brand{display:none}
   .hotbar-slot:nth-child(n+5){display:none}
 }
+
+
+/* Web Alpha 0.21 — categorias e progressão mecânica */
+.inventory-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px}
+.inventory-section-heading h3{margin:0!important}
+.inventory-section-heading>span{display:inline-grid;place-items:center;min-width:24px;height:20px;padding:0 6px;border:1px solid #d4a72f;border-radius:3px;background:#101821;color:#f2c84b;font:700 9px/1 monospace}
+.inventory-category .inventory-row{grid-template-columns:minmax(0,1fr) auto auto}
+.inventory-category .inventory-row>span b{color:#f1d693;font:700 12px Georgia}
+.inventory-category .inventory-row>span small{max-width:430px;white-space:normal;line-height:1.3;color:#9fa59a}
+.inventory-category .inventory-row>strong{color:#f4c841;font:700 12px monospace}
+.equipment-section{border-left:3px solid #d4a72f}
+.vocation-progress-card{border-left:3px solid #2d9bc5;background:linear-gradient(145deg,#0b141cde,#111a20e8)!important}
+.vocation-progress-main{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 3px 8px}
+.vocation-progress-main>div{display:grid;gap:3px}.vocation-progress-main b{color:#f0d18b;font:700 13px Georgia}.vocation-progress-main small{color:#9ba9ad;font:9px Arial}
+.vocation-progress-main>strong{color:#6fc7e7;font:700 11px monospace;white-space:nowrap}
+.vocation-xp-bar{height:10px;margin:0 3px 10px;overflow:hidden;border:1px solid #576872;border-radius:2px;background:#071017;box-shadow:inset 0 1px 4px #0009}
+.vocation-xp-bar i{display:block;height:100%;background:linear-gradient(90deg,#2383aa,#59bee1);box-shadow:inset 0 1px #bdefff55;transition:width .25s ease}
+.vocation-benefits{display:grid;grid-template-columns:1fr 1fr;gap:5px 8px;padding:8px;border:1px solid #334752;border-radius:4px;background:#081118a8}
+.vocation-benefits span{position:relative;padding-left:14px;color:#66747a;font:9px/1.3 Arial}
+.vocation-benefits span:before{content:"□";position:absolute;left:0;color:#596970}
+.vocation-benefits span.unlocked{color:#b8d5b0}.vocation-benefits span.unlocked:before{content:"■";color:#78b66b}
+.vocation-active-bonus{display:block;margin-top:8px;color:#8fa8b1;font:9px/1.35 Arial}
+@media(max-width:700px){
+  .inventory-category .inventory-row>span small{font-size:8px}
+  .vocation-benefits{grid-template-columns:1fr}
+  .vocation-progress-main{align-items:flex-start}
+}
