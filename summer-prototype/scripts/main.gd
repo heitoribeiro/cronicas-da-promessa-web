@@ -145,9 +145,9 @@ func _advance_game_clock(delta: float) -> void:
 	game_minutes = fmod(game_minutes + delta * GAME_MINUTES_PER_REAL_SECOND, 1440.0)
 
 func _format_game_time() -> String:
-	var total := int(floor(game_minutes))
-	var hours := total / 60
-	var minutes := total % 60
+	var total: int = int(floor(game_minutes))
+	var hours: int = int(total / 60)
+	var minutes: int = total % 60
 	return "%02d:%02d" % [hours, minutes]
 
 func _get_hanan_routine_id(total_minutes: int) -> String:
@@ -226,7 +226,9 @@ func _run_routine_self_tests() -> void:
 	]
 	var passed := 0
 	for test_case in cases:
-		if _get_hanan_routine_id(test_case["minutes"]) == test_case["expected"]:
+		var test_minutes: int = int(test_case["minutes"])
+		var expected: String = String(test_case["expected"])
+		if _get_hanan_routine_id(test_minutes) == expected:
 			passed += 1
 	routine_self_test_summary = "ROTINA %d/%d" % [passed, cases.size()]
 	print("[ROUTINETEST] ", routine_self_test_summary)
