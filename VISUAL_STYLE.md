@@ -63,3 +63,27 @@ A terceira etapa substitui os principais assets vetoriais de aparência suave po
 - Pilhas de suprimentos.
 
 Os novos SVGs usam `shape-rendering="crispEdges"`, formas geométricas em grade e ausência de gradientes/blur, reduzindo a aparência de paper art. A mecânica, posições, colisões e dimensões do mapa permanecem inalteradas.
+
+
+## Aplicação — Fase 4
+
+Foram integrados os sprites pixel art aprovados para personagens e NPCs, preservando a proporção definida pelo mockup oficial.
+
+### Grade de personagem
+- frame lógico: **64 × 88 px**;
+- sheet jogável: **128 × 352 px**;
+- 2 frames por direção;
+- ordem das direções: frente, esquerda, direita e costas;
+- renderização por nearest/pixelated;
+- proporção de gameplay calibrada para o viewport 1280 × 720.
+
+### Assets integrados
+- personagem masculino;
+- personagem feminino;
+- Ancião;
+- Guarda;
+- Miriã;
+- Eliabe;
+- Hanan.
+
+Os personagens jogáveis agora utilizam o sprite sheet aprovado diretamente na animação de caminhada. Os NPCs e retratos de diálogo foram substituídos pelos novos PNGs pixel art. O personagem infantil permanece temporariamente no asset anterior até receber modelo próprio na mesma linguagem.
