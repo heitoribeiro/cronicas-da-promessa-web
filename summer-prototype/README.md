@@ -149,3 +149,22 @@ Validação:
 - logs `[ACTIVITY]` registram mudanças de comportamento
 - o HUD mostra rotina + estado ativo
 - o diálogo de Hanan também exibe o estado atual
+
+
+## Ações concretas de rotina
+
+Os estados de comportamento agora produzem ações temporizadas quando o NPC alcança um ponto da agenda.
+
+- `work`: executa uma ação de trabalho a cada ponto
+- `travel`: faz apenas uma pausa mínima de transição
+- `socialize`: permanece mais tempo socializando em cada ponto
+- `rest`: ao chegar ao destino único, executa a entrada em repouso e permanece assentado no local lógico
+- `meal` e `wait`: já possuem suporte genérico para próximas rotinas
+
+Logs:
+- `[ACTION] <NPC> iniciou ...`
+- `[ACTION] <NPC> concluiu ...`
+
+O diálogo pausa o contador da ação de Hanan e a ação continua normalmente quando a conversa termina.
+
+O HUD de rotinas foi compactado em três linhas para evitar corte na lateral direita.
