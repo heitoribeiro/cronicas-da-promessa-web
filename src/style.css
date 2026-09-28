@@ -1297,3 +1297,52 @@ img{user-select:none;-webkit-user-drag:none}
   .npc-child img{width:44px!important;height:61px!important}
   .npc-child b{top:54px!important}
 }
+
+
+/* === PIXEL RPG VISUAL PHASE 6 — CHILD / ANIMALS / INTERIORS === */
+
+.animal-sprite{
+  width:64px!important;
+  height:auto!important;
+  image-rendering:pixelated!important;
+  image-rendering:crisp-edges!important;
+  filter:drop-shadow(0 4px 1px #28190f66)!important;
+}
+.animal-sprite.face-left{transform:scaleX(-1)!important}
+.animal-sprite.animal-walking{animation:herdPixelStep .34s steps(2,end) infinite alternate!important}
+@keyframes herdPixelStep{from{translate:0 0}to{translate:0 -2px}}
+
+.interior-map{
+  background:#a77843!important;
+  box-shadow:inset 0 0 0 4px #3f2819,inset 0 0 70px #21160d45!important;
+}
+.interior-bg{
+  image-rendering:pixelated!important;
+  image-rendering:crisp-edges!important;
+  filter:saturate(1.08) contrast(1.04)!important;
+}
+.interior-npc{
+  width:64px!important;
+  height:88px!important;
+  filter:drop-shadow(0 5px 1px #24160e77)!important;
+}
+.interior-npc img{
+  width:64px!important;
+  height:88px!important;
+  object-fit:contain!important;
+}
+.interior-npc b{
+  top:78px!important;
+  padding:2px 5px!important;
+  border-radius:2px!important;
+  font-size:9px!important;
+}
+.elder-interior{left:468px!important;top:274px!important}
+.eliabe-interior{left:618px!important;top:352px!important}
+.interior-marker{
+  border-radius:2px!important;
+  background:#071019e8!important;
+  border:1px solid #d0a35a!important;
+  color:#f3d778!important;
+  box-shadow:0 3px 0 #0007!important;
+}
