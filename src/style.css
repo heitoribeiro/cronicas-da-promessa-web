@@ -497,3 +497,5 @@
  .journal-tabs button{padding:10px 4px 8px;font-size:9px}.journal-list{padding:11px}.journal-entry{padding:11px}.journal-entry h3{font-size:15px}.journal-entry p,.journal-objective{font-size:10px}
  .prompt{font-size:11px;max-width:74vw;white-space:normal}
 }
+
+.status-stack>.meal-hint:empty{display:none!important}
