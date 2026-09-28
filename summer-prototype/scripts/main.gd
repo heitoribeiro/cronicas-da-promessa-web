@@ -219,6 +219,28 @@ func _npc_route_for(npc_name: String, routine_id: String) -> Array[Vector2]:
 					return [Vector2(1040, 150)]
 	return [Vector2(640, 600)]
 
+func _routine_short_name(npc_name: String, routine_id: String) -> String:
+	match npc_name:
+		"Hanan":
+			match routine_id:
+				"cozinha_manha": return "Cozinha"
+				"servico_tarde": return "Centro"
+				"preparar_noite": return "Entardecer"
+				_: return "Repouso"
+		"Eliabe":
+			match routine_id:
+				"oficina_manha": return "Oficina"
+				"coleta_tarde": return "Coleta"
+				"fogueira_entardecer": return "Fogueira"
+				_: return "Repouso"
+		"Miriã":
+			match routine_id:
+				"tendas_manha": return "Tendas"
+				"agua_tarde": return "Água"
+				"fogueira_entardecer": return "Fogueira"
+				_: return "Repouso"
+	return routine_id
+
 func _npc_routine_display_name(npc_name: String, routine_id: String) -> String:
 	match npc_name:
 		"Hanan":
@@ -289,6 +311,7 @@ func _npc_pause_for(activity_id: String) -> float:
 		"socialize": return 1.8
 		"meal": return 3.0
 		"wait": return 2.0
+		"travel": return 0.15
 		_: return 0.8
 
 func _apply_all_npc_routines(force: bool) -> void:
@@ -321,10 +344,10 @@ func _update_clock_ui() -> void:
 		var h_activity: String = String(current_npc_activities.get("Hanan", "wait"))
 		var e_activity: String = String(current_npc_activities.get("Eliabe", "wait"))
 		var m_activity: String = String(current_npc_activities.get("Miriã", "wait"))
-		routine_label.text = "%s [%s] | %s [%s] | %s [%s]" % [
-			_npc_routine_display_name("Hanan", h_id), _activity_display_name(h_activity),
-			_npc_routine_display_name("Eliabe", e_id), _activity_display_name(e_activity),
-			_npc_routine_display_name("Miriã", m_id), _activity_display_name(m_activity)
+		routine_label.text = "Hanan • %s • %s\nEliabe • %s • %s\nMiriã • %s • %s" % [
+			_routine_short_name("Hanan", h_id), _activity_display_name(h_activity),
+			_routine_short_name("Eliabe", e_id), _activity_display_name(e_activity),
+			_routine_short_name("Miriã", m_id), _activity_display_name(m_activity)
 		]
 
 func _run_routine_self_tests() -> void:
@@ -527,6 +550,12 @@ func _on_hanan_routine_changed(routine_id: String) -> void:
 func _on_hanan_activity_changed(activity_id: String) -> void:
 	print("[ACTIVITY] Hanan estado: ", activity_id)
 
+func _on_hanan_action_started(activity_id: String, routine_id: String, world_position: Vector2) -> void:
+	print("[ACTION] Hanan iniciou ", activity_id, " / ", routine_id, " em ", world_position)
+
+func _on_hanan_action_completed(activity_id: String, routine_id: String, world_position: Vector2) -> void:
+	print("[ACTION] Hanan concluiu ", activity_id, " / ", routine_id, " em ", world_position)
+
 func _build_ui() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
@@ -545,8 +574,10 @@ func _build_ui() -> void:
 	canvas.add_child(clock_label)
 
 	routine_label = Label.new()
-	routine_label.position = Vector2(930, 46)
-	routine_label.add_theme_font_size_override("font_size", 13)
+	routine_label.position = Vector2(865, 46)
+	routine_label.size = Vector2(385, 70)
+	routine_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	routine_label.add_theme_font_size_override("font_size", 12)
 	routine_label.add_theme_color_override("font_color", Color("#f0c97a"))
 	canvas.add_child(routine_label)
 
@@ -619,6 +650,8 @@ func _spawn_hanan() -> void:
 	hanan.patrol_point_reached.connect(_on_hanan_patrol_point_reached)
 	hanan.routine_changed.connect(_on_hanan_routine_changed)
 	hanan.activity_changed.connect(_on_hanan_activity_changed)
+	hanan.action_started.connect(_on_hanan_action_started)
+	hanan.action_completed.connect(_on_hanan_action_completed)
 	add_child(hanan)
 	registered_npcs["Hanan"] = hanan
 
@@ -641,6 +674,8 @@ func _spawn_scheduled_npc(npc_name: String, start_position: Vector2) -> Prototyp
 	npc.patrol_point_reached.connect(_on_registered_npc_patrol_point_reached.bind(npc_name))
 	npc.routine_changed.connect(_on_registered_npc_routine_changed.bind(npc_name))
 	npc.activity_changed.connect(_on_registered_npc_activity_changed.bind(npc_name))
+	npc.action_started.connect(_on_registered_npc_action_started.bind(npc_name))
+	npc.action_completed.connect(_on_registered_npc_action_completed.bind(npc_name))
 	add_child(npc)
 	registered_npcs[npc_name] = npc
 
@@ -668,6 +703,12 @@ func _on_registered_npc_routine_changed(routine_id: String, npc_name: String) ->
 
 func _on_registered_npc_activity_changed(activity_id: String, npc_name: String) -> void:
 	print("[ACTIVITY] ", npc_name, " estado: ", activity_id)
+
+func _on_registered_npc_action_started(activity_id: String, routine_id: String, world_position: Vector2, npc_name: String) -> void:
+	print("[ACTION] ", npc_name, " iniciou ", activity_id, " / ", routine_id, " em ", world_position)
+
+func _on_registered_npc_action_completed(activity_id: String, routine_id: String, world_position: Vector2, npc_name: String) -> void:
+	print("[ACTION] ", npc_name, " concluiu ", activity_id, " / ", routine_id, " em ", world_position)
 
 func _create_destination_marker() -> void:
 	destination_marker = Node2D.new()
