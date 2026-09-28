@@ -2,6 +2,7 @@ extends CharacterBody2D
 class_name PrototypePlayer
 
 signal navigation_requested(world_position: Vector2)
+signal navigation_path_updated(path: PackedVector2Array, resolved_target: Vector2)
 signal destination_changed(world_position: Vector2)
 signal destination_reached(world_position: Vector2)
 signal destination_failed(world_position: Vector2)
@@ -42,6 +43,7 @@ func set_navigation_path(path: PackedVector2Array, requested_target: Vector2) ->
 	if _navigation_path.is_empty():
 		has_target = false
 		velocity = Vector2.ZERO
+		navigation_path_updated.emit(PackedVector2Array(), requested_target)
 		destination_failed.emit(requested_target)
 		return
 
@@ -55,11 +57,13 @@ func set_navigation_path(path: PackedVector2Array, requested_target: Vector2) ->
 		return
 
 	has_target = true
+	navigation_path_updated.emit(_navigation_path, requested_target)
 	destination_changed.emit(requested_target)
 
 func cancel_navigation() -> void:
 	has_target = false
 	_navigation_path = PackedVector2Array()
+	navigation_path_updated.emit(PackedVector2Array(), target_position)
 	_path_index = 0
 	_stuck_time = 0.0
 	velocity = Vector2.ZERO
