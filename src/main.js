@@ -138,7 +138,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.21</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.22</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -172,7 +172,7 @@ function menu() {
           <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle pixel-version">Web Alpha 0.21 • Direção visual Pixel RPG bíblico-desértico</p>
+        <p class="subtitle pixel-version">Web Alpha 0.22 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -230,12 +230,12 @@ function dialogue(title, text, button='Continuar') {
   if (!modal) return;
   const speaker = String(title || '').toLowerCase();
   let portrait = '';
-  if (speaker.includes('ancião')) portrait = './assets/art/npcs/elder.svg';
-  else if (speaker.includes('eliabe')) portrait = './assets/art/npcs/eliabe.svg';
-  else if (speaker.includes('miri')) portrait = './assets/art/npcs/miria.svg';
-  else if (speaker.includes('hanan')) portrait = './assets/art/npcs/hanan.svg';
+  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png';
+  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png';
+  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png';
+  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png';
   else if (speaker.includes('rebanho') || speaker.includes('criança')) portrait = './assets/art/npcs/herd_child.svg';
-  else if (speaker.includes('guarda')) portrait = './assets/art/npcs/guard.svg';
+  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png';
 
   modal.innerHTML = `
     <div class="dialogue-card pixel-dialogue-card">
@@ -254,7 +254,7 @@ function game() {
   if (!state.profile) return createCharacter();
   normalizeState();
   const playerSexSlug = state.profile.sex === 'Feminino' ? 'female' : 'male';
-  const playerAsset = `./assets/art/characters/${playerSexSlug}_down_1.svg`;
+  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png`;
 
   app.innerHTML = `
     <main class="game">
@@ -327,30 +327,30 @@ function game() {
         <div class="work-site gatherer-site" data-job="Coletor" style="left:1490px;top:905px"><b>COLETA</b></div>
         <div class="work-site levite-site" data-job="Levita" style="left:815px;top:390px"><b>SERVIÇO</b></div>
 
-        <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/npcs/elder.svg" alt="Ancião"><b>Ancião</b></div>
-        <div class="npc npc-eliabe" style="left:1325px;top:890px"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png" alt="Ancião"><b>Ancião</b></div>
+        <div class="npc npc-eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png" alt="Eliabe"><b>Eliabe</b></div>
         <div class="npc npc-child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg" alt="Criança do Rebanho"><b>Rebanho</b></div>
-        <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/npcs/miria.svg" alt="Miriã"><b>Miriã</b></div>
-        <div class="npc npc-hanan" style="left:520px;top:715px"><img src="./assets/art/npcs/hanan.svg" alt="Hanan"><b>Hanan</b></div>
-        <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/npcs/guard.svg" alt="Guarda"><b>Guarda</b></div>
+        <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png" alt="Miriã"><b>Miriã</b></div>
+        <div class="npc npc-hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png" alt="Hanan"><b>Hanan</b></div>
+        <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png" alt="Guarda"><b>Guarda</b></div>
 
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
         <div class="zone-label corral-zone">Currais</div><div class="zone-label workshop-zone">Oficinas</div>
 
         <div class="move-target hidden" id="moveTarget" aria-hidden="true"><i></i></div>
-        <div class="player player-art" id="player"><img src="${playerAsset}" alt="Personagem"></div>
+        <div class="player player-art" id="player"><span class="player-sprite" style="background-image:url(${playerSheet})" aria-label="Personagem"></span></div>
       </div>
 
       <div class="interior-map hidden" id="standardInterior">
         <img class="interior-bg" src="./assets/art/interiors/judah_standard_interior.svg" alt="Interior da Tenda do Estandarte">
-        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/npcs/elder.svg" alt="Ancião"><b>Ancião</b></div>
+        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png" alt="Ancião"><b>Ancião</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
       <div class="interior-map hidden" id="workshopInterior">
         <img class="interior-bg" src="./assets/art/interiors/workshop_interior.svg" alt="Interior da Oficina">
-        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png" alt="Eliabe"><b>Eliabe</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
@@ -367,7 +367,7 @@ function game() {
         <section class="character-window">
           <div class="character-titlebar"><span>INFORMAÇÕES DO PERSONAGEM</span><i></i></div>
           <div class="character-core">
-            <div class="character-portrait"><img src="${playerAsset}" alt=""></div>
+            <div class="character-portrait"><span class="portrait-sprite" style="background-image:url(${playerSheet})"></span></div>
             <div class="character-identity">
               <b>${state.profile.name}</b>
               <span>Tribo de ${state.profile.tribe}</span>
@@ -513,7 +513,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.21</div>
+      <div class="badge">Web Alpha 0.22</div>
     </main>`;
 
   const world = $('#world');
@@ -2146,7 +2146,7 @@ function game() {
   });
 
   refreshHud();
-  const playerImg = player.querySelector('img');
+  const playerSprite = player.querySelector('.player-sprite');
   let playerFacing = 'down';
   let playerFrame = 1;
   let lastPlayerFrame = 0;
@@ -2163,12 +2163,9 @@ function game() {
     } else {
       playerFrame = 1;
     }
-    // Usa o sprite lateral já carregável e espelha a imagem no navegador.
-    const mirrorLeft = playerSexSlug === 'female' && playerFacing === 'left';
-    const spriteFacing = mirrorLeft ? 'right' : playerFacing;
-    const src = `./assets/art/characters/${playerSexSlug}_${spriteFacing}_${playerFrame}.svg`;
-    playerImg.classList.toggle('mirror-left', mirrorLeft);
-    if (!playerImg.src.endsWith(src.replace('./','/'))) playerImg.setAttribute('src',src);
+    const row = ({down:0,left:1,right:2,up:3})[playerFacing] ?? 0;
+    const col = playerFrame === 2 ? 1 : 0;
+    if (playerSprite) playerSprite.style.backgroundPosition = `${-col * 64}px ${-row * 88}px`;
     player.dataset.facing = playerFacing;
   }
 
