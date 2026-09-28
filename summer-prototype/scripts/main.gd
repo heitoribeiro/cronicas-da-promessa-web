@@ -5,6 +5,10 @@ const NpcScript = preload("res://scripts/npc.gd")
 
 var player: PrototypePlayer
 var hanan: PrototypeNPC
+var eliabe: PrototypeNPC
+var miria: PrototypeNPC
+var registered_npcs: Dictionary = {}
+var current_npc_routines: Dictionary = {}
 
 var prompt_panel: PanelContainer
 var prompt_label: Label
@@ -41,7 +45,8 @@ func _ready() -> void:
 	_build_ui()
 	_spawn_player()
 	_spawn_hanan()
-	_apply_hanan_routine(true)
+	_spawn_additional_npcs()
+	_apply_all_npc_routines(true)
 	_create_destination_marker()
 	_create_navigation_debug_line()
 
@@ -51,7 +56,7 @@ func _process(delta: float) -> void:
 	if player == null or hanan == null:
 		return
 
-	_apply_hanan_routine(false)
+	_apply_all_npc_routines(false)
 	_update_clock_ui()
 
 	var nearby := player.global_position.distance_to(hanan.global_position) <= 82.0
@@ -87,7 +92,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F4:
 			game_minutes = fmod(game_minutes + 360.0, 1440.0)
-			_apply_hanan_routine(true)
+			_apply_all_npc_routines(true)
 			_update_clock_ui()
 			get_viewport().set_input_as_handled()
 			return
@@ -150,87 +155,144 @@ func _format_game_time() -> String:
 	var minutes: int = total % 60
 	return "%02d:%02d" % [hours, minutes]
 
-func _get_hanan_routine_id(total_minutes: int) -> String:
-	if total_minutes >= 360 and total_minutes < 720:
-		return "cozinha_manha"
-	if total_minutes >= 720 and total_minutes < 1080:
-		return "servico_tarde"
-	if total_minutes >= 1080 and total_minutes < 1260:
-		return "preparar_noite"
+func _get_npc_routine_id(npc_name: String, total_minutes: int) -> String:
+	match npc_name:
+		"Hanan":
+			if total_minutes >= 360 and total_minutes < 720:
+				return "cozinha_manha"
+			if total_minutes >= 720 and total_minutes < 1080:
+				return "servico_tarde"
+			if total_minutes >= 1080 and total_minutes < 1260:
+				return "preparar_noite"
+			return "repouso"
+		"Eliabe":
+			if total_minutes >= 360 and total_minutes < 720:
+				return "oficina_manha"
+			if total_minutes >= 720 and total_minutes < 1080:
+				return "coleta_tarde"
+			if total_minutes >= 1080 and total_minutes < 1260:
+				return "fogueira_entardecer"
+			return "repouso"
+		"Miriã":
+			if total_minutes >= 360 and total_minutes < 720:
+				return "tendas_manha"
+			if total_minutes >= 720 and total_minutes < 1080:
+				return "agua_tarde"
+			if total_minutes >= 1080 and total_minutes < 1260:
+				return "fogueira_entardecer"
+			return "repouso"
 	return "repouso"
 
-func _hanan_route_for(routine_id: String) -> Array[Vector2]:
-	match routine_id:
-		"cozinha_manha":
-			return [
-				Vector2(465, 145),
-				Vector2(165, 145),
-				Vector2(165, 360),
-				Vector2(465, 360)
-			]
-		"servico_tarde":
-			return [
-				Vector2(520, 300),
-				Vector2(760, 300),
-				Vector2(760, 430),
-				Vector2(520, 430)
-			]
-		"preparar_noite":
-			return [
-				Vector2(465, 360),
-				Vector2(520, 430),
-				Vector2(430, 430)
-			]
-		_:
-			return [Vector2(520, 620)]
+func _npc_route_for(npc_name: String, routine_id: String) -> Array[Vector2]:
+	match npc_name:
+		"Hanan":
+			match routine_id:
+				"cozinha_manha":
+					return [Vector2(465, 145), Vector2(165, 145), Vector2(165, 360), Vector2(465, 360)]
+				"servico_tarde":
+					return [Vector2(520, 300), Vector2(760, 300), Vector2(760, 430), Vector2(520, 430)]
+				"preparar_noite":
+					return [Vector2(465, 360), Vector2(520, 430), Vector2(430, 430)]
+				_:
+					return [Vector2(520, 620)]
+		"Eliabe":
+			match routine_id:
+				"oficina_manha":
+					return [Vector2(1090, 350), Vector2(1170, 350), Vector2(1170, 590), Vector2(1090, 590)]
+				"coleta_tarde":
+					return [Vector2(1040, 620), Vector2(1180, 620), Vector2(1180, 300), Vector2(1040, 300)]
+				"fogueira_entardecer":
+					return [Vector2(820, 330), Vector2(780, 360), Vector2(820, 390)]
+				_:
+					return [Vector2(1120, 650)]
+		"Miriã":
+			match routine_id:
+				"tendas_manha":
+					return [Vector2(760, 120), Vector2(980, 120), Vector2(980, 260), Vector2(760, 260)]
+				"agua_tarde":
+					return [Vector2(760, 520), Vector2(720, 560), Vector2(760, 600)]
+				"fogueira_entardecer":
+					return [Vector2(720, 330), Vector2(760, 360), Vector2(720, 390)]
+				_:
+					return [Vector2(1040, 150)]
+	return [Vector2(640, 600)]
 
-func _apply_hanan_routine(force: bool) -> void:
-	if hanan == null:
+func _npc_routine_display_name(npc_name: String, routine_id: String) -> String:
+	match npc_name:
+		"Hanan":
+			match routine_id:
+				"cozinha_manha": return "Hanan: serviço na Cozinha"
+				"servico_tarde": return "Hanan: serviço no centro"
+				"preparar_noite": return "Hanan: preparativos do entardecer"
+				_: return "Hanan: repouso"
+		"Eliabe":
+			match routine_id:
+				"oficina_manha": return "Eliabe: serviço na Oficina"
+				"coleta_tarde": return "Eliabe: coleta e transporte"
+				"fogueira_entardecer": return "Eliabe: reunião junto à fogueira"
+				_: return "Eliabe: repouso"
+		"Miriã":
+			match routine_id:
+				"tendas_manha": return "Miriã: tendas familiares"
+				"agua_tarde": return "Miriã: busca de água"
+				"fogueira_entardecer": return "Miriã: reunião junto à fogueira"
+				_: return "Miriã: repouso"
+	return "%s: rotina" % npc_name
+
+func _npc_pause_for(routine_id: String) -> float:
+	return 4.0 if routine_id == "repouso" else 0.8
+
+func _apply_all_npc_routines(force: bool) -> void:
+	for npc_key in registered_npcs.keys():
+		_apply_npc_routine(String(npc_key), force)
+
+func _apply_npc_routine(npc_name: String, force: bool) -> void:
+	if not registered_npcs.has(npc_name):
 		return
 
-	var routine_id := _get_hanan_routine_id(int(floor(game_minutes)))
-	if not force and routine_id == current_hanan_routine:
+	var npc: PrototypeNPC = registered_npcs[npc_name]
+	var routine_id: String = _get_npc_routine_id(npc_name, int(floor(game_minutes)))
+	var current_id: String = String(current_npc_routines.get(npc_name, ""))
+	if not force and routine_id == current_id:
 		return
 
-	current_hanan_routine = routine_id
-	var pause_seconds := 0.8
-	if routine_id == "repouso":
-		pause_seconds = 4.0
-
-	hanan.apply_routine(routine_id, _hanan_route_for(routine_id), pause_seconds)
-	print("[ROUTINE] Hanan -> ", routine_id, " às ", _format_game_time())
-
-func _routine_display_name(routine_id: String) -> String:
-	match routine_id:
-		"cozinha_manha":
-			return "Hanan: serviço na Cozinha"
-		"servico_tarde":
-			return "Hanan: serviço no centro do acampamento"
-		"preparar_noite":
-			return "Hanan: preparativos do entardecer"
-		_:
-			return "Hanan: repouso"
+	current_npc_routines[npc_name] = routine_id
+	npc.apply_routine(routine_id, _npc_route_for(npc_name, routine_id), _npc_pause_for(routine_id))
+	print("[ROUTINE] ", npc_name, " -> ", routine_id, " às ", _format_game_time())
 
 func _update_clock_ui() -> void:
 	if clock_label != null:
 		clock_label.text = "Hora %s" % _format_game_time()
 	if routine_label != null:
-		routine_label.text = _routine_display_name(current_hanan_routine)
+		var h_id: String = String(current_npc_routines.get("Hanan", ""))
+		var e_id: String = String(current_npc_routines.get("Eliabe", ""))
+		var m_id: String = String(current_npc_routines.get("Miriã", ""))
+		routine_label.text = "%s | %s | %s" % [
+			_npc_routine_display_name("Hanan", h_id),
+			_npc_routine_display_name("Eliabe", e_id),
+			_npc_routine_display_name("Miriã", m_id)
+		]
 
 func _run_routine_self_tests() -> void:
-	var cases := [
-		{"minutes": 360, "expected": "cozinha_manha"},
-		{"minutes": 720, "expected": "servico_tarde"},
-		{"minutes": 1080, "expected": "preparar_noite"},
-		{"minutes": 1260, "expected": "repouso"}
+	var checks: Array[bool] = [
+		_get_npc_routine_id("Hanan", 360) == "cozinha_manha",
+		_get_npc_routine_id("Hanan", 720) == "servico_tarde",
+		_get_npc_routine_id("Hanan", 1080) == "preparar_noite",
+		_get_npc_routine_id("Hanan", 1260) == "repouso",
+		_get_npc_routine_id("Eliabe", 360) == "oficina_manha",
+		_get_npc_routine_id("Eliabe", 720) == "coleta_tarde",
+		_get_npc_routine_id("Eliabe", 1080) == "fogueira_entardecer",
+		_get_npc_routine_id("Eliabe", 1260) == "repouso",
+		_get_npc_routine_id("Miriã", 360) == "tendas_manha",
+		_get_npc_routine_id("Miriã", 720) == "agua_tarde",
+		_get_npc_routine_id("Miriã", 1080) == "fogueira_entardecer",
+		_get_npc_routine_id("Miriã", 1260) == "repouso"
 	]
 	var passed := 0
-	for test_case in cases:
-		var test_minutes: int = int(test_case["minutes"])
-		var expected: String = String(test_case["expected"])
-		if _get_hanan_routine_id(test_minutes) == expected:
+	for check in checks:
+		if check:
 			passed += 1
-	routine_self_test_summary = "ROTINA %d/%d" % [passed, cases.size()]
+	routine_self_test_summary = "ROTINA %d/%d" % [passed, checks.size()]
 	print("[ROUTINETEST] ", routine_self_test_summary)
 
 func _build_navigation_grid() -> void:
@@ -478,12 +540,50 @@ func _spawn_hanan() -> void:
 	hanan.patrol_point_reached.connect(_on_hanan_patrol_point_reached)
 	hanan.routine_changed.connect(_on_hanan_routine_changed)
 	add_child(hanan)
+	registered_npcs["Hanan"] = hanan
 
 	var label := Label.new()
 	label.text = "Hanan"
 	label.position = Vector2(-23, 45)
 	label.add_theme_font_size_override("font_size", 12)
 	hanan.add_child(label)
+
+func _spawn_additional_npcs() -> void:
+	eliabe = _spawn_scheduled_npc("Eliabe", Vector2(1120, 590))
+	miria = _spawn_scheduled_npc("Miriã", Vector2(900, 220))
+
+func _spawn_scheduled_npc(npc_name: String, start_position: Vector2) -> PrototypeNPC:
+	var npc: PrototypeNPC = NpcScript.new()
+	npc.name = npc_name
+	npc.npc_name = npc_name
+	npc.global_position = start_position
+	npc.navigation_requested.connect(_on_registered_npc_navigation_requested.bind(npc_name))
+	npc.patrol_point_reached.connect(_on_registered_npc_patrol_point_reached.bind(npc_name))
+	npc.routine_changed.connect(_on_registered_npc_routine_changed.bind(npc_name))
+	add_child(npc)
+	registered_npcs[npc_name] = npc
+
+	var label := Label.new()
+	label.text = npc_name
+	label.position = Vector2(-26, 45)
+	label.add_theme_font_size_override("font_size", 12)
+	npc.add_child(label)
+	return npc
+
+func _on_registered_npc_navigation_requested(world_position: Vector2, npc_name: String) -> void:
+	if not navigation_ready or not registered_npcs.has(npc_name):
+		return
+	var npc: PrototypeNPC = registered_npcs[npc_name]
+	var result := _compute_navigation_path(npc.global_position, world_position)
+	var path: PackedVector2Array = result["path"]
+	var resolved_target: Vector2 = result["resolved_target"]
+	npc.set_navigation_path(path, resolved_target)
+
+func _on_registered_npc_patrol_point_reached(index: int, world_position: Vector2, npc_name: String) -> void:
+	print("[NPCNAV] ", npc_name, " ponto ", index, " alcançado em ", world_position)
+
+func _on_registered_npc_routine_changed(routine_id: String, npc_name: String) -> void:
+	print("[NPCRoutine] ", npc_name, " rotina ativa: ", routine_id)
 
 func _create_destination_marker() -> void:
 	destination_marker = Node2D.new()
