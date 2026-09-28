@@ -90,3 +90,21 @@ Objetivo desta etapa: aproximar o controle por mouse do comportamento de MMORPGs
 - pressione `F3` para mostrar ou ocultar o debug
 - a rota calculada para o clique é desenhada em azul durante o deslocamento
 - essa validação usa coordenadas do mundo do próprio jogo e não depende de cliques sintéticos externos do Summer/Codex
+
+
+## Rotinas diárias por horário
+
+O protótipo agora possui um relógio de jogo e troca de rotina de NPC por faixa horária.
+
+Hanan:
+- 06:00–11:59: serviço ao redor da Cozinha
+- 12:00–17:59: serviço no centro do acampamento
+- 18:00–20:59: preparativos do entardecer
+- 21:00–05:59: repouso
+
+Controles e debug:
+- F4 avança 6 horas para testar transições de rotina
+- o HUD mostra a hora atual e a rotina ativa de Hanan
+- o console registra `[ROUTINE]`, `[NPCRoutine]` e `[NPCNAV]`
+- o autoteste `[ROUTINETEST] ROTINA 4/4` confirma os quatro limites de horário
+- a troca de rotina reutiliza o mesmo AStarGrid2D já validado para jogador e NPC
