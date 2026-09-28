@@ -122,10 +122,10 @@
 .warehouse-asset{width:190px;height:auto;z-index:10}
 .warehouse-small{width:155px}
 .well-asset{width:145px;height:auto;z-index:14}
-.campfire-asset{width:118px;height:auto;z-index:15;animation:fireGlow 1.5s ease-in-out infinite alternate}
+.campfire-asset{width:118px;height:auto;z-index:15;filter:drop-shadow(0 8px 7px #37241555);animation:campfirePulse 1.3s ease-in-out infinite alternate}
 .tower-asset{width:106px;height:auto;z-index:8;transform:none}
 .tower-nw{left:62px;top:18px}.tower-ne{right:62px;top:18px}.tower-sw{left:62px;bottom:43px}.tower-se{right:62px;bottom:43px}
-@keyframes fireGlow{from{filter:drop-shadow(0 8px 8px #37241555) drop-shadow(0 0 5px #e8792b88)}to{filter:drop-shadow(0 8px 8px #37241555) drop-shadow(0 0 17px #ffad42cc)}}
+@keyframes campfirePulse{from{opacity:.94}to{opacity:1}}
 .player-art{width:72px;height:102px;border:0;background:transparent;box-shadow:none;border-radius:0;z-index:35;transform:translate(-50%,-78%);transform-origin:50% 100%;filter:drop-shadow(0 9px 5px #30201366)}
 .player-art:before{display:none}.player-art:after{content:"";position:absolute;left:14px;bottom:0;width:44px;height:12px;border-radius:50%;background:#3525183b;z-index:-1}
 .player-art img{display:block;width:100%;height:100%;object-fit:contain;transform-origin:50% 100%}
@@ -223,7 +223,7 @@
 .animal-sprite.animal-walking{animation:herdStep .42s ease-in-out infinite alternate}
 @keyframes herdStep{from{translate:0 0}to{translate:0 -2px}}
 .sheep-one{left:72px;top:70px}.sheep-two{left:210px;top:155px}.goat-one{left:292px;top:72px}
-.player-art,.npc,.scenic-asset{will-change:transform,left,top}
+.world{will-change:transform}.player-art,.npc{will-change:transform,left,top}.scenic-asset{will-change:auto}
 .player-art:after{left:13px;bottom:2px;width:46px;height:13px;background:radial-gradient(ellipse,#2d20176b 0 25%,#2d201732 55%,transparent 72%);filter:blur(1px)}
 .npc:after{content:"";position:absolute;left:16px;bottom:4px;width:42px;height:12px;border-radius:50%;background:radial-gradient(ellipse,#2d20175d 0 28%,#2d201727 58%,transparent 74%);z-index:-1}
 .scenic-asset{filter:drop-shadow(0 11px 8px #2d1f1655)}
@@ -269,11 +269,11 @@
 .elder-interior{left:455px;top:265px}.eliabe-interior{left:605px;top:365px}
 .interior-marker{position:absolute;padding:6px 11px;border-radius:8px;background:#2a1a11d9;border:1px solid #d0a35a;color:#f5dfaa;font:700 12px Georgia;letter-spacing:.8px}
 .exit-marker{left:462px;top:625px}
-.daylight{position:fixed;inset:0;pointer-events:none;z-index:4200;transition:background 1.8s ease,opacity 1.8s ease;mix-blend-mode:multiply}
+.daylight{position:fixed;inset:0;pointer-events:none;z-index:4200;transition:background 1.2s ease,opacity 1.2s ease;will-change:opacity}
 .daylight.morning{background:linear-gradient(180deg,#ffd99c22,#ffb15f0a);opacity:.52}
 .daylight.afternoon{background:#fff7dc;opacity:.03}
 .daylight.evening{background:linear-gradient(180deg,#ff9f5f34,#b85f4225);opacity:.64}
-.daylight.night{background:linear-gradient(180deg,#24385c88,#151b347c);opacity:.80}
+.daylight.night{background:linear-gradient(180deg,rgba(22,31,53,.54),rgba(10,14,28,.66));opacity:1}
 .interior-map:not(.hidden)~.daylight.night{opacity:.48}
 .interior-map:not(.hidden)~.daylight.evening{opacity:.38}
 .gate-asset{filter:drop-shadow(0 12px 9px #261a125f)}
@@ -499,3 +499,25 @@
 }
 
 .status-stack>.meal-hint:empty{display:none!important}
+
+
+/* Web Alpha 0.18.2 — desempenho noturno e FPS */
+.game[data-phase="night"]:before{box-shadow:inset 0 0 70px #130d0926}
+.game[data-phase="night"] .campfire-asset{filter:drop-shadow(0 7px 6px #2f201655)}
+.game-settings{margin:0 0 12px;padding:10px 12px;border:1px solid #8e734d55;border-radius:10px;background:#17100bb0}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer}
+.setting-row>span{display:grid;gap:3px}.setting-row b{color:#f0d18b;font:700 11px Arial;letter-spacing:.5px}.setting-row small{color:#bca887;font:10px/1.35 Georgia}
+.setting-row input{position:absolute;opacity:0;pointer-events:none}
+.setting-row i{position:relative;flex:0 0 42px;width:42px;height:22px;border-radius:12px;border:1px solid #947047;background:#2a1d14;box-shadow:inset 0 2px 5px #0007;transition:.18s}
+.setting-row i:after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#b99d72;box-shadow:0 2px 4px #0008;transition:.18s}
+.setting-row input:checked+i{border-color:#b89a59;background:#70512b}
+.setting-row input:checked+i:after{left:23px;background:#f0d17c}
+.setting-row input:focus-visible+i{outline:2px solid #f0d17c;outline-offset:3px}
+.fps-counter{position:fixed;left:18px;bottom:18px;z-index:5100;display:flex;align-items:baseline;gap:6px;padding:6px 9px;border:1px solid #91b27199;border-radius:7px;background:#151b12e8;color:#cfe8ad;font:700 10px Arial;box-shadow:0 5px 16px #0006;pointer-events:none;font-variant-numeric:tabular-nums}
+.fps-counter b{min-width:20px;color:#efffcf;font-size:13px}.fps-counter small{color:#9bb18b;font-size:9px}
+.fps-counter.fps-mid{border-color:#d1aa5f99;background:#211a10e8;color:#f0d28e}.fps-counter.fps-mid b{color:#ffe0a0}
+.fps-counter.fps-low{border-color:#b9604eaa;background:#291310eb;color:#efab9e}.fps-counter.fps-low b{color:#ffd0c8}
+@media(max-width:700px){
+ .fps-counter{left:8px;bottom:66px;padding:5px 7px;font-size:8px}.fps-counter b{font-size:11px}.fps-counter small{font-size:8px}
+ .setting-row{gap:10px}.setting-row small{font-size:9px}
+}
