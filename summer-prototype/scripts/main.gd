@@ -39,11 +39,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event is InputEventKey and event.pressed:
 			dialogue_panel.visible = false
 			hanan.paused = false
-		return
+			return
 		if event is InputEventMouseButton and event.pressed:
 			dialogue_panel.visible = false
 			hanan.paused = false
 			return
+		return
 
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
@@ -88,6 +89,7 @@ func _build_world() -> void:
 
 	_create_well(Vector2(640, 500))
 	_create_campfire(Vector2(640, 360))
+	_create_world_bounds()
 
 	var title := Label.new()
 	title.text = "CRÔNICAS DA PROMESSA — PROTÓTIPO SUMMER"
@@ -152,6 +154,8 @@ func _spawn_player() -> void:
 	player.name = "Player"
 	player.global_position = Vector2(640, 595)
 	player.destination_changed.connect(_on_destination_changed)
+	player.destination_reached.connect(_on_destination_reached)
+	player.destination_failed.connect(_on_destination_failed)
 	add_child(player)
 
 func _spawn_hanan() -> void:
@@ -190,8 +194,21 @@ func _create_destination_marker() -> void:
 
 func _on_destination_changed(world_position: Vector2) -> void:
 	destination_marker.global_position = world_position
+	destination_marker.modulate = Color.WHITE
 	destination_marker.visible = true
-	queue_redraw()
+
+func _on_destination_reached(_world_position: Vector2) -> void:
+	destination_marker.visible = false
+
+func _on_destination_failed(world_position: Vector2) -> void:
+	destination_marker.global_position = world_position
+	destination_marker.modulate = Color("#d95b4d")
+	destination_marker.visible = true
+	var timer := get_tree().create_timer(0.65)
+	timer.timeout.connect(func() -> void:
+		if destination_marker != null:
+			destination_marker.visible = false
+	)
 
 func _interact_with_hanan() -> void:
 	hanan.paused = true
@@ -250,9 +267,9 @@ func _create_static_rect(label_text: String, center: Vector2, size: Vector2, col
 	label.add_theme_color_override("font_color", Color("#3c2a1b"))
 	body.add_child(label)
 
-func _create_well(position: Vector2) -> void:
+func _create_well(center: Vector2) -> void:
 	var body := StaticBody2D.new()
-	body.position = position
+	body.position = center
 	body.collision_layer = 2
 	add_child(body)
 
@@ -267,12 +284,34 @@ func _create_well(position: Vector2) -> void:
 	visual.color = Color("#496f7a")
 	body.add_child(visual)
 
-func _create_campfire(position: Vector2) -> void:
+func _create_campfire(center: Vector2) -> void:
 	var visual := Polygon2D.new()
-	visual.position = position
+	visual.position = center
 	visual.polygon = _regular_polygon(27.0, 12)
 	visual.color = Color("#e9792e")
 	add_child(visual)
+
+func _create_world_bounds() -> void:
+	const thickness := 48.0
+	const width := 1280.0
+	const height := 720.0
+	_create_invisible_wall(Vector2(width * 0.5, -thickness * 0.5), Vector2(width + thickness * 2.0, thickness))
+	_create_invisible_wall(Vector2(width * 0.5, height + thickness * 0.5), Vector2(width + thickness * 2.0, thickness))
+	_create_invisible_wall(Vector2(-thickness * 0.5, height * 0.5), Vector2(thickness, height))
+	_create_invisible_wall(Vector2(width + thickness * 0.5, height * 0.5), Vector2(thickness, height))
+
+func _create_invisible_wall(center: Vector2, wall_size: Vector2) -> void:
+	var body := StaticBody2D.new()
+	body.position = center
+	body.collision_layer = 2
+	body.collision_mask = 1 | 4
+	add_child(body)
+
+	var shape := CollisionShape2D.new()
+	var rectangle := RectangleShape2D.new()
+	rectangle.size = wall_size
+	shape.shape = rectangle
+	body.add_child(shape)
 
 func _regular_polygon(radius: float, sides: int) -> PackedVector2Array:
 	var points := PackedVector2Array()
