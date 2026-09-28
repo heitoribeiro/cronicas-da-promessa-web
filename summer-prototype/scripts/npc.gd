@@ -5,6 +5,7 @@ signal navigation_requested(world_position: Vector2)
 signal navigation_path_updated(path: PackedVector2Array, resolved_target: Vector2)
 signal patrol_point_reached(index: int, world_position: Vector2)
 signal routine_changed(routine_id: String)
+signal activity_changed(activity_id: String)
 
 @export var npc_name := "Hanan"
 @export var patrol_speed := 42.0
@@ -14,6 +15,8 @@ var patrol_points: Array[Vector2] = []
 var patrol_index := 0
 var paused := false
 var active_routine_id := "default"
+var active_activity_id := "wait"
+var _settled := false
 
 var _navigation_path: PackedVector2Array = PackedVector2Array()
 var _path_index := 0
@@ -33,12 +36,19 @@ func _ready() -> void:
 	add_child(shape)
 	queue_redraw()
 
-func apply_routine(routine_id: String, points: Array[Vector2], pause_seconds: float = -1.0) -> void:
+func apply_routine(routine_id: String, points: Array[Vector2], activity_id: String = "work", pause_seconds: float = -1.0) -> void:
 	active_routine_id = routine_id
+	set_activity_state(activity_id)
 	if pause_seconds >= 0.0:
 		patrol_pause_seconds = pause_seconds
 	set_patrol(points)
 	routine_changed.emit(active_routine_id)
+
+func set_activity_state(activity_id: String) -> void:
+	if active_activity_id == activity_id:
+		return
+	active_activity_id = activity_id
+	activity_changed.emit(active_activity_id)
 
 func set_patrol(points: Array[Vector2]) -> void:
 	patrol_points = points
@@ -47,6 +57,7 @@ func set_patrol(points: Array[Vector2]) -> void:
 	_path_index = 0
 	_waiting_for_path = false
 	_pause_remaining = 0.0
+	_settled = false
 
 func set_navigation_path(path: PackedVector2Array, resolved_target: Vector2) -> void:
 	_waiting_for_path = false
@@ -73,7 +84,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
-	if patrol_points.is_empty():
+	if patrol_points.is_empty() or _settled:
 		velocity = Vector2.ZERO
 		return
 
@@ -107,7 +118,7 @@ func _follow_navigation_path(delta: float) -> void:
 		waypoint = _navigation_path[_path_index]
 		offset = waypoint - global_position
 
-	velocity = offset.normalized() * patrol_speed
+	velocity = offset.normalized() * _movement_speed_for_activity()
 	var before_move := global_position
 	move_and_slide()
 
@@ -132,14 +143,38 @@ func _finish_current_patrol_point() -> void:
 	_stuck_time = 0.0
 	velocity = Vector2.ZERO
 	patrol_point_reached.emit(reached_index, reached_position)
-	_advance_patrol()
-	_pause_remaining = patrol_pause_seconds
+
+	if patrol_points.size() == 1 and _activity_is_stationary(active_activity_id):
+		_settled = true
+		_pause_remaining = 0.0
+	else:
+		_advance_patrol()
+		_pause_remaining = patrol_pause_seconds
+
 	navigation_path_updated.emit(PackedVector2Array(), reached_position)
 
 func _advance_patrol() -> void:
 	if patrol_points.is_empty():
 		return
 	patrol_index = (patrol_index + 1) % patrol_points.size()
+
+func _activity_is_stationary(activity_id: String) -> bool:
+	return activity_id == "wait" or activity_id == "meal" or activity_id == "rest"
+
+func _movement_speed_for_activity() -> float:
+	match active_activity_id:
+		"travel":
+			return patrol_speed * 1.25
+		"socialize":
+			return patrol_speed * 0.85
+		"meal":
+			return patrol_speed * 0.8
+		"rest":
+			return patrol_speed * 0.75
+		"wait":
+			return patrol_speed * 0.75
+		_:
+			return patrol_speed
 
 func _draw() -> void:
 	draw_circle(Vector2(0, -8), 11.0, Color("#c9895e"))
