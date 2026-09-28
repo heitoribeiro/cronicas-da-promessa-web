@@ -138,7 +138,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.22</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.23</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -172,7 +172,7 @@ function menu() {
           <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle pixel-version">Web Alpha 0.22 • Direção visual Pixel RPG bíblico-desértico</p>
+        <p class="subtitle pixel-version">Web Alpha 0.23 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -230,12 +230,12 @@ function dialogue(title, text, button='Continuar') {
   if (!modal) return;
   const speaker = String(title || '').toLowerCase();
   let portrait = '';
-  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png?v=0.22';
-  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png?v=0.22';
-  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png?v=0.22';
-  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png?v=0.22';
+  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png?v=0.23';
+  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png?v=0.23';
+  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png?v=0.23';
+  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png?v=0.23';
   else if (speaker.includes('rebanho') || speaker.includes('criança')) portrait = './assets/art/npcs/herd_child.svg';
-  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png?v=0.22';
+  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png?v=0.23';
 
   modal.innerHTML = `
     <div class="dialogue-card pixel-dialogue-card">
@@ -254,7 +254,7 @@ function game() {
   if (!state.profile) return createCharacter();
   normalizeState();
   const playerSexSlug = state.profile.sex === 'Feminino' ? 'female' : 'male';
-  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png?v=0.22`;
+  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png?v=0.23`;
 
   app.innerHTML = `
     <main class="game">
@@ -308,6 +308,21 @@ function game() {
         <img class="scenic-asset prop-art rock-art" style="left:585px;top:245px" src="./assets/art/judah/rock_cluster.svg" alt="">
         <img class="scenic-asset prop-art rock-art small-rock" style="left:1050px;top:830px" src="./assets/art/judah/rock_cluster.svg" alt="">
         <img class="scenic-asset prop-art supply-art" style="left:470px;top:560px" src="./assets/art/judah/supply_stack.svg" alt="">
+
+        <!-- Ambientação visual: densidade extra sem interferir nas áreas de colisão/interação. -->
+        <img class="scenic-asset flora-asset shrub-asset visual-filler" style="left:205px;top:185px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset visual-filler" style="left:430px;top:165px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset visual-filler" style="left:1325px;top:155px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset visual-filler" style="left:1540px;top:335px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset visual-filler" style="left:230px;top:1015px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset flora-asset shrub-asset visual-filler" style="left:1450px;top:1010px" src="./assets/art/judah/desert_shrub.svg" alt="">
+        <img class="scenic-asset prop-art rock-art visual-filler" style="left:175px;top:345px" src="./assets/art/judah/rock_cluster.svg" alt="">
+        <img class="scenic-asset prop-art rock-art visual-filler" style="left:1530px;top:465px" src="./assets/art/judah/rock_cluster.svg" alt="">
+        <img class="scenic-asset prop-art rock-art visual-filler" style="left:1160px;top:1010px" src="./assets/art/judah/rock_cluster.svg" alt="">
+        <img class="scenic-asset prop-art rock-art visual-filler" style="left:515px;top:1025px" src="./assets/art/judah/rock_cluster.svg" alt="">
+        <img class="scenic-asset prop-art supply-art visual-filler" style="left:342px;top:603px" src="./assets/art/judah/supply_stack.svg" alt="">
+        <img class="scenic-asset prop-art supply-art visual-filler" style="left:1452px;top:760px" src="./assets/art/judah/supply_stack.svg" alt="">
+
         <div class="jar" style="left:1125px;top:500px"></div><div class="crate" style="left:510px;top:620px"></div>
         <div class="torch" style="left:790px;top:690px"></div><div class="torch" style="left:1010px;top:690px"></div>
 
@@ -327,12 +342,12 @@ function game() {
         <div class="work-site gatherer-site" data-job="Coletor" style="left:1490px;top:905px"><b>COLETA</b></div>
         <div class="work-site levite-site" data-job="Levita" style="left:815px;top:390px"><b>SERVIÇO</b></div>
 
-        <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png?v=0.22" alt="Ancião"><b>Ancião</b></div>
-        <div class="npc npc-eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.22" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png?v=0.23" alt="Ancião"><b>Ancião</b></div>
+        <div class="npc npc-eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.23" alt="Eliabe"><b>Eliabe</b></div>
         <div class="npc npc-child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg" alt="Criança do Rebanho"><b>Rebanho</b></div>
-        <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png?v=0.22" alt="Miriã"><b>Miriã</b></div>
-        <div class="npc npc-hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png?v=0.22" alt="Hanan"><b>Hanan</b></div>
-        <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png?v=0.22" alt="Guarda"><b>Guarda</b></div>
+        <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png?v=0.23" alt="Miriã"><b>Miriã</b></div>
+        <div class="npc npc-hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png?v=0.23" alt="Hanan"><b>Hanan</b></div>
+        <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png?v=0.23" alt="Guarda"><b>Guarda</b></div>
 
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
@@ -344,13 +359,13 @@ function game() {
 
       <div class="interior-map hidden" id="standardInterior">
         <img class="interior-bg" src="./assets/art/interiors/judah_standard_interior.svg" alt="Interior da Tenda do Estandarte">
-        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png?v=0.22" alt="Ancião"><b>Ancião</b></div>
+        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png?v=0.23" alt="Ancião"><b>Ancião</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
       <div class="interior-map hidden" id="workshopInterior">
         <img class="interior-bg" src="./assets/art/interiors/workshop_interior.svg" alt="Interior da Oficina">
-        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.22" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.23" alt="Eliabe"><b>Eliabe</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
@@ -513,7 +528,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.22</div>
+      <div class="badge">Web Alpha 0.23</div>
     </main>`;
 
   const world = $('#world');
