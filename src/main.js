@@ -129,7 +129,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.19.1</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.20.1</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -163,7 +163,7 @@ function menu() {
           <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle pixel-version">Web Alpha 0.19.1 • Direção visual Pixel RPG bíblico-desértico</p>
+        <p class="subtitle pixel-version">Web Alpha 0.20.1 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -382,6 +382,36 @@ function game() {
         <div class="daily-task" id="dailyTask"></div>
         <div class="vocation-task" id="vocationTask"></div>
       </div>
+
+      <aside class="mini-map-hud" id="miniMapHud" aria-label="Minimapa do acampamento">
+        <div class="mini-map-brand">Crônicas da Promessa</div>
+        <div class="mini-map-board">
+          <span class="mini-map-north">N</span>
+          <i class="mini-map-path path-v"></i>
+          <i class="mini-map-path path-h"></i>
+          <span class="mini-map-landmark landmark-standard" title="Tenda do Estandarte">⌂</span>
+          <span class="mini-map-landmark landmark-fire" title="Fogueira">✦</span>
+          <span class="mini-map-landmark landmark-well" title="Poço">◉</span>
+          <span class="mini-map-landmark landmark-workshop" title="Oficina">⚒</span>
+          <span class="mini-map-landmark landmark-corral" title="Currais">◇</span>
+          <i class="mini-map-player" id="miniMapPlayer"></i>
+          <i class="mini-map-quest hidden" id="miniMapQuest"></i>
+        </div>
+        <div class="mini-map-footer">
+          <b>Acampamento de Judá</b>
+          <small id="miniMapCoords">X: -- &nbsp; Y: --</small>
+        </div>
+      </aside>
+
+      <div class="hotbar" id="hotbar" aria-label="Atalhos rápidos">
+        <div class="hotbar-slot active"><kbd>1</kbd><span class="hotbar-icon">⚔</span><em id="hotbarTool">—</em></div>
+        <div class="hotbar-slot"><kbd>2</kbd><span class="hotbar-icon">▦</span><em id="hotbarWood">0</em></div>
+        <div class="hotbar-slot"><kbd>3</kbd><span class="hotbar-icon">≈</span><em id="hotbarWater">0</em></div>
+        <div class="hotbar-slot"><kbd>4</kbd><span class="hotbar-icon">●</span><em id="hotbarFood">0</em></div>
+        <div class="hotbar-slot"><kbd>5</kbd><span class="hotbar-icon">▤</span><em id="hotbarRecords">0</em></div>
+        <div class="hotbar-slot"><kbd>6</kbd><span class="hotbar-icon">✦</span><em id="hotbarQuest">0</em></div>
+      </div>
+
       <button type="button" class="prompt hidden" id="prompt"></button>
       <div class="quick-actions">
         <button class="journal-button" id="journalButton" aria-label="Abrir diário de quests" title="Diário de quests (J)">DIÁRIO <span id="journalCount"></span></button>
@@ -474,7 +504,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.19.1</div>
+      <div class="badge">Web Alpha 0.20.1</div>
     </main>`;
 
   const world = $('#world');
@@ -522,6 +552,15 @@ function game() {
   const frameTime = $('#frameTime');
   const worldQuest = $('#worldQuest');
   const moveTargetEl = $('#moveTarget');
+  const miniMapPlayer = $('#miniMapPlayer');
+  const miniMapQuest = $('#miniMapQuest');
+  const miniMapCoords = $('#miniMapCoords');
+  const hotbarTool = $('#hotbarTool');
+  const hotbarWood = $('#hotbarWood');
+  const hotbarWater = $('#hotbarWater');
+  const hotbarFood = $('#hotbarFood');
+  const hotbarRecords = $('#hotbarRecords');
+  const hotbarQuest = $('#hotbarQuest');
   const keys = new Set();
 
   if (isTouch()) touchControls.classList.remove('hidden');
@@ -1472,6 +1511,13 @@ function game() {
     const cfg = vocationConfig();
     if (state.equippedTool === cfg.toolId) items.push(`⚒ ${cfg.toolLabel}`);
     inventoryMini.textContent = items.length ? items.join(' • ') : 'Bolsa vazia';
+
+    if (hotbarTool) hotbarTool.textContent = state.equippedTool === cfg.toolId ? 'E' : '—';
+    if (hotbarWood) hotbarWood.textContent = state.inventory.lenha || 0;
+    if (hotbarWater) hotbarWater.textContent = (state.inventory.agua || 0) + (state.inventory.agua_hanan || 0);
+    if (hotbarFood) hotbarFood.textContent = state.inventory.racao || 0;
+    if (hotbarRecords) hotbarRecords.textContent = state.inventory.registros || 0;
+    if (hotbarQuest) hotbarQuest.textContent = journal.active.length || 0;
   }
 
   function updateMap() {
@@ -1853,6 +1899,19 @@ function game() {
       worldQuest.style.top = `${destination.y - 58}px`;
       $('#worldQuestLabel').textContent = destination.label;
     }
+
+    if (miniMapPlayer) {
+      miniMapPlayer.style.left = `${Math.max(3,Math.min(97,(state.x/1800)*100))}%`;
+      miniMapPlayer.style.top = `${Math.max(5,Math.min(95,(state.y/1200)*100))}%`;
+    }
+    if (miniMapQuest) {
+      miniMapQuest.classList.toggle('hidden',!destination);
+      if (destination) {
+        miniMapQuest.style.left = `${Math.max(3,Math.min(97,(destination.x/1800)*100))}%`;
+        miniMapQuest.style.top = `${Math.max(5,Math.min(95,(destination.y/1200)*100))}%`;
+      }
+    }
+    if (miniMapCoords) miniMapCoords.textContent = `X: ${Math.round(state.x/16)}  Y: ${Math.round(state.y/16)}`;
 
     if (currentScene === 'outdoor') {
       player.style.left = state.x + 'px';
