@@ -49,3 +49,13 @@ A arquitetura inicial é deliberadamente estática e compatível com GitHub Page
 - a missão principal concluída é movida para o histórico
 - rotinas diárias concluídas aparecem no histórico com o dia de conclusão
 - quests e trabalhos concluídos deixam de ocupar permanentemente a HUD principal
+
+
+## Web Alpha 0.18.1
+- Hanan reposicionado para trabalhar e circular fora da área física da Cozinha
+- Eliabe reposicionado para circular em frente e nas laterais externas da Oficina
+- rotas de Hanan desenhadas como um arco de circulação externo, sem atravessar o edifício
+- rotas de Eliabe desenhadas ao redor da fachada da Oficina, sem cruzar sua caixa de colisão
+- marcador da missão de Eliabe atualizado para a área externa da Oficina
+- proteção de zona impede que os dois NPCs derivem para dentro da construção durante suas rotinas de trabalho
+- deslocamentos de Eliabe entre Oficina e Armazém continuam livres e independentes da proteção da zona de trabalho
