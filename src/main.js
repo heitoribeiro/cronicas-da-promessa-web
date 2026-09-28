@@ -11,7 +11,7 @@ const VOCATION_GEAR = {
 
 const QUESTS = [
   { id:'fire', label:'Vá até a fogueira central.', target:{x:900,y:590,r:110}, action:'Examinar fogueira' },
-  { id:'eliabe', label:'Fale com Eliabe, o artesão, na oficina.', target:{x:1330,y:760,r:115}, action:'Falar com Eliabe' },
+  { id:'eliabe', label:'Fale com Eliabe, o artesão, na oficina.', target:{x:1325,y:880,r:125}, action:'Falar com Eliabe' },
   { id:'well', label:'Busque água no poço para ajudar o curral.', target:{x:900,y:825,r:105}, action:'Retirar água' },
   { id:'corral', label:'Leve a água para a Criança do Rebanho.', target:{x:455,y:790,r:120}, action:'Falar com a Criança do Rebanho' },
   { id:'elder', label:'Apresente-se ao Ancião junto à Tenda do Estandarte.', target:{x:900,y:300,r:125}, action:'Falar com o Ancião' },
@@ -111,7 +111,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.18</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.18.1</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -133,7 +133,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.18 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.18.1 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -271,10 +271,10 @@ function game() {
         <div class="work-site levite-site" data-job="Levita" style="left:815px;top:390px"><b>SERVIÇO</b></div>
 
         <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/npcs/elder.svg" alt="Ancião"><b>Ancião</b></div>
-        <div class="npc npc-eliabe" style="left:1320px;top:745px"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="npc npc-eliabe" style="left:1325px;top:890px"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
         <div class="npc npc-child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg" alt="Criança do Rebanho"><b>Rebanho</b></div>
         <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/npcs/miria.svg" alt="Miriã"><b>Miriã</b></div>
-        <div class="npc npc-hanan" style="left:520px;top:535px"><img src="./assets/art/npcs/hanan.svg" alt="Hanan"><b>Hanan</b></div>
+        <div class="npc npc-hanan" style="left:540px;top:630px"><img src="./assets/art/npcs/hanan.svg" alt="Hanan"><b>Hanan</b></div>
         <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/npcs/guard.svg" alt="Guarda"><b>Guarda</b></div>
 
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
@@ -405,7 +405,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.18</div>
+      <div class="badge">Web Alpha 0.18.1</div>
     </main>`;
 
   const world = $('#world');
@@ -772,10 +772,10 @@ function game() {
 
   const npcAgents = {
     elder: { el:$('.npc-elder'), x:890, y:292, route:[[890,292]], target:0, speed:.34, scheduleTag:'' },
-    eliabe:{ el:$('.npc-eliabe'),x:1320,y:745,route:[[1320,745]],target:0,speed:.42, scheduleTag:'' },
+    eliabe:{ el:$('.npc-eliabe'),x:1325,y:890,route:[[1325,890]],target:0,speed:.42, scheduleTag:'' },
     child: { el:$('.npc-child'), x:445, y:780, route:[[445,780]], target:0, speed:.45, scheduleTag:'' },
     miria: { el:$('.npc-miria'), x:1245,y:420,route:[[1245,420]],target:0,speed:.38, scheduleTag:'' },
-    hanan: { el:$('.npc-hanan'), x:520,y:535,route:[[520,535]],target:0,speed:.30, scheduleTag:'' },
+    hanan: { el:$('.npc-hanan'), x:540,y:630,route:[[540,630]],target:0,speed:.30, scheduleTag:'' },
     guard: { el:$('.npc-guard'), x:820,y:1015,route:[[820,1015]],target:0,speed:.48, scheduleTag:'' }
   };
 
@@ -790,14 +790,14 @@ function game() {
       {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[890,292]]}
     ],
     eliabe:[
-      {from:480,to:510,tag:'oficina',route:[[1320,745],[1370,780],[1275,790]]},
-      {from:510,to:525,tag:'porta-oficina',route:[[1325,835]]},
+      {from:480,to:510,tag:'oficina-externa',route:[[1165,855],[1200,882],[1260,895],[1330,900],[1405,890],[1470,852],[1480,805],[1470,852],[1405,890],[1330,900],[1260,895],[1200,882]]},
+      {from:510,to:525,tag:'porta-oficina',route:[[1325,868]]},
       {from:525,to:690,tag:'interior-oficina',inside:'workshop',route:[[650,430]]},
-      {from:690,to:705,tag:'saindo-oficina',route:[[1325,835],[980,650],[575,560]]},
-      {from:705,to:750,tag:'armazem',route:[[575,560],[530,590],[610,585]]},
+      {from:690,to:705,tag:'saindo-oficina',route:[[1325,868],[1165,875],[1030,745],[900,665],[720,620],[610,610]]},
+      {from:705,to:750,tag:'armazem',route:[[610,610],[575,625],[535,632],[500,620]]},
       {from:750,to:1080,tag:'interior-oficina-2',inside:'workshop',route:[[650,430]]},
-      {from:1080,to:1260,tag:'oficina-fim',route:[[1320,745],[1370,780],[1275,790]]},
-      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[1320,745]]}
+      {from:1080,to:1260,tag:'oficina-fim',route:[[1165,855],[1200,882],[1260,895],[1330,900],[1405,890],[1470,852],[1480,805],[1470,852],[1405,890],[1330,900],[1260,895],[1200,882]]},
+      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[1325,890]]}
     ],
     child:[
       {from:480,to:690,tag:'curral',route:[[445,780],[360,825],[510,835],[420,745]]},
@@ -812,10 +812,10 @@ function game() {
       {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[1245,420]]}
     ],
     hanan:[
-      {from:480,to:660,tag:'cozinha',route:[[520,535],[455,560],[570,575]]},
-      {from:660,to:750,tag:'patio',route:[[735,610],[700,640],[770,645]]},
-      {from:750,to:1260,tag:'cozinha',route:[[520,535],[455,560],[570,575]]},
-      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[520,535]]}
+      {from:480,to:660,tag:'cozinha-externa',route:[[420,610],[465,625],[525,635],[585,625],[620,595],[620,548],[620,595],[585,625],[525,635],[465,625]]},
+      {from:660,to:750,tag:'patio',route:[[620,610],[680,625],[735,610],[770,645],[710,660],[650,645]]},
+      {from:750,to:1260,tag:'cozinha-externa',route:[[420,610],[465,625],[525,635],[585,625],[620,595],[620,548],[620,595],[585,625],[525,635],[465,625]]},
+      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[540,630]]}
     ],
     guard:[
       {from:480,to:600,tag:'entrada',route:[[820,1015],[980,1015],[900,965]]},
@@ -826,7 +826,7 @@ function game() {
   };
 
   function scheduleForNpc(key) {
-    if (key === 'eliabe' && state.questStep === 1) return {tag:'quest-oficina',route:[[1320,745],[1360,770],[1285,785]]};
+    if (key === 'eliabe' && state.questStep === 1) return {tag:'quest-oficina-externa',route:[[1200,882],[1260,895],[1325,900],[1395,892],[1465,855],[1395,892],[1325,900],[1260,895]]};
     if (key === 'child' && state.questStep === 3) return {tag:'quest-curral',route:[[445,780],[400,815],[495,825]]};
     if (key === 'elder' && state.questStep === 4) return {tag:'quest-estandarte',route:[[890,292],[855,318],[925,320]]};
     const minute = ((state.time % 1440) + 1440) % 1440;
@@ -844,6 +844,21 @@ function game() {
     }
   }
 
+  const npcExteriorZones = {
+    hanan:{x1:405,x2:640,y1:535,y2:655},
+    eliabe:{x1:1145,x2:1495,y1:850,y2:910}
+  };
+
+  function keepExteriorNpcReadable(key,agent) {
+    const zone=npcExteriorZones[key];
+    if(!zone || agent.inside) return;
+    // These workers may travel elsewhere according to their schedule.
+    if(!agent.scheduleTag.includes('cozinha') && key==='hanan') return;
+    if(!agent.scheduleTag.includes('oficina') && !agent.scheduleTag.includes('quest-oficina') && key==='eliabe') return;
+    agent.x=Math.max(zone.x1,Math.min(zone.x2,agent.x));
+    agent.y=Math.max(zone.y1,Math.min(zone.y2,agent.y));
+  }
+
   function moveNpc(key, agent, dt) {
     syncNpcSchedule(key, agent);
     if (agent.inside) return;
@@ -858,6 +873,7 @@ function game() {
     const step = Math.min(dist, agent.speed * dt * 1.5);
     agent.x += dx/dist * step;
     agent.y += dy/dist * step;
+    keepExteriorNpcReadable(key,agent);
     agent.el.style.left = agent.x + 'px';
     agent.el.style.top = agent.y + 'px';
     agent.el.classList.add('npc-walking');
