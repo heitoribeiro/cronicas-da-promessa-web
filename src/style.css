@@ -366,3 +366,69 @@
  .inventory-row{font-size:12px}
  .inventory-gear{align-items:flex-start;flex-direction:column}
 }
+
+
+/* Web Alpha 0.17 — HUD refinado, clique para mover e menu de save */
+.game:before{content:"";position:fixed;inset:0;z-index:4100;pointer-events:none;box-shadow:inset 0 0 110px #24160d30,inset 0 0 24px #f0d49a0d}
+.status-stack{position:fixed;z-index:5050;left:18px;top:18px;width:min(390px,42vw);display:grid;gap:7px;pointer-events:none}
+.status-stack .hud,.status-stack .inventory-mini,.status-stack .needs-hud,.status-stack .meal-hint{position:relative!important;left:auto!important;top:auto!important;width:auto!important;max-width:none!important;margin:0}
+.status-stack .hud{padding:11px 14px;border:1px solid #d0aa6b70;border-radius:12px;background:linear-gradient(145deg,#2b1e14ee,#18110be5);box-shadow:0 9px 28px #1a100a45,inset 0 1px #f2d99a14}
+.status-stack .hud>b{display:inline-block;margin-right:7px;color:#ffe6a9;font-size:16px}
+.hud-role{color:#ccb486;font-size:13px}
+.status-stack .hud small{display:block;margin-top:5px;color:#d5bd8e;font-size:11px;letter-spacing:.15px}
+.status-stack .inventory-mini{padding:6px 10px;border-color:#9f7b4965;background:#24180fda;color:#e8d3a3;font-size:11px;box-shadow:0 6px 18px #1a100a35}
+.status-stack .needs-hud{padding:7px 10px;background:#21160edd;border-color:#9b754966;box-shadow:0 6px 18px #1a100a35}
+.status-stack .meal-hint{padding:7px 10px;background:#21160ed5;border-color:#9b754955;color:#dec99b;font-size:11px;box-shadow:0 6px 18px #1a100a2d}
+.task-stack{position:fixed;z-index:5050;right:18px;top:18px;width:min(390px,40vw);display:grid;gap:7px;pointer-events:none}
+.task-stack .objective,.task-stack .daily-task,.task-stack .vocation-task{position:relative!important;right:auto!important;top:auto!important;max-width:none!important;margin:0;padding:9px 12px;border-radius:11px;background:linear-gradient(145deg,#2b1e14eb,#1b120ce0);border:1px solid #c0995d5c;color:#f1dfb6;font-size:12px;line-height:1.32;box-shadow:0 8px 24px #1a100a3b,inset 0 1px #f6dda015}
+.task-stack .objective{border-left:3px solid #e1bd6f}
+.task-stack .daily-task{border-left:3px solid #aab77a}
+.task-stack .vocation-task{border-left:3px solid #8da6c0}
+.task-stack .objective:empty,.task-stack .daily-task:empty,.task-stack .vocation-task:empty{display:none}
+.quick-actions{position:fixed;z-index:5100;right:18px;bottom:18px;display:grid;gap:8px;justify-items:end}
+.quick-actions .inventory-button,.quick-actions .map-button,.quick-actions .game-menu{position:relative!important;right:auto!important;bottom:auto!important}
+.quick-actions .inventory-button,.quick-actions .map-button{min-width:82px;padding:10px 13px;border-radius:11px;border:1px solid #d0a45f94;background:linear-gradient(#392719ed,#24180fe8);box-shadow:0 7px 20px #160d0838;color:#f9e5b7;letter-spacing:.4px}
+.quick-actions .inventory-button:hover,.quick-actions .map-button:hover,.quick-actions .game-menu:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.quick-actions .game-menu{width:44px;height:44px;border-color:#d0a45f94;background:linear-gradient(#392719ed,#24180fe8);box-shadow:0 7px 20px #160d0838;cursor:pointer}
+.world,.interior-map{cursor:crosshair}
+.move-target{position:absolute;width:42px;height:24px;z-index:2600;transform:translate(-50%,-50%);pointer-events:none;border:2px solid #f4d46d;border-radius:50%;box-shadow:0 0 0 2px #4b321655,0 0 18px #f1bd4b77;animation:moveTargetPulse .8s ease-in-out infinite alternate}
+.move-target:before,.move-target:after{content:"";position:absolute;background:#f4d46d;opacity:.9}
+.move-target:before{left:50%;top:-7px;width:2px;height:36px;transform:translateX(-50%)}
+.move-target:after{left:-7px;top:50%;width:52px;height:2px;transform:translateY(-50%)}
+.move-target i{position:absolute;inset:6px 13px;border-radius:50%;background:#f7df8eaa;box-shadow:0 0 9px #f5cc5c}
+@keyframes moveTargetPulse{from{opacity:.6;transform:translate(-50%,-50%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
+.prompt{border:1px solid #d1aa6c8c;background:linear-gradient(#2f2015ed,#19110be9);box-shadow:0 8px 25px #130b073f;color:#f7e7be}
+.zone-label{backdrop-filter:blur(2px);box-shadow:0 4px 12px #24160d42}
+.work-site{opacity:.48;transition:opacity .2s,filter .2s}.world:hover .work-site{opacity:.64}
+.game-menu-overlay{position:fixed;inset:0;z-index:8500;display:grid;place-items:center;padding:18px;background:#100b08df;backdrop-filter:blur(4px)}
+.game-menu-panel{width:min(610px,95vw);padding:20px;border:1px solid #d2aa6b;border-radius:17px;background:linear-gradient(145deg,#352319f8,#20150ef8);color:#f7e7bd;box-shadow:0 28px 90px #000c,inset 0 1px #f8dfa21a}
+.game-menu-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:13px;border-bottom:1px solid #9e784746}
+.game-menu-heading small{color:#a78c61;font:10px Arial;letter-spacing:1.4px}.game-menu-heading h2{margin:3px 0 0;font-size:29px;color:#f7d993}
+.game-menu-heading button{padding:8px 11px;border:1px solid #cca15f;border-radius:9px;background:#59351f;color:#fbe9c3;cursor:pointer}
+.save-status{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;padding:10px 12px;border:1px solid #8e734d55;border-radius:10px;background:#17100bb8;font-size:12px}
+.save-status span:before{content:"●";margin-right:7px;color:#9ebf76}.save-status b{color:#d7c194;font-size:11px}
+.game-menu-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.game-menu-actions button{display:grid;gap:4px;text-align:left;padding:13px;border:1px solid #b58c5266;border-radius:11px;background:linear-gradient(145deg,#4a2f1ce8,#2f1e13e8);color:#f7e7bd;cursor:pointer;box-shadow:inset 0 1px #f5d89b11}
+.game-menu-actions button:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.game-menu-actions button b{font-size:12px;color:#f4d48f;letter-spacing:.4px}.game-menu-actions button small{font-size:10px;color:#c9b48d;line-height:1.35}
+.game-menu-actions button.secondary{background:#241a12e8}
+.save-help{margin:13px 2px 0;color:#bca780;font-size:11px;line-height:1.4}
+.hidden.game-menu-overlay{display:none}
+.map-panel,.inventory-panel{border-color:#d2aa6b;box-shadow:0 26px 80px #000c,inset 0 1px #f8dfa214}
+.camp-map{background:
+ radial-gradient(circle at 50% 48%,#d2b978 0 10%,transparent 10.7%),
+ radial-gradient(circle at 50% 50%,#ad9159 0 34%,#9e824e 67%,#8e7447 100%);
+ box-shadow:inset 0 0 55px #5b43245e}
+.map-place{border-color:#d9bc806f;background:#342316e8;box-shadow:0 3px 8px #2a1a1050}
+.dialogue-card{border-radius:16px;box-shadow:0 22px 70px #000c,inset 0 1px #f8dda218}
+@media(max-width:700px){
+ .status-stack{left:8px;top:8px;width:min(55vw,255px);gap:5px}
+ .task-stack{right:8px;top:8px;width:min(42vw,220px);gap:5px}
+ .status-stack .hud{padding:7px 9px}.status-stack .hud>b{font-size:12px}.hud-role{font-size:9px}.status-stack .hud small{font-size:8px}
+ .status-stack .inventory-mini,.status-stack .needs-hud,.status-stack .meal-hint{font-size:9px;padding:5px 7px}
+ .task-stack .objective,.task-stack .daily-task,.task-stack .vocation-task{padding:6px 8px;font-size:9px}
+ .quick-actions{right:8px;bottom:8px;gap:6px}.quick-actions .inventory-button,.quick-actions .map-button{min-width:68px;padding:8px 9px;font-size:10px}
+ .quick-actions .game-menu{width:40px;height:40px}
+ .game-menu-panel{padding:14px}.game-menu-heading h2{font-size:23px}.game-menu-actions{grid-template-columns:1fr}
+ .move-target{width:36px;height:20px}
+}
