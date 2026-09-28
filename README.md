@@ -36,3 +36,16 @@ A arquitetura inicial é deliberadamente estática e compatível com GitHub Page
 - menu do jogo com Salvar agora, Exportar save e Importar save
 - saves exportados em JSON podem ser transferidos entre computador e celular
 - botão ☰ agora abre o menu do jogo em vez de sair imediatamente
+
+
+## Web Alpha 0.18
+- prompt de interação agora é clicável com o mouse, mantendo a tecla `E`
+- texto do prompt no desktop indica `CLIQUE / E`
+- clique em NPC aproxima o personagem; a confirmação ocorre no prompt para evitar interações ambíguas
+- HUD superior esquerdo redesenhado como uma janela compacta de MMORPG, com retrato, identidade, reputação, horário, energia, fome e bolsa
+- mensagens de alimentação só aparecem quando são relevantes
+- botão `DIÁRIO` e atalho `J`
+- Diário de Quests com abas `Em andamento` e `Concluídas`
+- a missão principal concluída é movida para o histórico
+- rotinas diárias concluídas aparecem no histórico com o dia de conclusão
+- quests e trabalhos concluídos deixam de ocupar permanentemente a HUD principal
