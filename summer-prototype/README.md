@@ -108,3 +108,20 @@ Controles e debug:
 - o console registra `[ROUTINE]`, `[NPCRoutine]` e `[NPCNAV]`
 - o autoteste `[ROUTINETEST] ROTINA 4/4` confirma os quatro limites de horário
 - a troca de rotina reutiliza o mesmo AStarGrid2D já validado para jogador e NPC
+
+
+## Múltiplos NPCs com agendas independentes
+
+A mesma infraestrutura de relógio e AStarGrid2D agora controla múltiplos NPCs simultaneamente.
+
+NPCs atuais:
+- Hanan: Cozinha -> centro do acampamento -> preparativos -> repouso
+- Eliabe: Oficina -> coleta/transporte -> fogueira -> repouso
+- Miriã: tendas familiares -> busca de água -> fogueira -> repouso
+
+Validação:
+- `[ROUTINETEST] ROTINA 12/12` cobre as quatro faixas de horário dos três NPCs
+- F4 continua avançando 6 horas por teste
+- cada NPC recebe uma rota A* própria quando sua rotina muda
+- logs `[ROUTINE]`, `[NPCRoutine]` e `[NPCNAV]` identificam o NPC pelo nome
+- a interação de diálogo com Hanan permanece independente das agendas dos demais
