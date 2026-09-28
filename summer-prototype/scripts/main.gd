@@ -283,8 +283,7 @@ func _activity_display_name(activity_id: String) -> String:
 		"rest": return "repouso"
 	return activity_id
 
-func _npc_pause_for(routine_id: String) -> float:
-	var activity_id := "rest" if routine_id == "repouso" else "work"
+func _npc_pause_for(activity_id: String) -> float:
 	match activity_id:
 		"rest": return 4.0
 		"socialize": return 1.8
@@ -309,7 +308,7 @@ func _apply_npc_routine(npc_name: String, force: bool) -> void:
 	current_npc_routines[npc_name] = routine_id
 	var activity_id: String = _npc_activity_for(npc_name, routine_id)
 	current_npc_activities[npc_name] = activity_id
-	npc.apply_routine(routine_id, _npc_route_for(npc_name, routine_id), activity_id, _npc_pause_for(routine_id))
+	npc.apply_routine(routine_id, _npc_route_for(npc_name, routine_id), activity_id, _npc_pause_for(activity_id))
 	print("[ROUTINE] ", npc_name, " -> ", routine_id, " [", activity_id, "] às ", _format_game_time())
 
 func _update_clock_ui() -> void:
