@@ -52,7 +52,8 @@ let state = {
   tools: {},
   equippedTool: null,
   warehouseTrades: 0,
-  lastSavedAt: null
+  lastSavedAt: null,
+  settings: { showFps:false }
 };
 
 function $(selector) { return document.querySelector(selector); }
@@ -69,6 +70,8 @@ function normalizeState() {
   if (!('equippedTool' in state)) state.equippedTool = null;
   if (!Number.isInteger(state.warehouseTrades)) state.warehouseTrades = 0;
   if (!('lastSavedAt' in state)) state.lastSavedAt = null;
+  state.settings ||= {};
+  if (typeof state.settings.showFps !== 'boolean') state.settings.showFps = false;
   if (!Number.isFinite(state.x)) state.x = 900;
   if (!Number.isFinite(state.y)) state.y = 980;
   if (!Number.isInteger(state.day) || state.day < 1) state.day = 1;
@@ -111,7 +114,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.18.1</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.18.2</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -133,7 +136,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.18.1 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.18.2 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -178,7 +181,8 @@ function createCharacter() {
       inventory: {}, reputation: 0, questStep: 0, visited: {},
       energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {},
       workCompleted: {}, workProgress: null, lastDaySummary: null,
-      tools: {}, equippedTool: null, warehouseTrades: 0, lastSavedAt: null
+      tools: {}, equippedTool: null, warehouseTrades: 0, lastSavedAt: null,
+      settings: { showFps:false }
     };
     save();
     game();
@@ -274,7 +278,7 @@ function game() {
         <div class="npc npc-eliabe" style="left:1325px;top:890px"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
         <div class="npc npc-child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg" alt="Criança do Rebanho"><b>Rebanho</b></div>
         <div class="npc npc-miria" style="left:1245px;top:420px"><img src="./assets/art/npcs/miria.svg" alt="Miriã"><b>Miriã</b></div>
-        <div class="npc npc-hanan" style="left:540px;top:630px"><img src="./assets/art/npcs/hanan.svg" alt="Hanan"><b>Hanan</b></div>
+        <div class="npc npc-hanan" style="left:520px;top:715px"><img src="./assets/art/npcs/hanan.svg" alt="Hanan"><b>Hanan</b></div>
         <div class="npc npc-guard" style="left:820px;top:1015px"><img src="./assets/art/npcs/guard.svg" alt="Guarda"><b>Guarda</b></div>
 
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
@@ -387,6 +391,13 @@ function game() {
         <div class="game-menu-panel">
           <div class="game-menu-heading"><div><small>CRÔNICAS DA PROMESSA</small><h2>Menu do jogo</h2></div><button id="closeGameMenu">Fechar ×</button></div>
           <div class="save-status"><span>Salvamento automático ativo</span><b id="saveStatusText"></b></div>
+          <div class="game-settings">
+            <label class="setting-row" for="fpsToggle">
+              <span><b>EXIBIR FPS</b><small>Mostra quadros por segundo e tempo por quadro durante o jogo.</small></span>
+              <input type="checkbox" id="fpsToggle">
+              <i aria-hidden="true"></i>
+            </label>
+          </div>
           <div class="game-menu-actions">
             <button id="saveNowButton"><b>SALVAR AGORA</b><small>Grava imediatamente neste navegador.</small></button>
             <button id="exportSaveButton"><b>EXPORTAR SAVE</b><small>Baixa um arquivo para usar em outro aparelho.</small></button>
@@ -405,7 +416,8 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.18.1</div>
+      <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
+      <div class="badge">Web Alpha 0.18.2</div>
     </main>`;
 
   const world = $('#world');
@@ -442,11 +454,17 @@ function game() {
   const gameMenuOverlay = $('#gameMenuOverlay');
   const saveStatusText = $('#saveStatusText');
   const saveFileInput = $('#saveFileInput');
+  const fpsToggle = $('#fpsToggle');
+  const fpsCounter = $('#fpsCounter');
+  const fpsValue = $('#fpsValue');
+  const frameTime = $('#frameTime');
   const worldQuest = $('#worldQuest');
   const moveTargetEl = $('#moveTarget');
   const keys = new Set();
 
   if (isTouch()) touchControls.classList.remove('hidden');
+  fpsToggle.checked = Boolean(state.settings.showFps);
+  fpsCounter.classList.toggle('hidden', !state.settings.showFps);
 
   let activeInteraction = null;
   let currentScene = 'outdoor';
@@ -775,7 +793,7 @@ function game() {
     eliabe:{ el:$('.npc-eliabe'),x:1325,y:890,route:[[1325,890]],target:0,speed:.42, scheduleTag:'' },
     child: { el:$('.npc-child'), x:445, y:780, route:[[445,780]], target:0, speed:.45, scheduleTag:'' },
     miria: { el:$('.npc-miria'), x:1245,y:420,route:[[1245,420]],target:0,speed:.38, scheduleTag:'' },
-    hanan: { el:$('.npc-hanan'), x:540,y:630,route:[[540,630]],target:0,speed:.30, scheduleTag:'' },
+    hanan: { el:$('.npc-hanan'), x:520,y:715,route:[[520,715]],target:0,speed:.30, scheduleTag:'' },
     guard: { el:$('.npc-guard'), x:820,y:1015,route:[[820,1015]],target:0,speed:.48, scheduleTag:'' }
   };
 
@@ -812,10 +830,10 @@ function game() {
       {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[1245,420]]}
     ],
     hanan:[
-      {from:480,to:660,tag:'cozinha-externa',route:[[420,610],[465,625],[525,635],[585,625],[620,595],[620,548],[620,595],[585,625],[525,635],[465,625]]},
-      {from:660,to:750,tag:'patio',route:[[620,610],[680,625],[735,610],[770,645],[710,660],[650,645]]},
-      {from:750,to:1260,tag:'cozinha-externa',route:[[420,610],[465,625],[525,635],[585,625],[620,595],[620,548],[620,595],[585,625],[525,635],[465,625]]},
-      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[540,630]]}
+      {from:480,to:660,tag:'cozinha-externa',route:[[405,625],[410,675],[455,705],[520,715],[590,705],[645,675],[665,625],[650,600],[665,625],[645,675],[590,705],[520,715],[455,705],[410,675]]},
+      {from:660,to:750,tag:'patio',route:[[645,675],[690,680],[735,660],[775,630],[760,590],[710,610],[670,640]]},
+      {from:750,to:1260,tag:'cozinha-externa',route:[[405,625],[410,675],[455,705],[520,715],[590,705],[645,675],[665,625],[650,600],[665,625],[645,675],[590,705],[520,715],[455,705],[410,675]]},
+      {from:1260,to:1440,tag:'descanso',inside:'rest',route:[[540,700]]}
     ],
     guard:[
       {from:480,to:600,tag:'entrada',route:[[820,1015],[980,1015],[900,965]]},
@@ -845,7 +863,7 @@ function game() {
   }
 
   const npcExteriorZones = {
-    hanan:{x1:405,x2:640,y1:535,y2:655},
+    hanan:{x1:395,x2:675,y1:590,y2:725},
     eliabe:{x1:1145,x2:1495,y1:850,y2:910}
   };
 
@@ -1638,11 +1656,15 @@ function game() {
     eliabeInside.classList.toggle('hidden', eliabe.inside !== 'workshop');
   }
 
+  let lastLightingPhase = '';
   function applyLighting() {
     const phase = timePhase();
+    if (phase === lastLightingPhase) return;
+    lastLightingPhase = phase;
     dayPhase.textContent = phaseLabel();
     calendarDay.textContent = calendarLabel();
     daylight.className = 'daylight ' + phase;
+    document.querySelector('.game')?.setAttribute('data-phase',phase);
   }
 
   function draw() {
@@ -1746,6 +1768,11 @@ function game() {
   $('#exportSaveButton').addEventListener('click', exportSave);
   $('#importSaveButton').addEventListener('click', () => saveFileInput.click());
   saveFileInput.addEventListener('change', () => importSaveFile(saveFileInput.files?.[0]));
+  fpsToggle.addEventListener('change', () => {
+    state.settings.showFps = fpsToggle.checked;
+    fpsCounter.classList.toggle('hidden', !state.settings.showFps);
+    save();
+  });
   $('#returnMainMenuButton').addEventListener('click', () => { save(); menu(); });
 
   world.addEventListener('pointerdown',handleScenePointer);
@@ -1792,6 +1819,8 @@ function game() {
 
   let last = performance.now();
   let lastHudRefresh = 0;
+  let fpsSampleStart = last;
+  let fpsFrames = 0;
   const persistOnLeave=()=>save();
   addEventListener('pagehide',persistOnLeave);
   document.addEventListener('visibilitychange',persistOnLeave);
@@ -1805,7 +1834,25 @@ function game() {
       document.removeEventListener('visibilitychange',persistOnLeave);
       return;
     }
-    const dt = Math.min((now-last)/16.67,2); last = now;
+    const rawFrameMs = Math.max(0.01,now-last);
+    const dt = Math.min(rawFrameMs/16.67,2); last = now;
+    if (state.settings.showFps) {
+      fpsFrames += 1;
+      const sampleElapsed = now - fpsSampleStart;
+      if (sampleElapsed >= 500) {
+        const fps = Math.round((fpsFrames * 1000) / sampleElapsed);
+        const avgMs = sampleElapsed / fpsFrames;
+        fpsValue.textContent = String(fps);
+        frameTime.textContent = avgMs.toFixed(1) + ' ms';
+        fpsCounter.classList.toggle('fps-low',fps < 30);
+        fpsCounter.classList.toggle('fps-mid',fps >= 30 && fps < 50);
+        fpsSampleStart = now;
+        fpsFrames = 0;
+      }
+    } else {
+      fpsSampleStart = now;
+      fpsFrames = 0;
+    }
     const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden');
     let dx=0,dy=0;
     if (!dialogOpen) {
