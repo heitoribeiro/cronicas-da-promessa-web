@@ -28,3 +28,18 @@ Prioridade de implementação:
 5. Menu principal com cenário de acampamento e moldura RPG.
 
 Esta documentação deve ser usada como referência para manter o chat de desenvolvimento mecânico e o chat de direção visual alinhados.
+
+
+## Aplicação — Fase 2
+
+A segunda etapa de integração aproxima o gameplay diretamente do mockup aprovado:
+
+- painel de personagem compacto no canto superior esquerdo;
+- painel de missões abaixo do personagem;
+- minimapa permanente no canto superior direito com posição do jogador e objetivo;
+- hotbar de seis slots no canto inferior esquerdo;
+- atalhos de diário, inventário, mapa e menu no canto inferior direito;
+- layout responsivo específico para 1280x720 e celular horizontal;
+- atualização da interface para Web Alpha 0.20.
+
+A estrutura continua usando os sistemas mecânicos já existentes. A próxima fase visual é a substituição progressiva dos SVGs temporários do cenário por sprites/tiles pixel art definitivos.
