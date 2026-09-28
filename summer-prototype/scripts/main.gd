@@ -17,6 +17,13 @@ var npc_navigation_debug_line: Line2D
 var navigation_debug_label: Label
 var navigation_debug_visible := true
 var navigation_self_test_summary := "NAV: aguardando autoteste"
+var routine_self_test_summary := "ROTINA: aguardando autoteste"
+var clock_label: Label
+var routine_label: Label
+
+const GAME_MINUTES_PER_REAL_SECOND := 2.0
+var game_minutes := 6.0 * 60.0
+var current_hanan_routine := ""
 
 const NAV_CELL_SIZE := 24.0
 const NAV_AGENT_PADDING := 22.0
@@ -30,15 +37,22 @@ func _ready() -> void:
 	_build_world()
 	_build_navigation_grid()
 	_run_navigation_self_tests()
+	_run_routine_self_tests()
 	_build_ui()
 	_spawn_player()
 	_spawn_hanan()
+	_apply_hanan_routine(true)
 	_create_destination_marker()
 	_create_navigation_debug_line()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_advance_game_clock(delta)
+
 	if player == null or hanan == null:
 		return
+
+	_apply_hanan_routine(false)
+	_update_clock_ui()
 
 	var nearby := player.global_position.distance_to(hanan.global_position) <= 82.0
 	prompt_panel.visible = nearby and not dialogue_panel.visible
@@ -69,6 +83,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				npc_navigation_debug_line.visible = navigation_debug_visible and not npc_navigation_debug_line.points.is_empty()
 			if navigation_debug_label != null:
 				navigation_debug_label.visible = navigation_debug_visible
+			get_viewport().set_input_as_handled()
+			return
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F4:
+			game_minutes = fmod(game_minutes + 360.0, 1440.0)
+			_apply_hanan_routine(true)
+			_update_clock_ui()
 			get_viewport().set_input_as_handled()
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_E:
@@ -120,6 +140,96 @@ func _build_world() -> void:
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", Color("#3a271a"))
 	add_child(title)
+
+func _advance_game_clock(delta: float) -> void:
+	game_minutes = fmod(game_minutes + delta * GAME_MINUTES_PER_REAL_SECOND, 1440.0)
+
+func _format_game_time() -> String:
+	var total := int(floor(game_minutes))
+	var hours := total / 60
+	var minutes := total % 60
+	return "%02d:%02d" % [hours, minutes]
+
+func _get_hanan_routine_id(total_minutes: int) -> String:
+	if total_minutes >= 360 and total_minutes < 720:
+		return "cozinha_manha"
+	if total_minutes >= 720 and total_minutes < 1080:
+		return "servico_tarde"
+	if total_minutes >= 1080 and total_minutes < 1260:
+		return "preparar_noite"
+	return "repouso"
+
+func _hanan_route_for(routine_id: String) -> Array[Vector2]:
+	match routine_id:
+		"cozinha_manha":
+			return [
+				Vector2(465, 145),
+				Vector2(165, 145),
+				Vector2(165, 360),
+				Vector2(465, 360)
+			]
+		"servico_tarde":
+			return [
+				Vector2(520, 300),
+				Vector2(760, 300),
+				Vector2(760, 430),
+				Vector2(520, 430)
+			]
+		"preparar_noite":
+			return [
+				Vector2(465, 360),
+				Vector2(520, 430),
+				Vector2(430, 430)
+			]
+		_:
+			return [Vector2(520, 620)]
+
+func _apply_hanan_routine(force: bool) -> void:
+	if hanan == null:
+		return
+
+	var routine_id := _get_hanan_routine_id(int(floor(game_minutes)))
+	if not force and routine_id == current_hanan_routine:
+		return
+
+	current_hanan_routine = routine_id
+	var pause_seconds := 0.8
+	if routine_id == "repouso":
+		pause_seconds = 4.0
+
+	hanan.apply_routine(routine_id, _hanan_route_for(routine_id), pause_seconds)
+	print("[ROUTINE] Hanan -> ", routine_id, " às ", _format_game_time())
+
+func _routine_display_name(routine_id: String) -> String:
+	match routine_id:
+		"cozinha_manha":
+			return "Hanan: serviço na Cozinha"
+		"servico_tarde":
+			return "Hanan: serviço no centro do acampamento"
+		"preparar_noite":
+			return "Hanan: preparativos do entardecer"
+		_:
+			return "Hanan: repouso"
+
+func _update_clock_ui() -> void:
+	if clock_label != null:
+		clock_label.text = "Hora %s" % _format_game_time()
+	if routine_label != null:
+		routine_label.text = _routine_display_name(current_hanan_routine)
+
+func _run_routine_self_tests() -> void:
+	var cases := [
+		{"minutes": 360, "expected": "cozinha_manha"},
+		{"minutes": 720, "expected": "servico_tarde"},
+		{"minutes": 1080, "expected": "preparar_noite"},
+		{"minutes": 1260, "expected": "repouso"}
+	]
+	var passed := 0
+	for test_case in cases:
+		if _get_hanan_routine_id(test_case["minutes"]) == test_case["expected"]:
+			passed += 1
+	routine_self_test_summary = "ROTINA %d/%d" % [passed, cases.size()]
+	print("[ROUTINETEST] ", routine_self_test_summary)
 
 func _build_navigation_grid() -> void:
 	navigation_grid.region = Rect2i(0, 0, int(ceil(1280.0 / NAV_CELL_SIZE)), int(ceil(720.0 / NAV_CELL_SIZE)))
@@ -271,19 +381,34 @@ func _on_hanan_navigation_path_updated(path: PackedVector2Array, _resolved_targe
 func _on_hanan_patrol_point_reached(index: int, world_position: Vector2) -> void:
 	print("[NPCNAV] Hanan ponto ", index, " alcançado em ", world_position)
 
+func _on_hanan_routine_changed(routine_id: String) -> void:
+	print("[NPCRoutine] Hanan rotina ativa: ", routine_id)
+
 func _build_ui() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
 
 	var instructions := Label.new()
-	instructions.text = "Clique: pathfinding • WASD/setas • E interagir • F3 rotas jogador/NPC"
+	instructions.text = "Clique: pathfinding • WASD/setas • E interagir • F3 rotas • F4 +6h"
 	instructions.position = Vector2(24, 675)
 	instructions.add_theme_font_size_override("font_size", 14)
 	instructions.add_theme_color_override("font_color", Color.WHITE)
 	canvas.add_child(instructions)
 
+	clock_label = Label.new()
+	clock_label.position = Vector2(1090, 18)
+	clock_label.add_theme_font_size_override("font_size", 17)
+	clock_label.add_theme_color_override("font_color", Color("#f4df9c"))
+	canvas.add_child(clock_label)
+
+	routine_label = Label.new()
+	routine_label.position = Vector2(930, 46)
+	routine_label.add_theme_font_size_override("font_size", 13)
+	routine_label.add_theme_color_override("font_color", Color("#f0c97a"))
+	canvas.add_child(routine_label)
+
 	navigation_debug_label = Label.new()
-	navigation_debug_label.text = navigation_self_test_summary
+	navigation_debug_label.text = "%s • %s" % [navigation_self_test_summary, routine_self_test_summary]
 	navigation_debug_label.position = Vector2(24, 642)
 	navigation_debug_label.add_theme_font_size_override("font_size", 13)
 	navigation_debug_label.add_theme_color_override("font_color", Color("#7ee0ff"))
@@ -349,13 +474,8 @@ func _spawn_hanan() -> void:
 	hanan.navigation_requested.connect(_on_hanan_navigation_requested)
 	hanan.navigation_path_updated.connect(_on_hanan_navigation_path_updated)
 	hanan.patrol_point_reached.connect(_on_hanan_patrol_point_reached)
+	hanan.routine_changed.connect(_on_hanan_routine_changed)
 	add_child(hanan)
-	hanan.set_patrol([
-		Vector2(465, 145),
-		Vector2(165, 145),
-		Vector2(165, 360),
-		Vector2(465, 360)
-	])
 
 	var label := Label.new()
 	label.text = "Hanan"
@@ -407,7 +527,7 @@ func _interact_with_hanan() -> void:
 	hanan.paused = true
 	dialogue_panel.visible = true
 	prompt_panel.visible = false
-	dialogue_title.text = "Hanan"
+	dialogue_title.text = "Hanan — %s" % _format_game_time()
 
 	if not quest_started:
 		quest_started = true
