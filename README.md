@@ -92,3 +92,9 @@ A arquitetura inicial é deliberadamente estática e compatível com GitHub Page
 ## Direção visual oficial
 
 O projeto adota agora o **estilo Pixel RPG bíblico-desértico**, com HUD escura/dourada e interfaces inspiradas nos mockups aprovados. Consulte [VISUAL_STYLE.md](VISUAL_STYLE.md) para a especificação.
+
+
+## Web Alpha 0.19.1
+- corrige falha que ocultava a janela do baú imediatamente após a interação
+- o prompt `CLIQUE / E — Abrir baú` agora abre corretamente o armazenamento pessoal
+- mantém intactos o sistema de capacidade, transferências e compatibilidade de saves da 0.19
