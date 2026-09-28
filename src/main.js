@@ -9,6 +9,19 @@ const VOCATION_GEAR = {
   Levita: { id:'bolsa_registros', label:'Bolsa de registros' }
 };
 
+const ITEM_DEFS = {
+  lenha:{label:'Lenha',load:2},
+  agua:{label:'Água',load:1.5},
+  'lã':{label:'Lã',load:.7},
+  graos:{label:'Grãos',load:.4},
+  ervas:{label:'Ervas',load:.2},
+  registros:{label:'Registros',load:.4},
+  racao:{label:'Ração de viagem',load:.8},
+  agua_hanan:{label:'Jarro para Hanan',load:1.5,transferable:false,quest:true}
+};
+const BAG_CAPACITY = 16;
+const CHEST_CAPACITY = 80;
+
 const QUESTS = [
   { id:'fire', label:'Vá até a fogueira central.', target:{x:900,y:590,r:110}, action:'Examinar fogueira' },
   { id:'eliabe', label:'Fale com Eliabe, o artesão, na oficina.', target:{x:1325,y:880,r:125}, action:'Falar com Eliabe' },
@@ -38,6 +51,7 @@ let state = {
   day: 1,
   time: 480,
   inventory: {},
+  storage: {},
   reputation: 0,
   questStep: 0,
   visited: {},
@@ -60,6 +74,7 @@ function $(selector) { return document.querySelector(selector); }
 
 function normalizeState() {
   state.inventory ||= {};
+  state.storage ||= {};
   state.visited ||= {};
   state.meals ||= {};
   state.dailyCompleted ||= {};
@@ -114,7 +129,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.18.2</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.19</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -136,7 +151,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.18.2 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.19 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -178,7 +193,7 @@ function createCharacter() {
         vocation: $('#characterVocation').value
       },
       x: 900, y: 980, day: 1, time: 480,
-      inventory: {}, reputation: 0, questStep: 0, visited: {},
+      inventory: {}, storage: {}, reputation: 0, questStep: 0, visited: {},
       energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {},
       workCompleted: {}, workProgress: null, lastDaySummary: null,
       tools: {}, equippedTool: null, warehouseTrades: 0, lastSavedAt: null,
@@ -348,8 +363,21 @@ function game() {
       <div class="inventory-overlay hidden" id="inventoryOverlay" role="dialog" aria-modal="true" aria-label="Bolsa e equipamento">
         <div class="inventory-panel">
           <div class="inventory-heading"><h2>Bolsa e equipamento</h2><button id="closeInventory" aria-label="Fechar bolsa">Fechar ×</button></div>
-          <p class="inventory-note">Recursos do trabalho podem ser entregues no Armazém de Judá. Rações podem ser usadas em qualquer lugar.</p>
+          <p class="inventory-note">A bolsa possui capacidade limitada. Recursos podem ser guardados no baú da sua tenda.</p>
           <div id="inventoryContent"></div>
+        </div>
+      </div>
+      <div class="chest-overlay hidden" id="chestOverlay" role="dialog" aria-modal="true" aria-label="Baú pessoal">
+        <div class="chest-panel">
+          <div class="chest-heading">
+            <div><small>SUA TENDA</small><h2>Baú pessoal</h2></div>
+            <button id="closeChest" aria-label="Fechar baú">Fechar ×</button>
+          </div>
+          <p class="chest-note">Transfira recursos entre a bolsa e o armazenamento da sua tenda. Itens de missão permanecem com o personagem.</p>
+          <div class="chest-columns">
+            <section class="chest-side"><div class="chest-side-title"><h3>Bolsa</h3><b id="chestBagLoad"></b></div><div id="chestBagContent"></div></section>
+            <section class="chest-side"><div class="chest-side-title"><h3>Baú</h3><b id="chestStorageLoad"></b></div><div id="chestStorageContent"></div></section>
+          </div>
         </div>
       </div>
       <div class="map-overlay hidden" id="mapOverlay" role="dialog" aria-modal="true" aria-label="Mapa do acampamento">
@@ -417,7 +445,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.18.2</div>
+      <div class="badge">Web Alpha 0.19</div>
     </main>`;
 
   const world = $('#world');
@@ -447,6 +475,11 @@ function game() {
   const inventoryOverlay = $('#inventoryOverlay');
   const inventoryButton = $('#inventoryButton');
   const inventoryContent = $('#inventoryContent');
+  const chestOverlay = $('#chestOverlay');
+  const chestBagContent = $('#chestBagContent');
+  const chestStorageContent = $('#chestStorageContent');
+  const chestBagLoad = $('#chestBagLoad');
+  const chestStorageLoad = $('#chestStorageLoad');
   const journalOverlay = $('#journalOverlay');
   const journalButton = $('#journalButton');
   const journalCount = $('#journalCount');
@@ -662,19 +695,46 @@ function game() {
     save();
   }
 
-  function inventoryRows() {
-    const labels = {
-      lenha:'Lenha',
-      agua:'Água',
-      'lã':'Lã',
-      graos:'Grãos',
-      ervas:'Ervas',
-      registros:'Registros',
-      racao:'Ração de viagem'
-    };
-    return Object.entries(labels)
-      .map(([id,label]) => ({id,label,qty:Math.max(0,state.inventory[id] || 0)}))
+  function containerRows(container,{includeQuest=true}={}) {
+    return Object.entries(ITEM_DEFS)
+      .filter(([,def]) => includeQuest || !def.quest)
+      .map(([id,def]) => ({id,...def,qty:Math.max(0,Number(container[id]) || 0)}))
       .filter(item => item.qty > 0);
+  }
+
+  function inventoryRows() {
+    return containerRows(state.inventory);
+  }
+
+  function containerLoad(container) {
+    return Object.entries(container || {}).reduce((total,[id,qty]) => {
+      const def=ITEM_DEFS[id];
+      return total + (def ? def.load * Math.max(0,Number(qty)||0) : 0);
+    },0);
+  }
+
+  function loadLabel(value,capacity) {
+    return `${value.toFixed(1).replace('.0','')} / ${capacity}`;
+  }
+
+  function bagLoad() {
+    return containerLoad(state.inventory);
+  }
+
+  function storageLoad() {
+    return containerLoad(state.storage);
+  }
+
+  function canCarryItem(id,qty=1) {
+    const def=ITEM_DEFS[id];
+    if(!def) return true;
+    return bagLoad() + def.load*qty <= BAG_CAPACITY + .001;
+  }
+
+  function addInventoryItem(id,qty=1) {
+    if(!canCarryItem(id,qty)) return false;
+    state.inventory[id]=(state.inventory[id] || 0)+qty;
+    return true;
   }
 
   function renderInventory() {
@@ -683,10 +743,15 @@ function game() {
     const gear = VOCATION_GEAR[state.profile.vocation];
     const ownsGear = Boolean(state.tools[gear.id]);
     const equipped = state.equippedTool === gear.id;
+    const currentLoad=bagLoad();
     const resources = rows.length
-      ? rows.map(item => `<div class="inventory-row"><span>${item.label}</span><b>×${item.qty}</b>${item.id === 'racao' ? '<button class="inventory-use" id="useRation">USAR</button>' : ''}</div>`).join('')
+      ? rows.map(item => `<div class="inventory-row"><span>${item.label}<small>${item.load} carga cada</small></span><b>×${item.qty}</b>${item.id === 'racao' ? '<button class="inventory-use" id="useRation">USAR</button>' : ''}</div>`).join('')
       : '<div class="inventory-empty">Sua bolsa está vazia.</div>';
     inventoryContent.innerHTML = `
+      <div class="inventory-capacity ${currentLoad > BAG_CAPACITY ? 'overloaded' : ''}">
+        <span><b>Carga da bolsa</b><small>Ferramentas equipáveis não entram neste limite nesta fase.</small></span>
+        <strong>${loadLabel(currentLoad,BAG_CAPACITY)}</strong>
+      </div>
       <section class="inventory-section">
         <h3>Recursos</h3>
         ${resources}
@@ -694,7 +759,7 @@ function game() {
       <section class="inventory-section">
         <h3>Ferramenta da vocação</h3>
         ${ownsGear
-          ? `<div class="inventory-gear"><span><b>${gear.label}</b><small>${equipped ? 'Equipada • reduz o gasto de energia no trabalho.' : 'Guardada • equipe para ganhar eficiência no trabalho.'}</small></span><button id="toggleGear">${equipped ? 'GUARDAR' : 'EQUIPAR'}</button></div>`
+          ? `<div class="inventory-gear"><span><b>${gear.label}</b><small>${equipped ? 'Equipada • reduz o gasto de energia no trabalho.' : 'Na bolsa • equipe para ganhar eficiência no trabalho.'}</small></span><button id="toggleGear">${equipped ? 'DESEQUIPAR' : 'EQUIPAR'}</button></div>`
           : `<div class="inventory-empty">Fale com Eliabe depois da missão inicial para receber: <b>${gear.label}</b>.</div>`}
       </section>
       <div class="inventory-foot">Entregas ao armazém: ${state.warehouseTrades}</div>
@@ -725,10 +790,79 @@ function game() {
     inventoryOverlay.classList.toggle('hidden', !open);
     if (open) {
       mapOverlay.classList.add('hidden');
+      chestOverlay.classList.add('hidden');
+      journalOverlay.classList.add('hidden');
       renderInventory();
     } else {
       keys.clear();
     }
+  }
+
+  function transferCapacity(source,target,id,capacity) {
+    const def=ITEM_DEFS[id];
+    if(!def || def.transferable===false || (source[id]||0)<=0) return false;
+    if(containerLoad(target)+def.load > capacity+.001) return false;
+    source[id]-=1;
+    if(source[id]<=0) delete source[id];
+    target[id]=(target[id]||0)+1;
+    return true;
+  }
+
+  function transferChestItem(id,direction) {
+    const toChest=direction==='store';
+    const moved=toChest
+      ? transferCapacity(state.inventory,state.storage,id,CHEST_CAPACITY)
+      : transferCapacity(state.storage,state.inventory,id,BAG_CAPACITY);
+    if(!moved) {
+      const targetName=toChest?'baú':'bolsa';
+      return dialogue('Sem espaço',`Não há capacidade suficiente no ${targetName} para esse item.`);
+    }
+    save();
+    refreshHud();
+    renderChest();
+  }
+
+  function chestRows(container) {
+    return containerRows(container,{includeQuest:false}).filter(item=>item.transferable!==false);
+  }
+
+  function chestItemMarkup(item,direction) {
+    const verb=direction==='store'?'GUARDAR':'RETIRAR';
+    return `<div class="chest-item">
+      <span><b>${item.label}</b><small>${item.load} carga cada</small></span>
+      <em>×${item.qty}</em>
+      <button data-chest-id="${item.id}" data-chest-direction="${direction}">${verb} 1</button>
+    </div>`;
+  }
+
+  function renderChest() {
+    const bagRows=chestRows(state.inventory);
+    const storedRows=chestRows(state.storage);
+    chestBagLoad.textContent=loadLabel(bagLoad(),BAG_CAPACITY);
+    chestStorageLoad.textContent=loadLabel(storageLoad(),CHEST_CAPACITY);
+    chestBagContent.innerHTML=bagRows.length
+      ? bagRows.map(item=>chestItemMarkup(item,'store')).join('')
+      : '<div class="chest-empty">Nenhum recurso transferível na bolsa.</div>';
+    chestStorageContent.innerHTML=storedRows.length
+      ? storedRows.map(item=>chestItemMarkup(item,'take')).join('')
+      : '<div class="chest-empty">O baú está vazio.</div>';
+    document.querySelectorAll('[data-chest-id]').forEach(button=>button.addEventListener('click',()=>{
+      transferChestItem(button.dataset.chestId,button.dataset.chestDirection);
+    }));
+  }
+
+  function toggleChest(force) {
+    const open=force ?? chestOverlay.classList.contains('hidden');
+    chestOverlay.classList.toggle('hidden',!open);
+    if(open){
+      mapOverlay.classList.add('hidden');
+      inventoryOverlay.classList.add('hidden');
+      chestOverlay.classList.add('hidden');
+      journalOverlay.classList.add('hidden');
+      gameMenuOverlay.classList.add('hidden');
+      cancelClickMove();
+      renderChest();
+    } else keys.clear();
   }
 
   function claimVocationTool() {
@@ -756,8 +890,11 @@ function game() {
     if (!canTurnInWork()) {
       return dialogue('Armazém de Judá',`Entregue ${cfg.rewardQty} × ${cfg.rewardLabel} produzidos no seu turno para retirar 1 ração de viagem. Você ainda não tem a quantidade necessária.`);
     }
+    if (!canCarryItem('racao',1)) {
+      return dialogue('Bolsa cheia','Você precisa liberar espaço na bolsa antes de retirar uma ração. Use o baú da sua tenda para guardar recursos.');
+    }
     state.inventory[cfg.rewardItem] -= cfg.rewardQty;
-    state.inventory.racao = (state.inventory.racao || 0) + 1;
+    addInventoryItem('racao',1);
     state.warehouseTrades += 1;
     save();
     refreshHud();
@@ -1115,7 +1252,7 @@ function game() {
 
   function handleScenePointer(event) {
     if(event.button!==0 || event.pointerType==='touch') return;
-    if(!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
+    if(!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !chestOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
     const container=currentScene==='outdoor' ? world : currentScene==='standard' ? standardInterior : currentScene==='workshop' ? workshopInterior : playerInterior;
     if(event.currentTarget!==container) return;
 
@@ -1263,6 +1400,7 @@ function game() {
     if(open){
       mapOverlay.classList.add('hidden');
       inventoryOverlay.classList.add('hidden');
+      chestOverlay.classList.add('hidden');
       gameMenuOverlay.classList.add('hidden');
       cancelClickMove();
       renderJournal();
@@ -1302,6 +1440,7 @@ function game() {
     if (state.inventory.ervas) items.push(`Ervas ×${state.inventory.ervas}`);
     if (state.inventory.registros) items.push(`Registros ×${state.inventory.registros}`);
     if (state.inventory.racao) items.push(`Ração ×${state.inventory.racao}`);
+    items.unshift(`Carga ${loadLabel(bagLoad(),BAG_CAPACITY)}`);
     const cfg = vocationConfig();
     if (state.equippedTool === cfg.toolId) items.push(`⚒ ${cfg.toolLabel}`);
     inventoryMini.textContent = items.length ? items.join(' • ') : 'Bolsa vazia';
@@ -1358,6 +1497,10 @@ function game() {
     }
 
     const stepIndex = state.workProgress.step;
+    const finishingWork = state.workProgress.step >= cfg.steps.length - 1;
+    if (finishingWork && !canCarryItem(cfg.rewardItem,cfg.rewardQty)) {
+      return dialogue('Bolsa cheia',`Você precisa de espaço para receber ${cfg.rewardQty} × ${cfg.rewardLabel}. Guarde alguns recursos no baú da sua tenda e volte para concluir o turno.`);
+    }
     state.energy = Math.max(0,state.energy - workEnergyCost);
     state.hunger = Math.max(0,state.hunger - 5);
     state.time += 35;
@@ -1365,7 +1508,7 @@ function game() {
 
     if (state.workProgress.step >= cfg.steps.length) {
       state.workCompleted[workKey()] = true;
-      state.inventory[cfg.rewardItem] = (state.inventory[cfg.rewardItem] || 0) + cfg.rewardQty;
+      addInventoryItem(cfg.rewardItem,cfg.rewardQty);
       state.reputation += cfg.rep;
       state.workProgress = null;
       save();
@@ -1424,7 +1567,10 @@ function game() {
     const hanan = npcAgents.hanan, child = npcAgents.child;
     if (state.dailyTask?.id === 'morning-water') {
       if (state.dailyTask.step === 0 && Math.hypot(state.x-900,state.y-825) < 115) {
-        return {action:'Encher jarro para Hanan',run:()=>{state.inventory.agua_hanan=1;state.dailyTask.step=1;save();refreshHud();dialogue('Poço','Você enche um jarro para os preparativos da manhã.');}};
+        return {action:'Encher jarro para Hanan',run:()=>{
+          if(!canCarryItem('agua_hanan',1)) return dialogue('Bolsa cheia','Você precisa liberar espaço antes de carregar o jarro para Hanan.');
+          state.inventory.agua_hanan=1;state.dailyTask.step=1;save();refreshHud();dialogue('Poço','Você enche um jarro para os preparativos da manhã.');
+        }};
       }
       if (state.dailyTask.step === 1 && !hanan.inside && Math.hypot(state.x-hanan.x,state.y-hanan.y) < 110) {
         return {action:'Entregar água a Hanan',run:()=>{delete state.inventory.agua_hanan;completeDailyTask('morning-water',3);state.hunger=Math.min(100,state.hunger+12);dialogue('Hanan','Chegou na hora certa. Obrigado. Pegue também um pouco de pão antes de seguir.');}};
@@ -1451,7 +1597,7 @@ function game() {
   function runQuestInteraction() {
     switch (state.questStep) {
       case 0:
-        state.inventory.lenha = (state.inventory.lenha || 0) + 1;
+        if (!addInventoryItem('lenha',1)) return dialogue('Bolsa cheia','Você precisa liberar espaço na bolsa antes de recolher a lenha.');
         dialogue('Fogueira central','Você observa o centro do acampamento. A fogueira reúne viajantes, famílias e trabalhadores. Você separa um pequeno feixe de lenha para ajudar a mantê-la acesa.');
         advanceQuest(2);
         break;
@@ -1460,7 +1606,7 @@ function game() {
         advanceQuest(2);
         break;
       case 2:
-        state.inventory.agua = (state.inventory.agua || 0) + 1;
+        if (!addInventoryItem('agua',1)) return dialogue('Bolsa cheia','Você precisa liberar espaço na bolsa antes de carregar a água do poço.');
         dialogue('Poço de Judá','Você baixa o balde e retira água fresca. Agora pode levá-la ao curral.');
         advanceQuest(1);
         break;
@@ -1526,7 +1672,7 @@ function game() {
           : {action:'Descansar',run:()=>dialogue('Sua cama','Ainda é cedo para encerrar o dia. Você pode voltar depois das 20:00.')};
       }
       if (Math.hypot(indoorPos.x-680,indoorPos.y-475) < 100) {
-        return {action:'Abrir baú',run:()=>dialogue('Baú pessoal','Aqui ficarão ferramentas, roupas e itens importantes. O armazenamento completo será ampliado nas próximas versões.')};
+        return {action:'Abrir baú',run:()=>toggleChest(true)};
       }
     }
     if (currentScene === 'workshop') {
@@ -1643,7 +1789,7 @@ function game() {
   }
 
   function interact() {
-    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
+    if (!$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !chestOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden')) return;
     activeInteraction?.run?.();
   }
 
@@ -1711,15 +1857,19 @@ function game() {
     const key=event.key.toLowerCase();
     if (['w','a','s','d','arrowleft','arrowright','arrowup','arrowdown'].includes(key)) cancelClickMove();
     if (key === 'j' && !event.repeat) {
-      if ($('#dialogue').classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleJournal();
+      if ($('#dialogue').classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden') && chestOverlay.classList.contains('hidden')) toggleJournal();
       return;
     }
     if (key === 'i' && !event.repeat) {
-      if ($('#dialogue').classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden') && journalOverlay.classList.contains('hidden')) toggleInventory();
+      if ($('#dialogue').classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden') && journalOverlay.classList.contains('hidden') && chestOverlay.classList.contains('hidden')) toggleInventory();
       return;
     }
     if (key === 'm' && !event.repeat) {
-      if ($('#dialogue').classList.contains('hidden') && inventoryOverlay.classList.contains('hidden') && journalOverlay.classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleMap();
+      if ($('#dialogue').classList.contains('hidden') && inventoryOverlay.classList.contains('hidden') && chestOverlay.classList.contains('hidden') && journalOverlay.classList.contains('hidden') && gameMenuOverlay.classList.contains('hidden')) toggleMap();
+      return;
+    }
+    if (!chestOverlay.classList.contains('hidden')) {
+      if (event.key === 'Escape') toggleChest(false);
       return;
     }
     if (!journalOverlay.classList.contains('hidden')) {
@@ -1760,6 +1910,7 @@ function game() {
   }));
   inventoryButton.addEventListener('click', () => toggleInventory());
   $('#closeInventory').addEventListener('click', () => toggleInventory(false));
+  $('#closeChest').addEventListener('click', () => toggleChest(false));
   mapButton.addEventListener('click', () => toggleMap());
   $('#closeMap').addEventListener('click', () => toggleMap(false));
   menuButton.addEventListener('click', () => toggleGameMenu());
@@ -1853,7 +2004,7 @@ function game() {
       fpsSampleStart = now;
       fpsFrames = 0;
     }
-    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden');
+    const dialogOpen = !$('#dialogue').classList.contains('hidden') || !mapOverlay.classList.contains('hidden') || !inventoryOverlay.classList.contains('hidden') || !chestOverlay.classList.contains('hidden') || !journalOverlay.classList.contains('hidden') || !gameMenuOverlay.classList.contains('hidden');
     let dx=0,dy=0;
     if (!dialogOpen) {
       if (keys.has('a')||keys.has('arrowleft')) dx--;
