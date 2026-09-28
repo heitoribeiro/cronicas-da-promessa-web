@@ -9,6 +9,7 @@ var eliabe: PrototypeNPC
 var miria: PrototypeNPC
 var registered_npcs: Dictionary = {}
 var current_npc_routines: Dictionary = {}
+var current_npc_activities: Dictionary = {}
 
 var prompt_panel: PanelContainer
 var prompt_label: Label
@@ -22,12 +23,12 @@ var navigation_debug_label: Label
 var navigation_debug_visible := true
 var navigation_self_test_summary := "NAV: aguardando autoteste"
 var routine_self_test_summary := "ROTINA: aguardando autoteste"
+var behavior_self_test_summary := "ESTADOS: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 
 const GAME_MINUTES_PER_REAL_SECOND := 2.0
 var game_minutes := 6.0 * 60.0
-var current_hanan_routine := ""
 
 const NAV_CELL_SIZE := 24.0
 const NAV_AGENT_PADDING := 22.0
@@ -42,6 +43,7 @@ func _ready() -> void:
 	_build_navigation_grid()
 	_run_navigation_self_tests()
 	_run_routine_self_tests()
+	_run_behavior_self_tests()
 	_build_ui()
 	_spawn_player()
 	_spawn_hanan()
@@ -239,8 +241,56 @@ func _npc_routine_display_name(npc_name: String, routine_id: String) -> String:
 				_: return "Miriã: repouso"
 	return "%s: rotina" % npc_name
 
+func _npc_activity_for(npc_name: String, routine_id: String) -> String:
+	match npc_name:
+		"Hanan":
+			match routine_id:
+				"cozinha_manha", "servico_tarde":
+					return "work"
+				"preparar_noite":
+					return "socialize"
+				_:
+					return "rest"
+		"Eliabe":
+			match routine_id:
+				"oficina_manha":
+					return "work"
+				"coleta_tarde":
+					return "travel"
+				"fogueira_entardecer":
+					return "socialize"
+				_:
+					return "rest"
+		"Miriã":
+			match routine_id:
+				"tendas_manha":
+					return "work"
+				"agua_tarde":
+					return "travel"
+				"fogueira_entardecer":
+					return "socialize"
+				_:
+					return "rest"
+	return "wait"
+
+func _activity_display_name(activity_id: String) -> String:
+	match activity_id:
+		"work": return "trabalho"
+		"travel": return "deslocamento"
+		"wait": return "espera"
+		"meal": return "refeição"
+		"socialize": return "socialização"
+		"rest": return "repouso"
+	return activity_id
+
 func _npc_pause_for(routine_id: String) -> float:
-	return 4.0 if routine_id == "repouso" else 0.8
+	var activity_id := "rest" if routine_id == "repouso" else "work"
+	match activity_id:
+		"rest": return 4.0
+		"socialize": return 1.8
+		"meal": return 3.0
+		"wait": return 2.0
+		_: return 0.8
 
 func _apply_all_npc_routines(force: bool) -> void:
 	for npc_key in registered_npcs.keys():
@@ -257,8 +307,10 @@ func _apply_npc_routine(npc_name: String, force: bool) -> void:
 		return
 
 	current_npc_routines[npc_name] = routine_id
-	npc.apply_routine(routine_id, _npc_route_for(npc_name, routine_id), _npc_pause_for(routine_id))
-	print("[ROUTINE] ", npc_name, " -> ", routine_id, " às ", _format_game_time())
+	var activity_id: String = _npc_activity_for(npc_name, routine_id)
+	current_npc_activities[npc_name] = activity_id
+	npc.apply_routine(routine_id, _npc_route_for(npc_name, routine_id), activity_id, _npc_pause_for(routine_id))
+	print("[ROUTINE] ", npc_name, " -> ", routine_id, " [", activity_id, "] às ", _format_game_time())
 
 func _update_clock_ui() -> void:
 	if clock_label != null:
@@ -267,10 +319,13 @@ func _update_clock_ui() -> void:
 		var h_id: String = String(current_npc_routines.get("Hanan", ""))
 		var e_id: String = String(current_npc_routines.get("Eliabe", ""))
 		var m_id: String = String(current_npc_routines.get("Miriã", ""))
-		routine_label.text = "%s | %s | %s" % [
-			_npc_routine_display_name("Hanan", h_id),
-			_npc_routine_display_name("Eliabe", e_id),
-			_npc_routine_display_name("Miriã", m_id)
+		var h_activity: String = String(current_npc_activities.get("Hanan", "wait"))
+		var e_activity: String = String(current_npc_activities.get("Eliabe", "wait"))
+		var m_activity: String = String(current_npc_activities.get("Miriã", "wait"))
+		routine_label.text = "%s [%s] | %s [%s] | %s [%s]" % [
+			_npc_routine_display_name("Hanan", h_id), _activity_display_name(h_activity),
+			_npc_routine_display_name("Eliabe", e_id), _activity_display_name(e_activity),
+			_npc_routine_display_name("Miriã", m_id), _activity_display_name(m_activity)
 		]
 
 func _run_routine_self_tests() -> void:
@@ -294,6 +349,28 @@ func _run_routine_self_tests() -> void:
 			passed += 1
 	routine_self_test_summary = "ROTINA %d/%d" % [passed, checks.size()]
 	print("[ROUTINETEST] ", routine_self_test_summary)
+
+func _run_behavior_self_tests() -> void:
+	var checks: Array[bool] = [
+		_npc_activity_for("Hanan", "cozinha_manha") == "work",
+		_npc_activity_for("Hanan", "servico_tarde") == "work",
+		_npc_activity_for("Hanan", "preparar_noite") == "socialize",
+		_npc_activity_for("Hanan", "repouso") == "rest",
+		_npc_activity_for("Eliabe", "oficina_manha") == "work",
+		_npc_activity_for("Eliabe", "coleta_tarde") == "travel",
+		_npc_activity_for("Eliabe", "fogueira_entardecer") == "socialize",
+		_npc_activity_for("Eliabe", "repouso") == "rest",
+		_npc_activity_for("Miriã", "tendas_manha") == "work",
+		_npc_activity_for("Miriã", "agua_tarde") == "travel",
+		_npc_activity_for("Miriã", "fogueira_entardecer") == "socialize",
+		_npc_activity_for("Miriã", "repouso") == "rest"
+	]
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+	behavior_self_test_summary = "ESTADOS %d/%d" % [passed, checks.size()]
+	print("[BEHAVIORTEST] ", behavior_self_test_summary)
 
 func _build_navigation_grid() -> void:
 	navigation_grid.region = Rect2i(0, 0, int(ceil(1280.0 / NAV_CELL_SIZE)), int(ceil(720.0 / NAV_CELL_SIZE)))
@@ -448,6 +525,9 @@ func _on_hanan_patrol_point_reached(index: int, world_position: Vector2) -> void
 func _on_hanan_routine_changed(routine_id: String) -> void:
 	print("[NPCRoutine] Hanan rotina ativa: ", routine_id)
 
+func _on_hanan_activity_changed(activity_id: String) -> void:
+	print("[ACTIVITY] Hanan estado: ", activity_id)
+
 func _build_ui() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
@@ -472,7 +552,7 @@ func _build_ui() -> void:
 	canvas.add_child(routine_label)
 
 	navigation_debug_label = Label.new()
-	navigation_debug_label.text = "%s • %s" % [navigation_self_test_summary, routine_self_test_summary]
+	navigation_debug_label.text = "%s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary]
 	navigation_debug_label.position = Vector2(24, 642)
 	navigation_debug_label.add_theme_font_size_override("font_size", 13)
 	navigation_debug_label.add_theme_color_override("font_color", Color("#7ee0ff"))
@@ -539,6 +619,7 @@ func _spawn_hanan() -> void:
 	hanan.navigation_path_updated.connect(_on_hanan_navigation_path_updated)
 	hanan.patrol_point_reached.connect(_on_hanan_patrol_point_reached)
 	hanan.routine_changed.connect(_on_hanan_routine_changed)
+	hanan.activity_changed.connect(_on_hanan_activity_changed)
 	add_child(hanan)
 	registered_npcs["Hanan"] = hanan
 
@@ -560,6 +641,7 @@ func _spawn_scheduled_npc(npc_name: String, start_position: Vector2) -> Prototyp
 	npc.navigation_requested.connect(_on_registered_npc_navigation_requested.bind(npc_name))
 	npc.patrol_point_reached.connect(_on_registered_npc_patrol_point_reached.bind(npc_name))
 	npc.routine_changed.connect(_on_registered_npc_routine_changed.bind(npc_name))
+	npc.activity_changed.connect(_on_registered_npc_activity_changed.bind(npc_name))
 	add_child(npc)
 	registered_npcs[npc_name] = npc
 
@@ -584,6 +666,9 @@ func _on_registered_npc_patrol_point_reached(index: int, world_position: Vector2
 
 func _on_registered_npc_routine_changed(routine_id: String, npc_name: String) -> void:
 	print("[NPCRoutine] ", npc_name, " rotina ativa: ", routine_id)
+
+func _on_registered_npc_activity_changed(activity_id: String, npc_name: String) -> void:
+	print("[ACTIVITY] ", npc_name, " estado: ", activity_id)
 
 func _create_destination_marker() -> void:
 	destination_marker = Node2D.new()
@@ -629,7 +714,7 @@ func _interact_with_hanan() -> void:
 	hanan.paused = true
 	dialogue_panel.visible = true
 	prompt_panel.visible = false
-	dialogue_title.text = "Hanan — %s" % _format_game_time()
+	dialogue_title.text = "Hanan — %s — %s" % [_format_game_time(), _activity_display_name(String(current_npc_activities.get("Hanan", "wait")))]
 
 	if not quest_started:
 		quest_started = true
