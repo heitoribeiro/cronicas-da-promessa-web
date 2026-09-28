@@ -90,7 +90,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.16</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.16.1</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -112,7 +112,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.16 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.16.1 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -337,7 +337,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.16</div>
+      <div class="badge">Web Alpha 0.16.1</div>
     </main>`;
 
   const world = $('#world');
