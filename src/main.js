@@ -26,7 +26,10 @@ let state = {
   hunger: 82,
   meals: {},
   dailyTask: null,
-  dailyCompleted: {}
+  dailyCompleted: {},
+  workCompleted: {},
+  workProgress: null,
+  lastDaySummary: null
 };
 
 function $(selector) { return document.querySelector(selector); }
@@ -36,6 +39,9 @@ function normalizeState() {
   state.visited ||= {};
   state.meals ||= {};
   state.dailyCompleted ||= {};
+  state.workCompleted ||= {};
+  if (!('workProgress' in state)) state.workProgress = null;
+  if (!('lastDaySummary' in state)) state.lastDaySummary = null;
   if (!Number.isFinite(state.energy)) state.energy = 100;
   if (!Number.isFinite(state.hunger)) state.hunger = 82;
   state.energy = Math.max(0,Math.min(100,state.energy));
@@ -71,7 +77,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.14</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.15</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -93,7 +99,7 @@ function menu() {
           <button class="btn" id="newGame">NOVA JORNADA</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}>CONTINUAR</button>
         </div>
-        <p class="subtitle">Web Alpha 0.14 • Judá vivo</p>
+        <p class="subtitle">Web Alpha 0.15 • Judá vivo</p>
       </section>
     </main>`;
 
@@ -136,7 +142,8 @@ function createCharacter() {
       },
       x: 900, y: 980, day: 1, time: 480,
       inventory: {}, reputation: 0, questStep: 0, visited: {},
-      energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {}
+      energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {},
+      workCompleted: {}, workProgress: null, lastDaySummary: null
     };
     save();
     game();
@@ -223,6 +230,10 @@ function game() {
 
         <img class="scenic-asset player-home-asset" style="left:565px;top:835px" src="./assets/art/judah/player_tent.svg" alt="Sua tenda">
         <div class="zone-label player-home-label" style="left:615px;top:825px">Sua tenda</div>
+        <div class="work-site pastor-site" data-job="Pastor" style="left:365px;top:875px"><b>PASTOREIO</b></div>
+        <div class="work-site farmer-site" data-job="Agricultor" style="left:1060px;top:910px"><b>CANTEIRO</b></div>
+        <div class="work-site gatherer-site" data-job="Coletor" style="left:1490px;top:905px"><b>COLETA</b></div>
+        <div class="work-site levite-site" data-job="Levita" style="left:815px;top:390px"><b>SERVIÇO</b></div>
 
         <div class="npc npc-elder" style="left:890px;top:292px"><img src="./assets/art/npcs/elder.svg" alt="Ancião"><b>Ancião</b></div>
         <div class="npc npc-eliabe" style="left:1320px;top:745px"><img src="./assets/art/npcs/eliabe.svg" alt="Eliabe"><b>Eliabe</b></div>
@@ -270,6 +281,7 @@ function game() {
       </div>
       <div class="meal-hint" id="mealHint"></div>
       <div class="objective" id="objective"></div>
+      <div class="vocation-task" id="vocationTask"></div>
       <div class="daily-task" id="dailyTask"></div>
       <div class="inventory-mini" id="inventoryMini"></div>
       <div class="prompt hidden" id="prompt"></div>
@@ -302,7 +314,7 @@ function game() {
 
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
-      <div class="badge">Web Alpha 0.14</div>
+      <div class="badge">Web Alpha 0.15</div>
     </main>`;
 
   const world = $('#world');
@@ -322,6 +334,7 @@ function game() {
   const energyText = $('#energyText');
   const hungerText = $('#hungerText');
   const dailyTaskEl = $('#dailyTask');
+  const vocationTaskEl = $('#vocationTask');
   const rep = $('#rep');
   const objective = $('#objective');
   const inventoryMini = $('#inventoryMini');
@@ -355,6 +368,65 @@ function game() {
     const week = Math.floor((state.day - 1) / 7) + 1;
     const dayName = weekDay === 7 ? 'Shabat' : weekDay + 'º dia';
     return `Semana ${week} • ${dayName}`;
+  }
+
+  function isShabbat() {
+    return ((state.day - 1) % 7) + 1 === 7;
+  }
+
+  function vocationConfig() {
+    const configs = {
+      Pastor: {
+        id:'pastor', label:'Cuidado do rebanho', x:420, y:825, radius:150,
+        rewardItem:'lã', rewardLabel:'Lã', rewardQty:2, rep:3, energyCost:13,
+        intro:'O rebanho precisa ser contado, os cochos verificados e os animais observados antes do calor aumentar.',
+        steps:['Contar o rebanho','Verificar cochos e água','Separar os animais que precisam de atenção']
+      },
+      Agricultor: {
+        id:'agricultor', label:'Canteiro comunitário', x:1080, y:920, radius:150,
+        rewardItem:'graos', rewardLabel:'Grãos', rewardQty:3, rep:3, energyCost:14,
+        intro:'O pequeno canteiro precisa ser revolvido, irrigado e preparado para o próximo plantio.',
+        steps:['Revolver a terra','Distribuir água','Organizar sementes e ferramentas']
+      },
+      Coletor: {
+        id:'coletor', label:'Coleta do entorno', x:1505, y:895, radius:160,
+        rewardItem:'ervas', rewardLabel:'Ervas', rewardQty:3, rep:3, energyCost:12,
+        intro:'O entorno do acampamento oferece gravetos, fibras e ervas úteis. É preciso coletar sem se afastar demais.',
+        steps:['Examinar a vegetação','Separar ervas e fibras','Levar a coleta de volta ao setor']
+      },
+      Levita: {
+        id:'levita', label:'Serviço comunitário', x:900, y:410, radius:145,
+        rewardItem:'registros', rewardLabel:'Registros', rewardQty:1, rep:4, energyCost:10,
+        intro:'Há registros, recados e tarefas de serviço a organizar junto ao centro do setor.',
+        steps:['Organizar os registros','Ajudar na distribuição de tarefas','Revisar os recados do dia']
+      }
+    };
+    return configs[state.profile.vocation] || configs.Pastor;
+  }
+
+  function workKey() {
+    return `${state.day}:${vocationConfig().id}`;
+  }
+
+  function workDoneToday() {
+    return Boolean(state.workCompleted[workKey()]);
+  }
+
+  function workWindowOpen() {
+    const minute = ((state.time % 1440) + 1440) % 1440;
+    return minute >= 510 && minute < 990;
+  }
+
+  function vocationTaskText() {
+    const cfg = vocationConfig();
+    if (state.questStep < QUESTS.length - 1) return '';
+    if (isShabbat()) return 'Shabat • sem turno de trabalho. O dia é dedicado ao descanso e à vida comunitária.';
+    if (workDoneToday()) return `${cfg.label} concluído hoje.`;
+    if (state.workProgress?.id === cfg.id && state.workProgress.day === state.day) {
+      return `Trabalho: ${cfg.label} • etapa ${state.workProgress.step + 1}/3 — ${cfg.steps[state.workProgress.step]}`;
+    }
+    if (workWindowOpen()) return `Turno disponível até 16:30: ${cfg.label}.`;
+    return `Próximo turno de ${cfg.label}: 08:30–16:30.`;
   }
 
   function mealWindow() {
@@ -731,9 +803,14 @@ function game() {
     const warning = needWarning();
     document.querySelector('.needs-hud')?.classList.toggle('warning',Boolean(warning));
     dailyTaskEl.textContent = getDailyTaskText();
+    vocationTaskEl.textContent = vocationTaskText();
     const items = [];
     if (state.inventory.lenha) items.push(`Lenha ×${state.inventory.lenha}`);
     if (state.inventory.agua) items.push(`Água ×${state.inventory.agua}`);
+    if (state.inventory['lã']) items.push(`Lã ×${state.inventory['lã']}`);
+    if (state.inventory.graos) items.push(`Grãos ×${state.inventory.graos}`);
+    if (state.inventory.ervas) items.push(`Ervas ×${state.inventory.ervas}`);
+    if (state.inventory.registros) items.push(`Registros ×${state.inventory.registros}`);
     inventoryMini.textContent = items.length ? items.join(' • ') : 'Bolsa vazia';
   }
 
@@ -763,6 +840,57 @@ function game() {
     state.questStep = Math.min(state.questStep + 1, QUESTS.length - 1);
     save();
     refreshHud();
+  }
+
+  function startOrAdvanceWork() {
+    const cfg = vocationConfig();
+    if (isShabbat()) {
+      return dialogue('Shabat','Hoje não há turno regular de trabalho. O acampamento reduz o ritmo e prioriza descanso, convívio e adoração.');
+    }
+    if (!workWindowOpen()) {
+      return dialogue(cfg.label,'O turno regular acontece entre 08:30 e 16:30.');
+    }
+    if (workDoneToday()) {
+      return dialogue(cfg.label,'Seu trabalho desta jornada já foi concluído. Agora você pode cuidar de outras tarefas.');
+    }
+    if (state.energy < cfg.energyCost) {
+      return dialogue('Cansaço','Você está sem energia suficiente para continuar este trabalho. Coma algo ou descanse.');
+    }
+    if (!state.workProgress || state.workProgress.id !== cfg.id || state.workProgress.day !== state.day) {
+      state.workProgress = {id:cfg.id,day:state.day,step:0};
+      save();
+      refreshHud();
+      return dialogue(cfg.label,cfg.intro);
+    }
+
+    const stepIndex = state.workProgress.step;
+    state.energy = Math.max(0,state.energy - cfg.energyCost);
+    state.hunger = Math.max(0,state.hunger - 5);
+    state.time += 35;
+    state.workProgress.step += 1;
+
+    if (state.workProgress.step >= cfg.steps.length) {
+      state.workCompleted[workKey()] = true;
+      state.inventory[cfg.rewardItem] = (state.inventory[cfg.rewardItem] || 0) + cfg.rewardQty;
+      state.reputation += cfg.rep;
+      state.workProgress = null;
+      save();
+      refreshHud();
+      return dialogue('Turno concluído',`${cfg.label} concluído. Você recebe ${cfg.rewardQty} × ${cfg.rewardLabel} e ganha ${cfg.rep} de reputação.`);
+    }
+
+    save();
+    refreshHud();
+    dialogue(cfg.label,`${cfg.steps[stepIndex]} concluído. Ainda há trabalho pela frente.`);
+  }
+
+  function getWorkInteraction() {
+    if (state.questStep < QUESTS.length - 1 || currentScene !== 'outdoor') return null;
+    const cfg = vocationConfig();
+    if (Math.hypot(state.x-cfg.x,state.y-cfg.y) > cfg.radius) return null;
+    if (isShabbat()) return {action:'Observar o descanso de Shabat',run:startOrAdvanceWork};
+    if (workDoneToday()) return {action:'Rever o trabalho do dia',run:startOrAdvanceWork};
+    return {action:state.workProgress?.id === cfg.id ? cfg.steps[state.workProgress.step] : `Iniciar: ${cfg.label}`,run:startOrAdvanceWork};
   }
 
   function timedWindowId() {
@@ -862,6 +990,8 @@ function game() {
   function getActiveInteraction() {
     const timed = getTimedInteraction();
     if (timed) return timed;
+    const work = getWorkInteraction();
+    if (work) return work;
     const quest = QUESTS[state.questStep];
     const questNpc = quest?.id === 'eliabe' ? npcAgents.eliabe : quest?.id === 'corral' ? npcAgents.child : quest?.id === 'elder' ? npcAgents.elder : null;
     if ((quest?.target || questNpc) && !questNpc?.inside) {
@@ -920,14 +1050,26 @@ function game() {
   }
 
   function sleepUntilMorning() {
+    const oldDay = state.day;
+    const cfg = vocationConfig();
+    const worked = Boolean(state.workCompleted[`${oldDay}:${cfg.id}`]);
+    const routines = Object.keys(state.dailyCompleted).filter(k=>k.startsWith(oldDay + ':')).length;
+    state.lastDaySummary = {
+      day:oldDay,
+      worked,
+      routines,
+      reputation:state.reputation
+    };
     state.day += 1;
     state.time = 360;
     state.energy = 100;
     state.hunger = Math.max(52,state.hunger - 8);
     state.dailyTask = null;
+    state.workProgress = null;
     save();
     refreshHud();
-    dialogue('Amanhecer',`Você descansa durante a noite. Começa o Dia ${state.day} com a energia restaurada.`,'Levantar');
+    const tomorrow = isShabbat() ? ' Hoje é Shabat: não haverá turno regular de trabalho.' : '';
+    dialogue('Amanhecer',`Dia ${oldDay} encerrado. Trabalho: ${worked ? 'concluído' : 'não realizado'} • rotinas comunitárias: ${routines}. Começa o Dia ${state.day} com a energia restaurada.${tomorrow}`,'Levantar');
   }
 
   function interact() {
@@ -1090,6 +1232,8 @@ function game() {
       if (state.time >= 1440) {
         state.time -= 1440;
         state.day += 1;
+        state.dailyTask = null;
+        state.workProgress = null;
         save();
       }
     }
