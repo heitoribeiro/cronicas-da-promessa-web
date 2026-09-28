@@ -10,11 +10,9 @@ signal destination_failed(world_position: Vector2)
 var target_position: Vector2
 var has_target := false
 var _stuck_time := 0.0
-var _last_position := Vector2.ZERO
 
 func _ready() -> void:
 	target_position = global_position
-	_last_position = global_position
 	collision_layer = 1
 	collision_mask = 2 | 4
 
@@ -33,7 +31,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			target_position = get_global_mouse_position()
 			has_target = true
 			_stuck_time = 0.0
-			_last_position = global_position
 			destination_changed.emit(target_position)
 
 func _physics_process(delta: float) -> void:
@@ -72,8 +69,6 @@ func _physics_process(delta: float) -> void:
 				destination_failed.emit(target_position)
 		else:
 			_stuck_time = 0.0
-
-	_last_position = global_position
 
 func _draw() -> void:
 	# Temporary technical representation. Final sprite comes from the visual pipeline.
