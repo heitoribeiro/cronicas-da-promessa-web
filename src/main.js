@@ -852,9 +852,11 @@ function game() {
   function keepExteriorNpcReadable(key,agent) {
     const zone=npcExteriorZones[key];
     if(!zone || agent.inside) return;
-    // These workers may travel elsewhere according to their schedule.
-    if(!agent.scheduleTag.includes('cozinha') && key==='hanan') return;
-    if(!agent.scheduleTag.includes('oficina') && !agent.scheduleTag.includes('quest-oficina') && key==='eliabe') return;
+    const workplaceTags = {
+      hanan:new Set(['cozinha-externa']),
+      eliabe:new Set(['oficina-externa','oficina-fim','quest-oficina-externa','porta-oficina'])
+    };
+    if(!workplaceTags[key]?.has(agent.scheduleTag)) return;
     agent.x=Math.max(zone.x1,Math.min(zone.x2,agent.x));
     agent.y=Math.max(zone.y1,Math.min(zone.y2,agent.y));
   }
