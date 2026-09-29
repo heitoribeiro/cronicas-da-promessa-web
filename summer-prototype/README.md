@@ -222,3 +222,24 @@ Regras:
 - logs `[PLAYERRESOURCE]` registram coleta do jogador
 - logs `[QUEST]` registram início e conclusão
 - `[QUESTTEST] QUEST 5/5` valida requisitos e limite básico da Bolsa
+
+
+## Sistema genérico de quests de entrega
+
+A primeira missão deixou de usar flags específicas e passou a usar definições configuráveis.
+
+Estrutura:
+- cada quest possui `id`, título, NPC responsável, requisitos e textos de início/conclusão
+- uma quest ativa é controlada por `active_quest_id`
+- quests concluídas são registradas em `completed_quest_ids`
+- requisitos são lidos genericamente da definição da quest
+
+Proteção contra soft-lock:
+- entregas de quest nunca são bloqueadas porque o estoque do acampamento está cheio
+- a parte que couber é armazenada normalmente
+- o excedente é considerado consumido pela própria missão
+- logs `[QUESTRESOURCE]` mostram quantidade entregue, armazenada e consumida na missão
+
+Validação:
+- `[QUESTTEST] QUESTSYS 9/9` valida definição, requisitos, capacidade da Bolsa e entrega com estoque cheio
+- a missão atual **Água para a Cozinha** continua exigindo 2 unidades de água
