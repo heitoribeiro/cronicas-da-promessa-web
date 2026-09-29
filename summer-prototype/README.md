@@ -194,3 +194,31 @@ Regras:
 - o HUD mostra os estoques do acampamento
 - logs `[RESOURCE]` registram produção, consumo e bloqueios
 - `[ECONOMYTEST] ECONOMIA 5/5` valida o mapeamento básico de recursos
+
+
+## Bolsa do jogador e primeira quest econômica
+
+A economia do acampamento agora está conectada ao jogador.
+
+Bolsa:
+- água
+- lenha
+- materiais
+- refeições
+- capacidade de 8 unidades por recurso
+
+Primeira quest real:
+- fale com Hanan para iniciar **Água para a Cozinha**
+- requisito: 2 unidades de água
+- aproxime-se do Poço e use E ou clique no prompt para recolher água
+- cada coleta adiciona 1 água à Bolsa
+- volte a Hanan com 2 águas
+- ao entregar, 2 águas saem da Bolsa e entram no estoque do acampamento
+- a quest só é concluída após a entrega real dos recursos
+
+Regras:
+- não é possível exceder a capacidade da Bolsa
+- a entrega não ocorre se o estoque do acampamento não comportar os recursos
+- logs `[PLAYERRESOURCE]` registram coleta do jogador
+- logs `[QUEST]` registram início e conclusão
+- `[QUESTTEST] QUEST 5/5` valida requisitos e limite básico da Bolsa
