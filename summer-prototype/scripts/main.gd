@@ -24,8 +24,18 @@ var navigation_debug_visible := true
 var navigation_self_test_summary := "NAV: aguardando autoteste"
 var routine_self_test_summary := "ROTINA: aguardando autoteste"
 var behavior_self_test_summary := "ESTADOS: aguardando autoteste"
+var economy_self_test_summary := "ECONOMIA: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
+var resource_label: Label
+
+const RESOURCE_CAP := 20
+var camp_resources: Dictionary = {
+	"agua": 4,
+	"lenha": 4,
+	"materiais": 0,
+	"refeicoes": 0
+}
 
 const GAME_MINUTES_PER_REAL_SECOND := 2.0
 var game_minutes := 6.0 * 60.0
@@ -44,6 +54,7 @@ func _ready() -> void:
 	_run_navigation_self_tests()
 	_run_routine_self_tests()
 	_run_behavior_self_tests()
+	_run_economy_self_tests()
 	_build_ui()
 	_spawn_player()
 	_spawn_hanan()
@@ -60,6 +71,7 @@ func _process(delta: float) -> void:
 
 	_apply_all_npc_routines(false)
 	_update_clock_ui()
+	_update_resource_ui()
 
 	var nearby := player.global_position.distance_to(hanan.global_position) <= 82.0
 	prompt_panel.visible = nearby and not dialogue_panel.visible
@@ -394,6 +406,87 @@ func _run_behavior_self_tests() -> void:
 	behavior_self_test_summary = "ESTADOS %d/%d" % [passed, checks.size()]
 	print("[BEHAVIORTEST] ", behavior_self_test_summary)
 
+func _resource_effect_for(npc_name: String, routine_id: String, point_index: int) -> Dictionary:
+	if point_index != 0:
+		return {}
+
+	match npc_name:
+		"Hanan":
+			if routine_id == "cozinha_manha":
+				return {"agua": -1, "lenha": -1, "refeicoes": 1}
+		"Eliabe":
+			if routine_id == "oficina_manha":
+				return {"materiais": 1}
+			if routine_id == "coleta_tarde":
+				return {"lenha": 1}
+		"Miriã":
+			if routine_id == "agua_tarde":
+				return {"agua": 1}
+
+	return {}
+
+func _can_apply_resource_effect(effect: Dictionary) -> bool:
+	for resource_key in effect.keys():
+		var resource_id := String(resource_key)
+		var delta := int(effect[resource_key])
+		if delta < 0 and int(camp_resources.get(resource_id, 0)) + delta < 0:
+			return false
+	return true
+
+func _apply_resource_effect(npc_name: String, routine_id: String, point_index: int) -> void:
+	var effect := _resource_effect_for(npc_name, routine_id, point_index)
+	if effect.is_empty():
+		return
+
+	if not _can_apply_resource_effect(effect):
+		print("[RESOURCE] ", npc_name, " bloqueado em ", routine_id, ": recursos insuficientes")
+		return
+
+	var parts: Array[String] = []
+	for resource_key in effect.keys():
+		var resource_id := String(resource_key)
+		var delta := int(effect[resource_key])
+		var current := int(camp_resources.get(resource_id, 0))
+		var updated := clampi(current + delta, 0, RESOURCE_CAP)
+		camp_resources[resource_id] = updated
+		parts.append("%s %+d" % [resource_id, delta])
+
+	print("[RESOURCE] ", npc_name, " / ", routine_id, " -> ", ", ".join(PackedStringArray(parts)))
+	_update_resource_ui()
+
+func _update_resource_ui() -> void:
+	if resource_label == null:
+		return
+	resource_label.text = "Acampamento  Água %d/%d  •  Lenha %d/%d  •  Materiais %d/%d  •  Refeições %d/%d" % [
+		int(camp_resources.get("agua", 0)), RESOURCE_CAP,
+		int(camp_resources.get("lenha", 0)), RESOURCE_CAP,
+		int(camp_resources.get("materiais", 0)), RESOURCE_CAP,
+		int(camp_resources.get("refeicoes", 0)), RESOURCE_CAP
+	]
+
+func _run_economy_self_tests() -> void:
+	var hanan_effect := _resource_effect_for("Hanan", "cozinha_manha", 0)
+	var eliabe_workshop := _resource_effect_for("Eliabe", "oficina_manha", 0)
+	var eliabe_collect := _resource_effect_for("Eliabe", "coleta_tarde", 0)
+	var miria_water := _resource_effect_for("Miriã", "agua_tarde", 0)
+	var non_productive := _resource_effect_for("Miriã", "agua_tarde", 1)
+
+	var checks: Array[bool] = [
+		int(hanan_effect.get("agua", 0)) == -1 and int(hanan_effect.get("lenha", 0)) == -1 and int(hanan_effect.get("refeicoes", 0)) == 1,
+		int(eliabe_workshop.get("materiais", 0)) == 1,
+		int(eliabe_collect.get("lenha", 0)) == 1,
+		int(miria_water.get("agua", 0)) == 1,
+		non_productive.is_empty()
+	]
+
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+
+	economy_self_test_summary = "ECONOMIA %d/%d" % [passed, checks.size()]
+	print("[ECONOMYTEST] ", economy_self_test_summary)
+
 func _build_navigation_grid() -> void:
 	navigation_grid.region = Rect2i(0, 0, int(ceil(1280.0 / NAV_CELL_SIZE)), int(ceil(720.0 / NAV_CELL_SIZE)))
 	navigation_grid.cell_size = Vector2(NAV_CELL_SIZE, NAV_CELL_SIZE)
@@ -550,11 +643,12 @@ func _on_hanan_routine_changed(routine_id: String) -> void:
 func _on_hanan_activity_changed(activity_id: String) -> void:
 	print("[ACTIVITY] Hanan estado: ", activity_id)
 
-func _on_hanan_action_started(activity_id: String, routine_id: String, world_position: Vector2) -> void:
-	print("[ACTION] Hanan iniciou ", activity_id, " / ", routine_id, " em ", world_position)
+func _on_hanan_action_started(activity_id: String, routine_id: String, point_index: int, world_position: Vector2) -> void:
+	print("[ACTION] Hanan iniciou ", activity_id, " / ", routine_id, " ponto ", point_index, " em ", world_position)
 
-func _on_hanan_action_completed(activity_id: String, routine_id: String, world_position: Vector2) -> void:
-	print("[ACTION] Hanan concluiu ", activity_id, " / ", routine_id, " em ", world_position)
+func _on_hanan_action_completed(activity_id: String, routine_id: String, point_index: int, world_position: Vector2) -> void:
+	print("[ACTION] Hanan concluiu ", activity_id, " / ", routine_id, " ponto ", point_index, " em ", world_position)
+	_apply_resource_effect("Hanan", routine_id, point_index)
 
 func _build_ui() -> void:
 	var canvas := CanvasLayer.new()
@@ -566,6 +660,15 @@ func _build_ui() -> void:
 	instructions.add_theme_font_size_override("font_size", 14)
 	instructions.add_theme_color_override("font_color", Color.WHITE)
 	canvas.add_child(instructions)
+
+	resource_label = Label.new()
+	resource_label.position = Vector2(380, 18)
+	resource_label.size = Vector2(690, 24)
+	resource_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	resource_label.add_theme_font_size_override("font_size", 13)
+	resource_label.add_theme_color_override("font_color", Color("#e8f0c4"))
+	canvas.add_child(resource_label)
+	_update_resource_ui()
 
 	clock_label = Label.new()
 	clock_label.position = Vector2(1090, 18)
@@ -582,7 +685,7 @@ func _build_ui() -> void:
 	canvas.add_child(routine_label)
 
 	navigation_debug_label = Label.new()
-	navigation_debug_label.text = "%s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary]
+	navigation_debug_label.text = "%s • %s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary, economy_self_test_summary]
 	navigation_debug_label.position = Vector2(24, 642)
 	navigation_debug_label.add_theme_font_size_override("font_size", 13)
 	navigation_debug_label.add_theme_color_override("font_color", Color("#7ee0ff"))
@@ -704,11 +807,12 @@ func _on_registered_npc_routine_changed(routine_id: String, npc_name: String) ->
 func _on_registered_npc_activity_changed(activity_id: String, npc_name: String) -> void:
 	print("[ACTIVITY] ", npc_name, " estado: ", activity_id)
 
-func _on_registered_npc_action_started(activity_id: String, routine_id: String, world_position: Vector2, npc_name: String) -> void:
-	print("[ACTION] ", npc_name, " iniciou ", activity_id, " / ", routine_id, " em ", world_position)
+func _on_registered_npc_action_started(activity_id: String, routine_id: String, point_index: int, world_position: Vector2, npc_name: String) -> void:
+	print("[ACTION] ", npc_name, " iniciou ", activity_id, " / ", routine_id, " ponto ", point_index, " em ", world_position)
 
-func _on_registered_npc_action_completed(activity_id: String, routine_id: String, world_position: Vector2, npc_name: String) -> void:
-	print("[ACTION] ", npc_name, " concluiu ", activity_id, " / ", routine_id, " em ", world_position)
+func _on_registered_npc_action_completed(activity_id: String, routine_id: String, point_index: int, world_position: Vector2, npc_name: String) -> void:
+	print("[ACTION] ", npc_name, " concluiu ", activity_id, " / ", routine_id, " ponto ", point_index, " em ", world_position)
+	_apply_resource_effect(npc_name, routine_id, point_index)
 
 func _create_destination_marker() -> void:
 	destination_marker = Node2D.new()
