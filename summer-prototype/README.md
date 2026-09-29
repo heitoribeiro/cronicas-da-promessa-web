@@ -243,3 +243,30 @@ Proteção contra soft-lock:
 Validação:
 - `[QUESTTEST] QUESTSYS 9/9` valida definição, requisitos, capacidade da Bolsa e entrega com estoque cheio
 - a missão atual **Água para a Cozinha** continua exigindo 2 unidades de água
+
+
+## Segunda quest genérica
+
+A infraestrutura de quests agora é reutilizada por um segundo NPC.
+
+Quest:
+- **Lenha para a Oficina**
+- NPC: Eliabe
+- requisito: 3 unidades de Lenha
+- pré-requisito: concluir **Água para a Cozinha**
+
+Fluxo:
+- fale com Eliabe após concluir a quest de Hanan
+- vá até a área de **Coleta de Lenha**
+- use E ou clique no prompt para recolher Lenha
+- cada coleta adiciona 1 Lenha à Bolsa
+- entregue 3 Lenhas a Eliabe
+- a entrega usa o mesmo tratamento de estoque cheio já validado
+
+Diálogos:
+- o jogo agora pausa apenas o NPC com quem o jogador está conversando
+- fechar o diálogo libera somente esse NPC
+- Hanan, Eliabe e os demais continuam independentes
+
+Validação:
+- o autoteste de quests passa a ser `QUESTSYS 12/12`
