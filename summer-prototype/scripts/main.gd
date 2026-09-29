@@ -35,8 +35,18 @@ var active_interaction_target := ""
 
 const RESOURCE_CAP := 20
 const PLAYER_RESOURCE_CAP := 8
-const QUEST_WATER_REQUIRED := 2
 const WELL_POSITION := Vector2(640, 500)
+const FIRST_QUEST_ID := "water_kitchen"
+
+const QUEST_DEFINITIONS := {
+	"water_kitchen": {
+		"title": "Água para a Cozinha",
+		"giver": "Hanan",
+		"requirements": {"agua": 2},
+		"start_text": "A Cozinha precisa de água. Vá até o Poço, recolha 2 unidades de Água e traga-as para mim.",
+		"complete_text": "Muito bem. A Água foi entregue à Cozinha. A missão está concluída."
+	}
+}
 
 var player_inventory: Dictionary = {
 	"agua": 0,
@@ -59,8 +69,8 @@ const NAV_AGENT_PADDING := 22.0
 var navigation_grid := AStarGrid2D.new()
 var navigation_ready := false
 
-var quest_started := false
-var quest_completed := false
+var active_quest_id := ""
+var completed_quest_ids: Dictionary = {}
 
 func _ready() -> void:
 	_build_world()
@@ -524,38 +534,82 @@ func _player_add_resource(resource_id: String, amount: int) -> int:
 	_update_inventory_ui()
 	return updated - current
 
-func _can_deposit_delivery(requirements: Dictionary) -> bool:
-	if not _inventory_has_requirements(player_inventory, requirements):
+func _get_quest_definition(quest_id: String) -> Dictionary:
+	if not QUEST_DEFINITIONS.has(quest_id):
+		return {}
+	return QUEST_DEFINITIONS[quest_id]
+
+func _quest_title(quest_id: String) -> String:
+	var definition := _get_quest_definition(quest_id)
+	return String(definition.get("title", quest_id))
+
+func _quest_requirements(quest_id: String) -> Dictionary:
+	var definition := _get_quest_definition(quest_id)
+	return definition.get("requirements", {})
+
+func _quest_is_completed(quest_id: String) -> bool:
+	return bool(completed_quest_ids.get(quest_id, false))
+
+func _start_quest(quest_id: String) -> bool:
+	if _get_quest_definition(quest_id).is_empty():
 		return false
-	for resource_key in requirements.keys():
-		var resource_id := String(resource_key)
-		var amount := int(requirements[resource_key])
-		if int(camp_resources.get(resource_id, 0)) + amount > RESOURCE_CAP:
-			return false
+	if _quest_is_completed(quest_id):
+		return false
+	if active_quest_id != "" and active_quest_id != quest_id:
+		return false
+	active_quest_id = quest_id
+	print("[QUEST] Iniciada: ", _quest_title(quest_id))
+	_update_inventory_ui()
 	return true
 
-func _deposit_player_delivery(requirements: Dictionary) -> bool:
-	if not _can_deposit_delivery(requirements):
+func _delivery_split(current_stock: int, amount: int) -> Vector2i:
+	var free_space := maxi(0, RESOURCE_CAP - current_stock)
+	var stored := mini(amount, free_space)
+	var consumed_by_quest := maxi(0, amount - stored)
+	return Vector2i(stored, consumed_by_quest)
+
+func _deliver_quest_resources(quest_id: String) -> bool:
+	var requirements := _quest_requirements(quest_id)
+	if requirements.is_empty() or not _inventory_has_requirements(player_inventory, requirements):
 		return false
+
 	for resource_key in requirements.keys():
 		var resource_id := String(resource_key)
 		var amount := int(requirements[resource_key])
+		var current_stock := int(camp_resources.get(resource_id, 0))
+		var split := _delivery_split(current_stock, amount)
+		var stored := split.x
+		var consumed := split.y
+
 		player_inventory[resource_id] = int(player_inventory.get(resource_id, 0)) - amount
-		camp_resources[resource_id] = int(camp_resources.get(resource_id, 0)) + amount
+		camp_resources[resource_id] = current_stock + stored
+
+		print("[QUESTRESOURCE] ", resource_id, " entregue=", amount, " armazenado=", stored, " consumido_na_missao=", consumed)
+
+	completed_quest_ids[quest_id] = true
+	if active_quest_id == quest_id:
+		active_quest_id = ""
+
+	print("[QUEST] Concluída: ", _quest_title(quest_id))
 	_update_inventory_ui()
 	_update_resource_ui()
 	return true
 
-func _quest_requirements() -> Dictionary:
-	return {"agua": QUEST_WATER_REQUIRED}
-
 func _quest_progress_text() -> String:
-	if not quest_started:
+	if active_quest_id == "":
+		if _quest_is_completed(FIRST_QUEST_ID):
+			return "Quest concluída: %s" % _quest_title(FIRST_QUEST_ID)
 		return "Quest: fale com Hanan"
-	if quest_completed:
-		return "Quest concluída: Água para a Cozinha"
-	var current := int(player_inventory.get("agua", 0))
-	return "Quest: Água para a Cozinha • %d/%d na Bolsa" % [current, QUEST_WATER_REQUIRED]
+
+	var requirements := _quest_requirements(active_quest_id)
+	var pieces: Array[String] = []
+	for resource_key in requirements.keys():
+		var resource_id := String(resource_key)
+		var current := int(player_inventory.get(resource_id, 0))
+		var required := int(requirements[resource_key])
+		pieces.append("%s %d/%d" % [resource_id.capitalize(), current, required])
+
+	return "Quest: %s • %s" % [_quest_title(active_quest_id), " • ".join(PackedStringArray(pieces))]
 
 func _update_inventory_ui() -> void:
 	if inventory_label != null:
@@ -594,19 +648,27 @@ func _run_player_quest_self_tests() -> void:
 	var empty_inventory := {"agua": 0}
 	var one_water := {"agua": 1}
 	var enough_water := {"agua": 2}
-	var requirements := {"agua": QUEST_WATER_REQUIRED}
+	var requirements := _quest_requirements(FIRST_QUEST_ID)
+	var overflow_split := _delivery_split(20, 2)
+	var partial_split := _delivery_split(19, 2)
+	var definition := _get_quest_definition(FIRST_QUEST_ID)
+
 	var checks: Array[bool] = [
+		not definition.is_empty(),
+		String(definition.get("giver", "")) == "Hanan",
+		int(requirements.get("agua", 0)) == 2,
 		not _inventory_has_requirements(empty_inventory, requirements),
 		not _inventory_has_requirements(one_water, requirements),
 		_inventory_has_requirements(enough_water, requirements),
 		clampi(7 + 2, 0, PLAYER_RESOURCE_CAP) == PLAYER_RESOURCE_CAP,
-		QUEST_WATER_REQUIRED == 2
+		overflow_split == Vector2i(0, 2),
+		partial_split == Vector2i(1, 1)
 	]
 	var passed := 0
 	for check in checks:
 		if check:
 			passed += 1
-	quest_self_test_summary = "QUEST %d/%d" % [passed, checks.size()]
+	quest_self_test_summary = "QUESTSYS %d/%d" % [passed, checks.size()]
 	print("[QUESTTEST] ", quest_self_test_summary)
 
 func _build_navigation_grid() -> void:
@@ -997,27 +1059,22 @@ func _interact_with_hanan() -> void:
 	prompt_panel.visible = false
 	dialogue_title.text = "Hanan — %s — %s" % [_format_game_time(), _activity_display_name(String(current_npc_activities.get("Hanan", "wait")))]
 
-	if not quest_started:
-		quest_started = true
-		dialogue_text.text = "A Cozinha precisa de água. Vá até o Poço, recolha %d unidades de Água e traga-as para mim." % QUEST_WATER_REQUIRED
-		print("[QUEST] Iniciada: Água para a Cozinha • requisito=", QUEST_WATER_REQUIRED)
-		_update_inventory_ui()
-	elif not quest_completed:
-		var requirements := _quest_requirements()
+	if not _quest_is_completed(FIRST_QUEST_ID) and active_quest_id == "":
+		var definition := _get_quest_definition(FIRST_QUEST_ID)
+		if _start_quest(FIRST_QUEST_ID):
+			dialogue_text.text = String(definition.get("start_text", "Uma nova missão foi iniciada."))
+	elif active_quest_id == FIRST_QUEST_ID:
+		var requirements := _quest_requirements(FIRST_QUEST_ID)
 		if _inventory_has_requirements(player_inventory, requirements):
-			if _deposit_player_delivery(requirements):
-				quest_completed = true
-				dialogue_text.text = "Muito bem. As %d unidades de Água foram entregues à Cozinha. A missão está concluída." % QUEST_WATER_REQUIRED
-				print("[QUEST] Concluída: Água para a Cozinha")
-				_update_inventory_ui()
-			else:
-				dialogue_text.text = "Você trouxe a Água, mas o estoque do acampamento está cheio. Use ou aguarde consumo antes de entregar."
+			if _deliver_quest_resources(FIRST_QUEST_ID):
+				var definition := _get_quest_definition(FIRST_QUEST_ID)
+				dialogue_text.text = String(definition.get("complete_text", "Missão concluída."))
 		else:
-			dialogue_text.text = "Ainda precisamos de Água. Você tem %d/%d unidades na Bolsa." % [
-				int(player_inventory.get("agua", 0)), QUEST_WATER_REQUIRED
-			]
-	else:
+			dialogue_text.text = "Ainda precisamos dos recursos. %s" % _quest_progress_text()
+	elif _quest_is_completed(FIRST_QUEST_ID):
 		dialogue_text.text = "A Água já foi entregue. Continue ajudando o acampamento conforme as necessidades surgirem."
+	else:
+		dialogue_text.text = "Conclua a missão ativa antes de iniciar outra tarefa."
 
 func _create_path(rect: Rect2, color: Color) -> void:
 	var polygon := Polygon2D.new()
