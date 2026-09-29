@@ -1,0 +1,50 @@
+[
+  {
+    "id": "hanan_default", "npc_id": "hanan", "fallback": "repouso",
+    "entries": [
+      {"start": 0, "end": 360, "routine_id": "repouso", "location": "judah_camp", "activity": "rest", "priority": 0, "short_name": "Repouso", "display_name": "Hanan: repouso", "pause": 4.0, "route": [[520,620]]},
+      {"start": 360, "end": 720, "routine_id": "cozinha_manha", "location": "kitchen", "activity": "work", "priority": 10, "short_name": "Cozinha", "display_name": "Hanan: serviço na Cozinha", "pause": 0.8, "route": [[465,145],[165,145],[165,360],[465,360]], "point_effects": {"0":{"agua":-1,"lenha":-1,"refeicoes":1}}},
+      {"start": 720, "end": 1080, "routine_id": "servico_tarde", "location": "judah_camp", "activity": "work", "priority": 10, "short_name": "Centro", "display_name": "Hanan: serviço no centro", "pause": 0.8, "route": [[520,300],[760,300],[760,430],[520,430]]},
+      {"start": 1080, "end": 1260, "routine_id": "preparar_noite", "location": "judah_camp", "activity": "socialize", "priority": 10, "short_name": "Entardecer", "display_name": "Hanan: preparativos do entardecer", "pause": 1.8, "route": [[465,360],[520,430],[430,430]]},
+      {"start": 1260, "end": 1440, "routine_id": "repouso", "location": "judah_camp", "activity": "rest", "priority": 0, "short_name": "Repouso", "display_name": "Hanan: repouso", "pause": 4.0, "route": [[520,620]]}
+    ]
+  },
+  {
+    "id": "eliabe_default", "npc_id": "eliabe", "fallback": "repouso",
+    "entries": [
+      {"start":0,"end":360,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Eliabe: repouso","pause":4.0,"route":[[1120,650]]},
+      {"start":360,"end":720,"routine_id":"oficina_manha","location":"workshop","activity":"work","priority":10,"short_name":"Oficina","display_name":"Eliabe: serviço na Oficina","pause":0.8,"route":[[1090,350],[1170,350],[1170,590],[1090,590]],"point_effects":{"0":{"materiais":1}}},
+      {"start":720,"end":1080,"routine_id":"coleta_tarde","location":"judah_camp","activity":"travel","priority":10,"short_name":"Coleta","display_name":"Eliabe: coleta e transporte","pause":0.15,"route":[[1040,620],[1180,620],[1180,300],[1040,300]],"point_effects":{"0":{"lenha":1}}},
+      {"start":1080,"end":1260,"routine_id":"fogueira_entardecer","location":"judah_camp","activity":"socialize","priority":10,"short_name":"Fogueira","display_name":"Eliabe: reunião junto à fogueira","pause":1.8,"route":[[820,330],[780,360],[820,390]]},
+      {"start":1260,"end":1440,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Eliabe: repouso","pause":4.0,"route":[[1120,650]]}
+    ]
+  },
+  {
+    "id": "miria_default", "npc_id": "miria", "fallback": "repouso",
+    "entries": [
+      {"start":0,"end":360,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Miriã: repouso","pause":4.0,"route":[[1040,150]]},
+      {"start":360,"end":720,"routine_id":"tendas_manha","location":"judah_camp","activity":"work","priority":10,"short_name":"Tendas","display_name":"Miriã: tendas familiares","pause":0.8,"route":[[760,120],[980,120],[980,260],[760,260]]},
+      {"start":720,"end":1080,"routine_id":"agua_tarde","location":"judah_camp","activity":"travel","priority":10,"short_name":"Água","display_name":"Miriã: busca de água","pause":0.15,"route":[[760,520],[720,560],[760,600]],"point_effects":{"0":{"agua":1}}},
+      {"start":1080,"end":1260,"routine_id":"fogueira_entardecer","location":"judah_camp","activity":"socialize","priority":10,"short_name":"Fogueira","display_name":"Miriã: reunião junto à fogueira","pause":1.8,"route":[[720,330],[760,360],[720,390]]},
+      {"start":1260,"end":1440,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Miriã: repouso","pause":4.0,"route":[[1040,150]]}
+    ]
+  },
+  {
+    "id":"anciao_default","npc_id":"anciao","fallback":"repouso",
+    "entries":[
+      {"start":0,"end":360,"routine_id":"repouso","location":"council","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Ancião: repouso","pause":4.0,"route":[[680,220]]},
+      {"start":360,"end":1080,"routine_id":"conselho_dia","location":"council","activity":"work","priority":10,"short_name":"Conselho","display_name":"Ancião: conselho","pause":0.8,"route":[[660,230],[740,230],[740,310],[660,310]]},
+      {"start":1080,"end":1260,"routine_id":"conselho_tarde","location":"judah_camp","activity":"socialize","priority":10,"short_name":"Conselho","display_name":"Ancião: conselho","pause":1.8,"route":[[680,340],[730,370]]},
+      {"start":1260,"end":1440,"routine_id":"repouso","location":"council","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Ancião: repouso","pause":4.0,"route":[[680,220]]}
+    ]
+  },
+  {
+    "id":"pastor_default","npc_id":"pastor","fallback":"repouso",
+    "entries":[
+      {"start":0,"end":360,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Pastor: repouso","pause":4.0,"route":[[390,640]]},
+      {"start":360,"end":1080,"routine_id":"rebanho_dia","location":"judah_camp","activity":"work","priority":10,"short_name":"Rebanho","display_name":"Pastor: rebanho","pause":0.8,"route":[[390,565],[420,620],[335,625],[390,565]]},
+      {"start":1080,"end":1260,"routine_id":"curral_tarde","location":"judah_camp","activity":"travel","priority":10,"short_name":"Rebanho","display_name":"Pastor: rebanho","pause":0.15,"route":[[365,575],[395,600]]},
+      {"start":1260,"end":1440,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Pastor: repouso","pause":4.0,"route":[[390,640]]}
+    ]
+  }
+]

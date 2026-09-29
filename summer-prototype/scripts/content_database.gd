@@ -88,6 +88,21 @@ func _validate_content() -> void:
 			if String(npc.get(required_key, "")).strip_edges().is_empty():
 				_errors.append("NPC '%s' sem campo obrigatório '%s'" % [npc_id, required_key])
 	if count("schedule") > 0:
+		for schedule_id in ids("schedule"):
+			var schedule := get_definition("schedule", schedule_id)
+			if not has("npc", String(schedule.get("npc_id", ""))):
+				_errors.append("schedule '%s' possui npc_id inválido" % schedule_id)
+			var entries: Array = schedule.get("entries", [])
+			if entries.is_empty():
+				_errors.append("schedule '%s' não possui entradas" % schedule_id)
+			for entry_value in entries:
+				var entry: Dictionary = entry_value
+				if int(entry.get("start", -1)) < 0 or int(entry.get("end", 0)) > 1440 or int(entry.get("start", 0)) >= int(entry.get("end", 0)):
+					_errors.append("schedule '%s' possui faixa de horário inválida" % schedule_id)
+				if not String(entry.get("activity", "")) in ["work", "travel", "socialize", "rest", "meal", "wait"]:
+					_errors.append("schedule '%s' possui atividade inválida" % schedule_id)
+				if not (entry.get("route", []) is Array) or (entry.get("route", []) as Array).is_empty():
+					_errors.append("schedule '%s' possui rota vazia" % schedule_id)
 		for npc_id in ids("npc"):
 			var schedule_id := String(get_npc(npc_id).get("schedule_id", ""))
 			if not has("schedule", schedule_id):

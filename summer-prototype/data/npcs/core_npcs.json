@@ -8,6 +8,7 @@
     "schedule_id": "hanan_default",
     "dialogue_set": "hanan_dialogues",
     "quest_giver": true,
+    "start_position": [465, 360],
     "sprite_set": "placeholder_adult",
     "portrait": ""
   },
@@ -20,6 +21,7 @@
     "schedule_id": "eliabe_default",
     "dialogue_set": "eliabe_dialogues",
     "quest_giver": true,
+    "start_position": [1120, 590],
     "sprite_set": "placeholder_adult",
     "portrait": ""
   },
@@ -32,6 +34,7 @@
     "schedule_id": "miria_default",
     "dialogue_set": "miria_dialogues",
     "quest_giver": true,
+    "start_position": [900, 220],
     "sprite_set": "placeholder_adult",
     "portrait": ""
   },
@@ -44,6 +47,7 @@
     "schedule_id": "anciao_default",
     "dialogue_set": "anciao_dialogues",
     "quest_giver": true,
+    "start_position": [680, 240],
     "sprite_set": "placeholder_elder",
     "portrait": ""
   },
@@ -56,6 +60,7 @@
     "schedule_id": "pastor_default",
     "dialogue_set": "pastor_dialogues",
     "quest_giver": true,
+    "start_position": [390, 570],
     "sprite_set": "placeholder_adult",
     "portrait": ""
   }

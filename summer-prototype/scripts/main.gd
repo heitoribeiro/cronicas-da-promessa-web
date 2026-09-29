@@ -8,8 +8,10 @@ const QuestManagerScript = preload("res://scripts/quest_manager.gd")
 const SaveManagerScript = preload("res://scripts/save_manager.gd")
 const M1UIScript = preload("res://scripts/m1_ui.gd")
 const ContentDatabaseScript = preload("res://scripts/content_database.gd")
+const NPCScheduleManagerScript = preload("res://scripts/npc_schedule_manager.gd")
 
 var content_db: Node
+var schedule_manager: Node
 var game_state: Node
 var inventory_manager: Node
 var quest_manager: Node
@@ -66,6 +68,7 @@ var save_self_test_summary := "SAVE: aguardando autoteste"
 var portable_self_test_summary := "PORTABLE: aguardando autoteste"
 var content_self_test_summary := "CONTENT: aguardando autoteste"
 var item_self_test_summary := "ITEMS: aguardando autoteste"
+var schedule_self_test_summary := "SCHEDULES: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
@@ -137,6 +140,11 @@ func _ready() -> void:
 	add_child(content_db)
 	content_db.load_all()
 	_run_content_self_tests()
+	schedule_manager = NPCScheduleManagerScript.new()
+	schedule_manager.name = "NPCScheduleManager"
+	add_child(schedule_manager)
+	schedule_manager.configure(content_db)
+	_run_schedule_self_tests()
 	game_state = GameStateScript.new()
 	game_state.name = "GameState"
 	add_child(game_state)
@@ -175,8 +183,8 @@ func _ready() -> void:
 	_spawn_player()
 	_spawn_hanan()
 	_spawn_additional_npcs()
-	elder = _spawn_scheduled_npc("Ancião", Vector2(680, 240))
-	shepherd = _spawn_scheduled_npc("Pastor", Vector2(390, 570))
+	elder = _spawn_scheduled_npc_from_data("anciao")
+	shepherd = _spawn_scheduled_npc_from_data("pastor")
 	_apply_all_npc_routines(true)
 	_create_destination_marker()
 	_create_navigation_debug_line()
@@ -226,6 +234,26 @@ func _run_item_self_tests() -> void:
 			passed += 1
 	item_self_test_summary = "ITEMS %d/%d" % [passed, checks.size()]
 	print("[M2TEST] ", item_self_test_summary)
+
+func _run_schedule_self_tests() -> void:
+	var checks: Array[bool] = [
+		content_db.count("schedule") == 5,
+		String(schedule_manager.entry_at("Hanan", 360).get("routine_id", "")) == "cozinha_manha",
+		String(schedule_manager.entry_at("Hanan", 720).get("activity", "")) == "work",
+		String(schedule_manager.entry_at("Eliabe", 720).get("routine_id", "")) == "coleta_tarde",
+		String(schedule_manager.entry_at("Miriã", 1080).get("activity", "")) == "socialize",
+		schedule_manager.route_for("Ancião", "conselho_dia").size() == 4,
+		schedule_manager.route_for("Pastor", "rebanho_dia").size() == 4,
+		int(schedule_manager.point_effect("Hanan", "cozinha_manha", 0).get("refeicoes", 0)) == 1,
+		schedule_manager.point_effect("Hanan", "cozinha_manha", 1).is_empty(),
+		String(schedule_manager.entry_at("Pastor", 1300).get("routine_id", "")) == "repouso"
+	]
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+	schedule_self_test_summary = "SCHEDULES %d/%d" % [passed, checks.size()]
+	print("[M2TEST] ", schedule_self_test_summary)
 
 func _process(delta: float) -> void:
 	if not game_started or menu_paused:
@@ -494,164 +522,19 @@ func _format_game_time() -> String:
 	return "%02d:%02d" % [hours, minutes]
 
 func _get_npc_routine_id(npc_name: String, total_minutes: int) -> String:
-	match npc_name:
-		"Hanan":
-			if total_minutes >= 360 and total_minutes < 720:
-				return "cozinha_manha"
-			if total_minutes >= 720 and total_minutes < 1080:
-				return "servico_tarde"
-			if total_minutes >= 1080 and total_minutes < 1260:
-				return "preparar_noite"
-			return "repouso"
-		"Eliabe":
-			if total_minutes >= 360 and total_minutes < 720:
-				return "oficina_manha"
-			if total_minutes >= 720 and total_minutes < 1080:
-				return "coleta_tarde"
-			if total_minutes >= 1080 and total_minutes < 1260:
-				return "fogueira_entardecer"
-			return "repouso"
-		"Miriã":
-			if total_minutes >= 360 and total_minutes < 720:
-				return "tendas_manha"
-			if total_minutes >= 720 and total_minutes < 1080:
-				return "agua_tarde"
-			if total_minutes >= 1080 and total_minutes < 1260:
-				return "fogueira_entardecer"
-			return "repouso"
-		"Ancião":
-			if total_minutes >= 360 and total_minutes < 1080: return "conselho_dia"
-			if total_minutes >= 1080 and total_minutes < 1260: return "conselho_tarde"
-			return "repouso"
-		"Pastor":
-			if total_minutes >= 360 and total_minutes < 1080: return "rebanho_dia"
-			if total_minutes >= 1080 and total_minutes < 1260: return "curral_tarde"
-			return "repouso"
-	return "repouso"
+	return String(schedule_manager.entry_at(npc_name, total_minutes, {"day": game_state.day if game_state != null else 1}).get("routine_id", "repouso"))
 
 func _npc_route_for(npc_name: String, routine_id: String) -> Array[Vector2]:
-	match npc_name:
-		"Hanan":
-			match routine_id:
-				"cozinha_manha":
-					return [Vector2(465, 145), Vector2(165, 145), Vector2(165, 360), Vector2(465, 360)]
-				"servico_tarde":
-					return [Vector2(520, 300), Vector2(760, 300), Vector2(760, 430), Vector2(520, 430)]
-				"preparar_noite":
-					return [Vector2(465, 360), Vector2(520, 430), Vector2(430, 430)]
-				_:
-					return [Vector2(520, 620)]
-		"Eliabe":
-			match routine_id:
-				"oficina_manha":
-					return [Vector2(1090, 350), Vector2(1170, 350), Vector2(1170, 590), Vector2(1090, 590)]
-				"coleta_tarde":
-					return [Vector2(1040, 620), Vector2(1180, 620), Vector2(1180, 300), Vector2(1040, 300)]
-				"fogueira_entardecer":
-					return [Vector2(820, 330), Vector2(780, 360), Vector2(820, 390)]
-				_:
-					return [Vector2(1120, 650)]
-		"Miriã":
-			match routine_id:
-				"tendas_manha":
-					return [Vector2(760, 120), Vector2(980, 120), Vector2(980, 260), Vector2(760, 260)]
-				"agua_tarde":
-					return [Vector2(760, 520), Vector2(720, 560), Vector2(760, 600)]
-				"fogueira_entardecer":
-					return [Vector2(720, 330), Vector2(760, 360), Vector2(720, 390)]
-				_:
-					return [Vector2(1040, 150)]
-		"Ancião":
-			if routine_id == "conselho_dia": return [Vector2(660, 230), Vector2(740, 230), Vector2(740, 310), Vector2(660, 310)]
-			if routine_id == "conselho_tarde": return [Vector2(680, 340), Vector2(730, 370)]
-			return [Vector2(680, 220)]
-		"Pastor":
-			if routine_id == "rebanho_dia": return [Vector2(390, 565), Vector2(420, 620), Vector2(335, 625), Vector2(390, 565)]
-			if routine_id == "curral_tarde": return [Vector2(365, 575), Vector2(395, 600)]
-			return [Vector2(390, 640)]
-	return [Vector2(640, 600)]
+	return schedule_manager.route_for(npc_name, routine_id)
 
 func _routine_short_name(npc_name: String, routine_id: String) -> String:
-	match npc_name:
-		"Hanan":
-			match routine_id:
-				"cozinha_manha": return "Cozinha"
-				"servico_tarde": return "Centro"
-				"preparar_noite": return "Entardecer"
-				_: return "Repouso"
-		"Eliabe":
-			match routine_id:
-				"oficina_manha": return "Oficina"
-				"coleta_tarde": return "Coleta"
-				"fogueira_entardecer": return "Fogueira"
-				_: return "Repouso"
-		"Miriã":
-			match routine_id:
-				"tendas_manha": return "Tendas"
-				"agua_tarde": return "Água"
-				"fogueira_entardecer": return "Fogueira"
-				_: return "Repouso"
-		"Ancião": return "Conselho" if routine_id != "repouso" else "Repouso"
-		"Pastor": return "Rebanho" if routine_id != "repouso" else "Repouso"
-	return routine_id
+	return String(schedule_manager.entry_by_routine(npc_name, routine_id).get("short_name", routine_id))
 
 func _npc_routine_display_name(npc_name: String, routine_id: String) -> String:
-	match npc_name:
-		"Hanan":
-			match routine_id:
-				"cozinha_manha": return "Hanan: serviço na Cozinha"
-				"servico_tarde": return "Hanan: serviço no centro"
-				"preparar_noite": return "Hanan: preparativos do entardecer"
-				_: return "Hanan: repouso"
-		"Eliabe":
-			match routine_id:
-				"oficina_manha": return "Eliabe: serviço na Oficina"
-				"coleta_tarde": return "Eliabe: coleta e transporte"
-				"fogueira_entardecer": return "Eliabe: reunião junto à fogueira"
-				_: return "Eliabe: repouso"
-		"Miriã":
-			match routine_id:
-				"tendas_manha": return "Miriã: tendas familiares"
-				"agua_tarde": return "Miriã: busca de água"
-				"fogueira_entardecer": return "Miriã: reunião junto à fogueira"
-				_: return "Miriã: repouso"
-		"Ancião": return "Ancião: conselho" if routine_id != "repouso" else "Ancião: repouso"
-		"Pastor": return "Pastor: rebanho" if routine_id != "repouso" else "Pastor: repouso"
-	return "%s: rotina" % npc_name
+	return String(schedule_manager.entry_by_routine(npc_name, routine_id).get("display_name", "%s: rotina" % npc_name))
 
 func _npc_activity_for(npc_name: String, routine_id: String) -> String:
-	match npc_name:
-		"Hanan":
-			match routine_id:
-				"cozinha_manha", "servico_tarde":
-					return "work"
-				"preparar_noite":
-					return "socialize"
-				_:
-					return "rest"
-		"Eliabe":
-			match routine_id:
-				"oficina_manha":
-					return "work"
-				"coleta_tarde":
-					return "travel"
-				"fogueira_entardecer":
-					return "socialize"
-				_:
-					return "rest"
-		"Miriã":
-			match routine_id:
-				"tendas_manha":
-					return "work"
-				"agua_tarde":
-					return "travel"
-				"fogueira_entardecer":
-					return "socialize"
-				_:
-					return "rest"
-		"Ancião": return "work" if routine_id == "conselho_dia" else ("socialize" if routine_id == "conselho_tarde" else "rest")
-		"Pastor": return "work" if routine_id == "rebanho_dia" else ("travel" if routine_id == "curral_tarde" else "rest")
-	return "wait"
+	return String(schedule_manager.entry_by_routine(npc_name, routine_id).get("activity", "wait"))
 
 func _activity_display_name(activity_id: String) -> String:
 	match activity_id:
@@ -753,23 +636,7 @@ func _run_behavior_self_tests() -> void:
 	print("[BEHAVIORTEST] ", behavior_self_test_summary)
 
 func _resource_effect_for(npc_name: String, routine_id: String, point_index: int) -> Dictionary:
-	if point_index != 0:
-		return {}
-
-	match npc_name:
-		"Hanan":
-			if routine_id == "cozinha_manha":
-				return {"agua": -1, "lenha": -1, "refeicoes": 1}
-		"Eliabe":
-			if routine_id == "oficina_manha":
-				return {"materiais": 1}
-			if routine_id == "coleta_tarde":
-				return {"lenha": 1}
-		"Miriã":
-			if routine_id == "agua_tarde":
-				return {"agua": 1}
-
-	return {}
+	return schedule_manager.point_effect(npc_name, routine_id, point_index)
 
 func _can_apply_resource_effect(effect: Dictionary) -> bool:
 	for resource_key in effect.keys():
@@ -1513,10 +1380,13 @@ func _spawn_player() -> void:
 	add_child(player)
 
 func _spawn_hanan() -> void:
+	var definition: Dictionary = content_db.get_npc("hanan")
 	hanan = NpcScript.new()
-	hanan.name = "Hanan"
-	hanan.npc_name = "Hanan"
-	hanan.global_position = Vector2(465, 360)
+	var npc_name := String(definition.get("name", "Hanan"))
+	var start: Array = definition.get("start_position", [465, 360])
+	hanan.name = npc_name
+	hanan.npc_name = npc_name
+	hanan.global_position = Vector2(float(start[0]), float(start[1]))
 	hanan.navigation_requested.connect(_on_hanan_navigation_requested)
 	hanan.navigation_path_updated.connect(_on_hanan_navigation_path_updated)
 	hanan.patrol_point_reached.connect(_on_hanan_patrol_point_reached)
@@ -1525,17 +1395,22 @@ func _spawn_hanan() -> void:
 	hanan.action_started.connect(_on_hanan_action_started)
 	hanan.action_completed.connect(_on_hanan_action_completed)
 	add_child(hanan)
-	registered_npcs["Hanan"] = hanan
+	registered_npcs[npc_name] = hanan
 
 	var label := Label.new()
-	label.text = "Hanan"
+	label.text = npc_name
 	label.position = Vector2(-23, 45)
 	label.add_theme_font_size_override("font_size", 12)
 	hanan.add_child(label)
 
 func _spawn_additional_npcs() -> void:
-	eliabe = _spawn_scheduled_npc("Eliabe", Vector2(1120, 590))
-	miria = _spawn_scheduled_npc("Miriã", Vector2(900, 220))
+	eliabe = _spawn_scheduled_npc_from_data("eliabe")
+	miria = _spawn_scheduled_npc_from_data("miria")
+
+func _spawn_scheduled_npc_from_data(npc_id: String) -> PrototypeNPC:
+	var definition: Dictionary = content_db.get_npc(npc_id)
+	var start: Array = definition.get("start_position", [640, 600])
+	return _spawn_scheduled_npc(String(definition.get("name", npc_id)), Vector2(float(start[0]), float(start[1])))
 
 func _spawn_scheduled_npc(npc_name: String, start_position: Vector2) -> PrototypeNPC:
 	var npc: PrototypeNPC = NpcScript.new()
