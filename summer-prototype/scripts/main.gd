@@ -577,8 +577,59 @@ func _on_event_action_requested(action: Dictionary) -> void:
 			quest_manager.start_for(String(action.get("giver", "")), game_state.day, game_minutes)
 		"complete_objective":
 			quest_manager.record_event(String(action.get("objective_type", "interact")), String(action.get("target", "")), int(action.get("amount", 1)), game_minutes)
+		"move_player":
+			var player_position: Array = action.get("position", [])
+			if player_position.size() >= 2:
+				player.cancel_navigation()
+				player.global_position = Vector2(float(player_position[0]), float(player_position[1]))
+		"move_npc":
+			var npc_id := String(action.get("npc", ""))
+			var npc_name := String(content_db.get_npc(npc_id).get("name", npc_id))
+			var npc_position: Array = action.get("position", [])
+			if registered_npcs.has(npc_name) and npc_position.size() >= 2:
+				(registered_npcs[npc_name] as PrototypeNPC).global_position = Vector2(float(npc_position[0]), float(npc_position[1]))
+		"camera_focus":
+			var focus_position := _event_target_position(String(action.get("target", "")))
+			if destination_marker != null and focus_position.x >= 0.0:
+				destination_marker.global_position = focus_position
+				destination_marker.modulate = Color("#f2ce58")
+				destination_marker.visible = true
+				get_tree().create_timer(1.0).timeout.connect(func() -> void:
+					if destination_marker != null: destination_marker.visible = false
+				)
+		"fade":
+			_show_event_fade(float(action.get("duration", 0.5)))
+		"play_animation":
+			var target_name := String(action.get("target", ""))
+			var target_node: Node = get_node_or_null(NodePath(target_name))
+			if target_node != null:
+				var animation_player := target_node.find_child("AnimationPlayer", true, false) as AnimationPlayer
+				if animation_player != null and animation_player.has_animation(String(action.get("animation", ""))):
+					animation_player.play(String(action.get("animation", "")))
+		"wait":
+			get_tree().create_timer(maxf(0.0, float(action.get("seconds", 0.0))))
 		_:
 			print("[EVENTACTION] ", action.get("type", ""), " • ", action)
+
+func _event_target_position(target_id: String) -> Vector2:
+	if target_id == "service_center": return Vector2(640, 360)
+	if target_id == "campfire": return Vector2(640, 360)
+	if EXTERIOR_TARGETS.has(target_id): return Vector2(EXTERIOR_TARGETS[target_id].get("position", Vector2(-1, -1)))
+	return Vector2(-1, -1)
+
+func _show_event_fade(duration: float) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 90
+	var shade := ColorRect.new()
+	shade.color = Color(0.04, 0.03, 0.02, 0.0)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(shade)
+	add_child(layer)
+	var tween := create_tween()
+	tween.tween_property(shade, "color:a", 0.75, maxf(0.05, duration * 0.5))
+	tween.tween_property(shade, "color:a", 0.0, maxf(0.05, duration * 0.5))
+	tween.finished.connect(layer.queue_free)
 
 func _process(delta: float) -> void:
 	if not game_started or menu_paused:
