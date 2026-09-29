@@ -26,14 +26,17 @@ var routine_self_test_summary := "ROTINA: aguardando autoteste"
 var behavior_self_test_summary := "ESTADOS: aguardando autoteste"
 var economy_self_test_summary := "ECONOMIA: aguardando autoteste"
 var quest_self_test_summary := "QUEST: aguardando autoteste"
+var save_self_test_summary := "SAVE: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
 var inventory_label: Label
 var quest_label: Label
+var save_status_label: Label
 var active_interaction_target := ""
 var active_dialogue_npc: PrototypeNPC
 
+const SAVE_PATH := "user://cronicas_promessa_summer_save.json"
 const RESOURCE_CAP := 20
 const PLAYER_RESOURCE_CAP := 8
 const WELL_POSITION := Vector2(640, 500)
@@ -90,6 +93,7 @@ func _ready() -> void:
 	_run_behavior_self_tests()
 	_run_economy_self_tests()
 	_run_player_quest_self_tests()
+	_run_save_self_tests()
 	_build_ui()
 	_spawn_player()
 	_spawn_hanan()
@@ -156,6 +160,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			game_minutes = fmod(game_minutes + 360.0, 1440.0)
 			_apply_all_npc_routines(true)
 			_update_clock_ui()
+			get_viewport().set_input_as_handled()
+			return
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F5:
+			_save_game("manual")
+			get_viewport().set_input_as_handled()
+			return
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F9:
+			_load_game()
 			get_viewport().set_input_as_handled()
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_E:
@@ -577,6 +589,7 @@ func _start_quest(quest_id: String) -> bool:
 	active_quest_id = quest_id
 	print("[QUEST] Iniciada: ", _quest_title(quest_id))
 	_update_inventory_ui()
+	_save_game("quest_start")
 	return true
 
 func _delivery_split(current_stock: int, amount: int) -> Vector2i:
@@ -610,6 +623,7 @@ func _deliver_quest_resources(quest_id: String) -> bool:
 	print("[QUEST] Concluída: ", _quest_title(quest_id))
 	_update_inventory_ui()
 	_update_resource_ui()
+	_save_game("quest_complete")
 	return true
 
 func _next_available_quest_for_giver(giver_name: String) -> String:
@@ -670,6 +684,7 @@ func _collect_water_from_well() -> void:
 
 	var added := _player_add_resource("agua", 1)
 	print("[PLAYERRESOURCE] Água +", added, " • Bolsa=", player_inventory["agua"])
+	_save_game("resource_collect")
 	_show_system_dialogue("Poço", "Você recolheu 1 unidade de Água. %s" % _quest_progress_text())
 
 func _collect_wood() -> void:
@@ -679,6 +694,7 @@ func _collect_wood() -> void:
 
 	var added := _player_add_resource("lenha", 1)
 	print("[PLAYERRESOURCE] Lenha +", added, " • Bolsa=", player_inventory["lenha"])
+	_save_game("resource_collect")
 	_show_system_dialogue("Área de Coleta", "Você recolheu 1 unidade de Lenha. %s" % _quest_progress_text())
 
 func _open_npc_dialogue(npc: PrototypeNPC, title: String) -> void:
@@ -733,6 +749,135 @@ func _run_player_quest_self_tests() -> void:
 			passed += 1
 	quest_self_test_summary = "QUESTSYS %d/%d" % [passed, checks.size()]
 	print("[QUESTTEST] ", quest_self_test_summary)
+
+func _build_save_payload() -> Dictionary:
+	var player_position := Vector2(640, 595)
+	if player != null:
+		player_position = player.global_position
+
+	return {
+		"version": 1,
+		"game_minutes": game_minutes,
+		"player_position": {"x": player_position.x, "y": player_position.y},
+		"player_inventory": player_inventory.duplicate(true),
+		"camp_resources": camp_resources.duplicate(true),
+		"active_quest_id": active_quest_id,
+		"completed_quest_ids": completed_quest_ids.duplicate(true)
+	}
+
+func _save_game(reason: String = "auto") -> bool:
+	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file == null:
+		_set_save_status("Falha ao salvar")
+		print("[SAVE] falha ao abrir arquivo: ", FileAccess.get_open_error())
+		return false
+
+	var payload := _build_save_payload()
+	file.store_string(JSON.stringify(payload))
+	file.close()
+	_set_save_status("Salvo • %s" % reason)
+	print("[SAVE] sucesso • ", reason, " • ", SAVE_PATH)
+	return true
+
+func _load_game() -> bool:
+	if not FileAccess.file_exists(SAVE_PATH):
+		_set_save_status("Nenhum save encontrado")
+		print("[SAVE] nenhum arquivo encontrado")
+		return false
+
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if file == null:
+		_set_save_status("Falha ao carregar")
+		print("[SAVE] falha ao abrir save: ", FileAccess.get_open_error())
+		return false
+
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not (parsed is Dictionary):
+		_set_save_status("Save inválido")
+		print("[SAVE] conteúdo inválido")
+		return false
+
+	var payload: Dictionary = parsed
+	if not _apply_save_payload(payload):
+		_set_save_status("Save incompatível")
+		return false
+
+	_set_save_status("Save carregado")
+	print("[SAVE] carregado • ", SAVE_PATH)
+	return true
+
+func _apply_save_payload(payload: Dictionary) -> bool:
+	if int(payload.get("version", 0)) != 1:
+		return false
+	if not payload.has("player_inventory") or not payload.has("camp_resources"):
+		return false
+
+	game_minutes = float(payload.get("game_minutes", game_minutes))
+
+	var loaded_inventory = payload.get("player_inventory", {})
+	var loaded_camp = payload.get("camp_resources", {})
+	if loaded_inventory is Dictionary:
+		for resource_id in player_inventory.keys():
+			player_inventory[resource_id] = clampi(int(loaded_inventory.get(resource_id, 0)), 0, PLAYER_RESOURCE_CAP)
+	if loaded_camp is Dictionary:
+		for resource_id in camp_resources.keys():
+			camp_resources[resource_id] = clampi(int(loaded_camp.get(resource_id, 0)), 0, RESOURCE_CAP)
+
+	active_quest_id = String(payload.get("active_quest_id", ""))
+	var loaded_completed = payload.get("completed_quest_ids", {})
+	completed_quest_ids.clear()
+	if loaded_completed is Dictionary:
+		for quest_key in loaded_completed.keys():
+			completed_quest_ids[String(quest_key)] = bool(loaded_completed[quest_key])
+
+	var position_data = payload.get("player_position", {})
+	if player != null and position_data is Dictionary:
+		player.cancel_navigation()
+		player.global_position = Vector2(
+			float(position_data.get("x", player.global_position.x)),
+			float(position_data.get("y", player.global_position.y))
+		)
+
+	_apply_all_npc_routines(true)
+	_update_clock_ui()
+	_update_resource_ui()
+	_update_inventory_ui()
+	return true
+
+func _set_save_status(text_value: String) -> void:
+	if save_status_label != null:
+		save_status_label.text = text_value
+
+func _run_save_self_tests() -> void:
+	var sample := {
+		"version": 1,
+		"game_minutes": 735.0,
+		"player_position": {"x": 321.0, "y": 456.0},
+		"player_inventory": {"agua": 2, "lenha": 3, "materiais": 1, "refeicoes": 0},
+		"camp_resources": {"agua": 10, "lenha": 8, "materiais": 4, "refeicoes": 2},
+		"active_quest_id": SECOND_QUEST_ID,
+		"completed_quest_ids": {FIRST_QUEST_ID: true}
+	}
+	var encoded := JSON.stringify(sample)
+	var decoded = JSON.parse_string(encoded)
+
+	var checks: Array[bool] = [
+		decoded is Dictionary,
+		int(decoded.get("version", 0)) == 1,
+		int(decoded.get("game_minutes", 0)) == 735,
+		int(decoded.get("player_inventory", {}).get("lenha", 0)) == 3,
+		int(decoded.get("camp_resources", {}).get("materiais", 0)) == 4,
+		String(decoded.get("active_quest_id", "")) == SECOND_QUEST_ID,
+		bool(decoded.get("completed_quest_ids", {}).get(FIRST_QUEST_ID, false))
+	]
+
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+	save_self_test_summary = "SAVESYS %d/%d" % [passed, checks.size()]
+	print("[SAVETEST] ", save_self_test_summary)
 
 func _build_navigation_grid() -> void:
 	navigation_grid.region = Rect2i(0, 0, int(ceil(1280.0 / NAV_CELL_SIZE)), int(ceil(720.0 / NAV_CELL_SIZE)))
@@ -902,7 +1047,7 @@ func _build_ui() -> void:
 	add_child(canvas)
 
 	var instructions := Label.new()
-	instructions.text = "Clique: pathfinding • WASD/setas • E interagir • F3 rotas • F4 +6h"
+	instructions.text = "Clique: pathfinding • WASD/setas • E interagir • F3 rotas • F4 +6h • F5 salvar • F9 carregar"
 	instructions.position = Vector2(24, 675)
 	instructions.add_theme_font_size_override("font_size", 14)
 	instructions.add_theme_color_override("font_color", Color.WHITE)
@@ -932,6 +1077,14 @@ func _build_ui() -> void:
 	canvas.add_child(quest_label)
 	_update_inventory_ui()
 
+	save_status_label = Label.new()
+	save_status_label.position = Vector2(24, 96)
+	save_status_label.size = Vector2(650, 20)
+	save_status_label.add_theme_font_size_override("font_size", 11)
+	save_status_label.add_theme_color_override("font_color", Color("#b9d7a6"))
+	save_status_label.text = "Save: autosave ativo"
+	canvas.add_child(save_status_label)
+
 	clock_label = Label.new()
 	clock_label.position = Vector2(1090, 18)
 	clock_label.add_theme_font_size_override("font_size", 17)
@@ -947,7 +1100,7 @@ func _build_ui() -> void:
 	canvas.add_child(routine_label)
 
 	navigation_debug_label = Label.new()
-	navigation_debug_label.text = "%s • %s • %s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary, economy_self_test_summary, quest_self_test_summary]
+	navigation_debug_label.text = "%s • %s • %s • %s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary, economy_self_test_summary, quest_self_test_summary, save_self_test_summary]
 	navigation_debug_label.position = Vector2(24, 642)
 	navigation_debug_label.add_theme_font_size_override("font_size", 13)
 	navigation_debug_label.add_theme_color_override("font_color", Color("#7ee0ff"))
