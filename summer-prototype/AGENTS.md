@@ -65,3 +65,22 @@ The project already has:
 - debug hotkeys/tests
 
 Do not remove working baseline functionality while expanding the vertical slice.
+
+
+## M2 data-driven rule
+
+After the M1 vertical slice, prefer content definitions over special-case gameplay code.
+
+New NPCs, schedules, quests, items, locations, dialogues and events should be created through the ContentDatabase/data layer whenever practical.
+
+The project may use Stardew Valley and similar persistent-world RPGs as design/architecture references, but must not copy proprietary/decompiled code or copyrighted game assets.
+
+Keep gameplay logic independent from final art assets so the approved pixel-art workstream can replace placeholders without rewriting systems.
+
+When extending the game:
+- first ask whether the feature belongs in data or a reusable system;
+- avoid adding quest/NPC-specific booleans to main.gd;
+- use stable content IDs in saves;
+- validate content references at boot/debug time;
+- maintain save migration paths;
+- validate the full M1 regression after architectural changes.
