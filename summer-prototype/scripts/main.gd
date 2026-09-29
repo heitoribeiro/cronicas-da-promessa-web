@@ -37,7 +37,7 @@ var active_dialogue_npc: PrototypeNPC
 const RESOURCE_CAP := 20
 const PLAYER_RESOURCE_CAP := 8
 const WELL_POSITION := Vector2(640, 500)
-const WOOD_GATHER_POSITION := Vector2(1140, 540)
+const WOOD_GATHER_POSITION := Vector2(900, 650)
 const FIRST_QUEST_ID := "water_kitchen"
 const SECOND_QUEST_ID := "wood_workshop"
 
