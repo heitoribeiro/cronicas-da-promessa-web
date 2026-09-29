@@ -108,6 +108,12 @@ func _validate_content() -> void:
 			if not has("schedule", schedule_id):
 				_errors.append("NPC '%s' referencia schedule ausente '%s'" % [npc_id, schedule_id])
 	if count("dialogue") > 0:
+		for dialogue_id in ids("dialogue"):
+			var dialogue := get_definition("dialogue", dialogue_id)
+			if not has("npc", String(dialogue.get("owner", ""))):
+				_errors.append("diálogo '%s' possui owner inválido" % dialogue_id)
+			if (dialogue.get("variants", []) as Array).is_empty():
+				_errors.append("diálogo '%s' não possui variantes" % dialogue_id)
 		for npc_id in ids("npc"):
 			var dialogue_id := String(get_npc(npc_id).get("dialogue_set", ""))
 			if not has("dialogue", dialogue_id):

@@ -6,6 +6,7 @@ signal changed(reason: String)
 var active_id: String = ""
 var completed: Dictionary = {}
 var progress: Dictionary = {}
+var last_completed_id: String = ""
 var content_db: Node
 var definitions: Dictionary = {}
 var order: Array[String] = []
@@ -25,6 +26,7 @@ func new_game() -> void:
 	active_id = ""
 	completed.clear()
 	progress.clear()
+	last_completed_id = ""
 	changed.emit("new_game")
 
 func definition(quest_id: String) -> Dictionary:
@@ -123,6 +125,7 @@ func talk_to(giver: String, inventory: Node, day: int, minutes: float) -> String
 		return "Nova missão: %s. %s" % [definition(started)["title"], current_objective_text()]
 
 	var quest_id: String = active_id
+	last_completed_id = quest_id
 	if giver != String(definition(quest_id).get("giver", "")):
 		if record_event("talk", giver, 1, minutes):
 			return "%s conversou com você. %s" % [giver, current_objective_text()]

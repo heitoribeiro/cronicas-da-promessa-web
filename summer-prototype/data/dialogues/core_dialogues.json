@@ -1,0 +1,27 @@
+[
+  {"id":"hanan_dialogues","owner":"hanan","variants":[
+    {"id":"quest_ready","priority":30,"conditions":{"quest_state":"ready_to_turn_in"},"text":"Vejo que você terminou o que combinamos."},
+    {"id":"working","priority":10,"conditions":{"activity":"work"},"text":"O serviço segue firme; cada provisão sustenta o acampamento."},
+    {"id":"trusted","priority":20,"conditions":{"relationship_min":5},"text":"Sua ajuda já é lembrada com carinho na cozinha."},
+    {"id":"default","priority":0,"conditions":{},"text":"Que a paz acompanhe o seu trabalho hoje."}
+  ]},
+  {"id":"eliabe_dialogues","owner":"eliabe","variants":[
+    {"id":"travel","priority":10,"conditions":{"activity":"travel"},"text":"Estou levando material entre a coleta e a oficina."},
+    {"id":"trusted","priority":20,"conditions":{"relationship_min":5},"text":"Você sempre terá lugar à minha bancada."},
+    {"id":"default","priority":0,"conditions":{},"text":"Ferramenta bem cuidada torna o trabalho mais leve."}
+  ]},
+  {"id":"miria_dialogues","owner":"miria","variants":[
+    {"id":"evening","priority":10,"conditions":{"daypart":"entardecer"},"text":"Ao entardecer, o acampamento enfim respira junto."},
+    {"id":"trusted","priority":20,"conditions":{"relationship_min":5},"text":"Sua presença tem trazido ânimo às famílias."},
+    {"id":"default","priority":0,"conditions":{},"text":"Há sempre alguém nas tendas precisando de cuidado."}
+  ]},
+  {"id":"anciao_dialogues","owner":"anciao","variants":[
+    {"id":"chapter_complete","priority":40,"conditions":{"flag":"m1_complete"},"text":"Um novo dia começou; agora construímos sobre o que aprendemos."},
+    {"id":"council","priority":10,"conditions":{"location":"council"},"text":"A mesa do conselho permanece aberta aos que servem com sinceridade."},
+    {"id":"default","priority":0,"conditions":{},"text":"Observe o acampamento; cada pessoa revela uma parte da nossa jornada."}
+  ]},
+  {"id":"pastor_dialogues","owner":"pastor","variants":[
+    {"id":"dusk","priority":10,"conditions":{"daypart":"entardecer"},"text":"No entardecer, nenhum animal deve ficar fora do curral."},
+    {"id":"default","priority":0,"conditions":{},"text":"O rebanho ensina paciência a quem sabe observar."}
+  ]}
+]

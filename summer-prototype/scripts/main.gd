@@ -9,9 +9,13 @@ const SaveManagerScript = preload("res://scripts/save_manager.gd")
 const M1UIScript = preload("res://scripts/m1_ui.gd")
 const ContentDatabaseScript = preload("res://scripts/content_database.gd")
 const NPCScheduleManagerScript = preload("res://scripts/npc_schedule_manager.gd")
+const RelationshipManagerScript = preload("res://scripts/relationship_manager.gd")
+const DialogueManagerScript = preload("res://scripts/dialogue_manager.gd")
 
 var content_db: Node
 var schedule_manager: Node
+var relationship_manager: Node
+var dialogue_manager: Node
 var game_state: Node
 var inventory_manager: Node
 var quest_manager: Node
@@ -70,6 +74,8 @@ var content_self_test_summary := "CONTENT: aguardando autoteste"
 var item_self_test_summary := "ITEMS: aguardando autoteste"
 var schedule_self_test_summary := "SCHEDULES: aguardando autoteste"
 var m2_quest_self_test_summary := "QUESTS: aguardando autoteste"
+var relationship_self_test_summary := "RELATIONSHIPS: aguardando autoteste"
+var dialogue_self_test_summary := "DIALOGUES: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
@@ -159,6 +165,15 @@ func _ready() -> void:
 	add_child(quest_manager)
 	quest_manager.configure(content_db)
 	_run_m2_quest_self_tests()
+	relationship_manager = RelationshipManagerScript.new()
+	relationship_manager.name = "RelationshipManager"
+	add_child(relationship_manager)
+	relationship_manager.configure(content_db)
+	dialogue_manager = DialogueManagerScript.new()
+	dialogue_manager.name = "DialogueManager"
+	add_child(dialogue_manager)
+	dialogue_manager.configure(content_db)
+	_run_relationship_dialogue_self_tests()
 	save_manager = SaveManagerScript.new()
 	save_manager.name = "SaveManager"
 	add_child(save_manager)
@@ -279,6 +294,39 @@ func _run_m2_quest_self_tests() -> void:
 			passed += 1
 	m2_quest_self_test_summary = "QUESTS %d/%d" % [passed, checks.size()]
 	print("[M2TEST] ", m2_quest_self_test_summary)
+
+func _run_relationship_dialogue_self_tests() -> void:
+	var relation_checks: Array[bool] = [
+		content_db.count("relationship") == 1,
+		relationship_manager.affinity.size() == 5,
+		relationship_manager.reputation.has("juda"),
+		relationship_manager.affinity_for("hanan") == 0,
+		relationship_manager.add_affinity("hanan", 5, "self_test") == 5,
+		relationship_manager.level_for("hanan") == "simpatia",
+		relationship_manager.add_reputation("juda", 2, "self_test") == 2,
+		relationship_manager.snapshot().has("relationships")
+	]
+	relationship_manager.new_game()
+	var relation_passed := 0
+	for check in relation_checks:
+		if check: relation_passed += 1
+	relationship_self_test_summary = "RELATIONSHIPS %d/%d" % [relation_passed, relation_checks.size()]
+	print("[M2TEST] ", relationship_self_test_summary)
+	var dialogue_checks: Array[bool] = [
+		content_db.count("dialogue") == 5,
+		dialogue_manager.resolve("hanan", {"activity":"work", "relationship":0}).contains("serviço"),
+		dialogue_manager.resolve("eliabe", {"activity":"travel", "relationship":0}).contains("material"),
+		dialogue_manager.resolve("miria", {"daypart":"entardecer", "relationship":0}).contains("entardecer"),
+		dialogue_manager.resolve("anciao", {"flags":{"m1_complete":true}, "relationship":0}).contains("novo dia"),
+		dialogue_manager.resolve("pastor", {"daypart":"manhã", "relationship":0}).contains("rebanho"),
+		dialogue_manager.resolve("hanan", {"activity":"rest", "relationship":5}).contains("carinho"),
+		not dialogue_manager.resolve("miria", {"daypart":"manhã", "relationship":0}).is_empty()
+	]
+	var dialogue_passed := 0
+	for check in dialogue_checks:
+		if check: dialogue_passed += 1
+	dialogue_self_test_summary = "DIALOGUES %d/%d" % [dialogue_passed, dialogue_checks.size()]
+	print("[M2TEST] ", dialogue_self_test_summary)
 
 func _process(delta: float) -> void:
 	if not game_started or menu_paused:
@@ -462,6 +510,14 @@ func _on_ui_action(action: String) -> void:
 		"map":
 			_set_game_paused(true)
 			ui_overlay.show_map(game_state.scene_id)
+		"relationships":
+			_set_game_paused(true)
+			var lines: Array[String] = []
+			for npc_id in relationship_manager.affinity.keys():
+				var npc_name := String(content_db.get_npc(String(npc_id)).get("name", npc_id))
+				lines.append("%s • %s • %d" % [npc_name, relationship_manager.level_for(String(npc_id)), relationship_manager.affinity_for(String(npc_id))])
+			lines.sort()
+			ui_overlay.show_relationships(lines, "Judá • %d" % int(relationship_manager.reputation.get("juda", 0)))
 		"settings":
 			_set_game_paused(true)
 			ui_overlay.show_settings(navigation_debug_visible)
@@ -492,6 +548,9 @@ func _on_quest_changed(reason: String) -> void:
 	_update_inventory_ui()
 	if game_started and reason != "load" and reason != "new_game":
 		_save_game(reason, AUTOSAVE_PATH)
+	if reason == "quest_complete" and relationship_manager != null:
+		var completed_definition: Dictionary = quest_manager.definition(quest_manager.last_completed_id)
+		relationship_manager.apply_rewards(Dictionary(completed_definition.get("rewards", {})), "quest:%s" % quest_manager.last_completed_id)
 	if reason == "quest_complete" and game_state.chapter_complete:
 		_set_game_paused(true)
 		ui_overlay.show_chapter_summary(game_state.day)
@@ -1649,7 +1708,17 @@ func _talk_to_npc(npc_name: String) -> void:
 	if npc == null:
 		return
 	_open_npc_dialogue(npc, "%s — %s" % [npc_name, _format_game_time()])
-	dialogue_text.text = quest_manager.talk_to(npc_name, inventory_manager, game_state.day, game_minutes)
+	var npc_id: String = String(schedule_manager.npc_id_for_name(npc_name))
+	var context_text: String = dialogue_manager.resolve(npc_id, {
+		"activity": String(current_npc_activities.get(npc_name, "wait")),
+		"daypart": game_state.phase(),
+		"location": game_state.scene_id,
+		"relationship": relationship_manager.affinity_for(npc_id),
+		"quest_state": quest_manager.state(quest_manager.active_id, game_state.day, game_minutes) if quest_manager.active_id != "" else "none",
+		"flags": {"m1_complete": game_state.chapter_complete}
+	})
+	var quest_text: String = quest_manager.talk_to(npc_name, inventory_manager, game_state.day, game_minutes)
+	dialogue_text.text = "%s\n\n%s" % [context_text, quest_text] if not context_text.is_empty() else quest_text
 	if not game_state.chapter_complete and bool(quest_manager.completed.get("new_day", false)):
 		game_state.chapter_complete = true
 		_save_game("chapter_complete", AUTOSAVE_PATH)

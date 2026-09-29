@@ -36,7 +36,7 @@
     {"type":"visit","target":"tent","count":1,"text":"Volte à sua Tenda"},
     {"type":"sleep","target":"bed","count":1,"text":"Durma até a manhã"}
   ]},
-  {"id":"new_day","order":90,"title":"Um Novo Dia","giver":"Ancião","giver_id":"anciao","location":"Centro","prerequisites":["earned_rest"],"min_day":2,"objectives":[
+  {"id":"new_day","order":90,"title":"Um Novo Dia","giver":"Ancião","giver_id":"anciao","location":"Centro","prerequisites":["earned_rest"],"min_day":2,"rewards":{"affinity":{"anciao":2},"reputation":{"juda":2}},"objectives":[
     {"type":"talk","target":"Ancião","count":1,"text":"Fale com o Ancião na nova manhã"}
   ]}
 ]

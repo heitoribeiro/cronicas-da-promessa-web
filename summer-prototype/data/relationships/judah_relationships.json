@@ -1,0 +1,10 @@
+[
+  {
+    "id": "juda_core",
+    "tribe_id": "juda",
+    "display_name": "Tribo de Judá",
+    "initial_reputation": 0,
+    "npc_ids": ["hanan", "eliabe", "miria", "anciao", "pastor"],
+    "initial_affinity": 0
+  }
+]

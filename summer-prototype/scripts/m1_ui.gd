@@ -45,6 +45,7 @@ func _ready() -> void:
 		{"label": "Diário [J]", "action": "journal"},
 		{"label": "Bolsa [I]", "action": "inventory"},
 		{"label": "Mapa [M]", "action": "map"},
+		{"label": "Relações", "action": "relationships"},
 		{"label": "Menu [Esc]", "action": "pause"}
 	]:
 		var button := Button.new()
@@ -151,6 +152,11 @@ func show_inventory(bag: Dictionary, chest: Dictionary, chest_open: bool) -> voi
 
 func show_map(scene_name: String) -> void:
 	_show_page("map", "Mapa de Judá", "Local atual: %s\n\nCentro: Ancião e Tenda do Estandarte\nOeste: Curral e Rebanho\nNorte: Cozinha e Tenda do Jogador\nLeste: Oficina e Coleta de Lenha\nSul: Poço" % scene_name, [
+		{"id": "resume", "label": "Fechar"}
+	])
+
+func show_relationships(lines: Array[String], reputation_text: String) -> void:
+	_show_page("relationships", "Relações", "Afinidade\n%s\n\nReputação\n%s" % ["\n".join(PackedStringArray(lines)), reputation_text], [
 		{"id": "resume", "label": "Fechar"}
 	])
 
