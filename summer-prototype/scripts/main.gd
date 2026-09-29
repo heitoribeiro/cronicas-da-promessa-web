@@ -25,11 +25,25 @@ var navigation_self_test_summary := "NAV: aguardando autoteste"
 var routine_self_test_summary := "ROTINA: aguardando autoteste"
 var behavior_self_test_summary := "ESTADOS: aguardando autoteste"
 var economy_self_test_summary := "ECONOMIA: aguardando autoteste"
+var quest_self_test_summary := "QUEST: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
+var inventory_label: Label
+var quest_label: Label
+var active_interaction_target := ""
 
 const RESOURCE_CAP := 20
+const PLAYER_RESOURCE_CAP := 8
+const QUEST_WATER_REQUIRED := 2
+const WELL_POSITION := Vector2(640, 500)
+
+var player_inventory: Dictionary = {
+	"agua": 0,
+	"lenha": 0,
+	"materiais": 0,
+	"refeicoes": 0
+}
 var camp_resources: Dictionary = {
 	"agua": 4,
 	"lenha": 4,
@@ -55,6 +69,7 @@ func _ready() -> void:
 	_run_routine_self_tests()
 	_run_behavior_self_tests()
 	_run_economy_self_tests()
+	_run_player_quest_self_tests()
 	_build_ui()
 	_spawn_player()
 	_spawn_hanan()
@@ -73,11 +88,18 @@ func _process(delta: float) -> void:
 	_update_clock_ui()
 	_update_resource_ui()
 
-	var nearby := player.global_position.distance_to(hanan.global_position) <= 82.0
-	prompt_panel.visible = nearby and not dialogue_panel.visible
+	var hanan_nearby := player.global_position.distance_to(hanan.global_position) <= 82.0
+	var well_nearby := player.global_position.distance_to(WELL_POSITION) <= 92.0
 
-	if nearby:
+	active_interaction_target = ""
+	if hanan_nearby:
+		active_interaction_target = "hanan"
 		prompt_label.text = "CLIQUE / E — Falar com Hanan"
+	elif well_nearby:
+		active_interaction_target = "well"
+		prompt_label.text = "CLIQUE / E — Recolher água do Poço"
+
+	prompt_panel.visible = active_interaction_target != "" and not dialogue_panel.visible
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -111,8 +133,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_E:
-			if player.global_position.distance_to(hanan.global_position) <= 82.0:
-				_interact_with_hanan()
+			if active_interaction_target != "":
+				_interact_current_target()
 				get_viewport().set_input_as_handled()
 				return
 
@@ -121,15 +143,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
 			var prompt_rect := prompt_panel.get_global_rect()
 			if prompt_rect.has_point(mouse_event.position):
-				_interact_with_hanan()
+				_interact_current_target()
 				get_viewport().set_input_as_handled()
 
 func _on_prompt_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-			if player != null and hanan != null and player.global_position.distance_to(hanan.global_position) <= 82.0:
-				_interact_with_hanan()
+			if active_interaction_target != "":
+				_interact_current_target()
 				get_viewport().set_input_as_handled()
 
 func _build_world() -> void:
@@ -487,6 +509,106 @@ func _run_economy_self_tests() -> void:
 	economy_self_test_summary = "ECONOMIA %d/%d" % [passed, checks.size()]
 	print("[ECONOMYTEST] ", economy_self_test_summary)
 
+func _inventory_has_requirements(inventory: Dictionary, requirements: Dictionary) -> bool:
+	for resource_key in requirements.keys():
+		var resource_id := String(resource_key)
+		var required := int(requirements[resource_key])
+		if int(inventory.get(resource_id, 0)) < required:
+			return false
+	return true
+
+func _player_add_resource(resource_id: String, amount: int) -> int:
+	var current := int(player_inventory.get(resource_id, 0))
+	var updated := clampi(current + amount, 0, PLAYER_RESOURCE_CAP)
+	player_inventory[resource_id] = updated
+	_update_inventory_ui()
+	return updated - current
+
+func _can_deposit_delivery(requirements: Dictionary) -> bool:
+	if not _inventory_has_requirements(player_inventory, requirements):
+		return false
+	for resource_key in requirements.keys():
+		var resource_id := String(resource_key)
+		var amount := int(requirements[resource_key])
+		if int(camp_resources.get(resource_id, 0)) + amount > RESOURCE_CAP:
+			return false
+	return true
+
+func _deposit_player_delivery(requirements: Dictionary) -> bool:
+	if not _can_deposit_delivery(requirements):
+		return false
+	for resource_key in requirements.keys():
+		var resource_id := String(resource_key)
+		var amount := int(requirements[resource_key])
+		player_inventory[resource_id] = int(player_inventory.get(resource_id, 0)) - amount
+		camp_resources[resource_id] = int(camp_resources.get(resource_id, 0)) + amount
+	_update_inventory_ui()
+	_update_resource_ui()
+	return true
+
+func _quest_requirements() -> Dictionary:
+	return {"agua": QUEST_WATER_REQUIRED}
+
+func _quest_progress_text() -> String:
+	if not quest_started:
+		return "Quest: fale com Hanan"
+	if quest_completed:
+		return "Quest concluída: Água para a Cozinha"
+	var current := int(player_inventory.get("agua", 0))
+	return "Quest: Água para a Cozinha • %d/%d na Bolsa" % [current, QUEST_WATER_REQUIRED]
+
+func _update_inventory_ui() -> void:
+	if inventory_label != null:
+		inventory_label.text = "Bolsa  Água %d/%d • Lenha %d/%d • Materiais %d/%d • Refeições %d/%d" % [
+			int(player_inventory.get("agua", 0)), PLAYER_RESOURCE_CAP,
+			int(player_inventory.get("lenha", 0)), PLAYER_RESOURCE_CAP,
+			int(player_inventory.get("materiais", 0)), PLAYER_RESOURCE_CAP,
+			int(player_inventory.get("refeicoes", 0)), PLAYER_RESOURCE_CAP
+		]
+	if quest_label != null:
+		quest_label.text = _quest_progress_text()
+
+func _interact_current_target() -> void:
+	match active_interaction_target:
+		"hanan":
+			_interact_with_hanan()
+		"well":
+			_collect_water_from_well()
+
+func _collect_water_from_well() -> void:
+	if int(player_inventory.get("agua", 0)) >= PLAYER_RESOURCE_CAP:
+		_show_system_dialogue("Poço", "Sua Bolsa já está no limite de Água.")
+		return
+
+	var added := _player_add_resource("agua", 1)
+	print("[PLAYERRESOURCE] Água +", added, " • Bolsa=", player_inventory["agua"])
+	_show_system_dialogue("Poço", "Você recolheu 1 unidade de Água. %s" % _quest_progress_text())
+
+func _show_system_dialogue(title: String, text: String) -> void:
+	dialogue_title.text = title
+	dialogue_text.text = text
+	dialogue_panel.visible = true
+	prompt_panel.visible = false
+
+func _run_player_quest_self_tests() -> void:
+	var empty_inventory := {"agua": 0}
+	var one_water := {"agua": 1}
+	var enough_water := {"agua": 2}
+	var requirements := {"agua": QUEST_WATER_REQUIRED}
+	var checks: Array[bool] = [
+		not _inventory_has_requirements(empty_inventory, requirements),
+		not _inventory_has_requirements(one_water, requirements),
+		_inventory_has_requirements(enough_water, requirements),
+		clampi(7 + 2, 0, PLAYER_RESOURCE_CAP) == PLAYER_RESOURCE_CAP,
+		QUEST_WATER_REQUIRED == 2
+	]
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+	quest_self_test_summary = "QUEST %d/%d" % [passed, checks.size()]
+	print("[QUESTTEST] ", quest_self_test_summary)
+
 func _build_navigation_grid() -> void:
 	navigation_grid.region = Rect2i(0, 0, int(ceil(1280.0 / NAV_CELL_SIZE)), int(ceil(720.0 / NAV_CELL_SIZE)))
 	navigation_grid.cell_size = Vector2(NAV_CELL_SIZE, NAV_CELL_SIZE)
@@ -670,6 +792,21 @@ func _build_ui() -> void:
 	canvas.add_child(resource_label)
 	_update_resource_ui()
 
+	inventory_label = Label.new()
+	inventory_label.position = Vector2(24, 48)
+	inventory_label.size = Vector2(650, 22)
+	inventory_label.add_theme_font_size_override("font_size", 12)
+	inventory_label.add_theme_color_override("font_color", Color("#d9f4ff"))
+	canvas.add_child(inventory_label)
+
+	quest_label = Label.new()
+	quest_label.position = Vector2(24, 72)
+	quest_label.size = Vector2(650, 22)
+	quest_label.add_theme_font_size_override("font_size", 12)
+	quest_label.add_theme_color_override("font_color", Color("#f6dc86"))
+	canvas.add_child(quest_label)
+	_update_inventory_ui()
+
 	clock_label = Label.new()
 	clock_label.position = Vector2(1090, 18)
 	clock_label.add_theme_font_size_override("font_size", 17)
@@ -685,7 +822,7 @@ func _build_ui() -> void:
 	canvas.add_child(routine_label)
 
 	navigation_debug_label = Label.new()
-	navigation_debug_label.text = "%s • %s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary, economy_self_test_summary]
+	navigation_debug_label.text = "%s • %s • %s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary, economy_self_test_summary, quest_self_test_summary]
 	navigation_debug_label.position = Vector2(24, 642)
 	navigation_debug_label.add_theme_font_size_override("font_size", 13)
 	navigation_debug_label.add_theme_color_override("font_color", Color("#7ee0ff"))
@@ -862,12 +999,25 @@ func _interact_with_hanan() -> void:
 
 	if not quest_started:
 		quest_started = true
-		dialogue_text.text = "A cozinha precisa de água antes que o movimento aumente. Este protótipo já valida movimentação, colisão, patrulha de NPC e interação."
+		dialogue_text.text = "A Cozinha precisa de água. Vá até o Poço, recolha %d unidades de Água e traga-as para mim." % QUEST_WATER_REQUIRED
+		print("[QUEST] Iniciada: Água para a Cozinha • requisito=", QUEST_WATER_REQUIRED)
+		_update_inventory_ui()
 	elif not quest_completed:
-		quest_completed = true
-		dialogue_text.text = "Muito bem. Na próxima etapa, esta missão será ligada ao inventário e ao sistema de quests do jogo web."
+		var requirements := _quest_requirements()
+		if _inventory_has_requirements(player_inventory, requirements):
+			if _deposit_player_delivery(requirements):
+				quest_completed = true
+				dialogue_text.text = "Muito bem. As %d unidades de Água foram entregues à Cozinha. A missão está concluída." % QUEST_WATER_REQUIRED
+				print("[QUEST] Concluída: Água para a Cozinha")
+				_update_inventory_ui()
+			else:
+				dialogue_text.text = "Você trouxe a Água, mas o estoque do acampamento está cheio. Use ou aguarde consumo antes de entregar."
+		else:
+			dialogue_text.text = "Ainda precisamos de Água. Você tem %d/%d unidades na Bolsa." % [
+				int(player_inventory.get("agua", 0)), QUEST_WATER_REQUIRED
+			]
 	else:
-		dialogue_text.text = "O protótipo Summer está funcionando. Podemos migrar os sistemas mecânicos gradualmente."
+		dialogue_text.text = "A Água já foi entregue. Continue ajudando o acampamento conforme as necessidades surgirem."
 
 func _create_path(rect: Rect2, color: Color) -> void:
 	var polygon := Polygon2D.new()
