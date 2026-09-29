@@ -3,53 +3,23 @@ class_name M1QuestManager
 
 signal changed(reason: String)
 
-const ORDER := ["camp_intro", "water_kitchen", "wood_workshop", "meal_prep", "flock_care", "center_service", "dusk_return", "earned_rest", "new_day"]
-const DEFINITIONS := {
-	"camp_intro": {"title": "Conhecendo o Acampamento de Judá", "giver": "Ancião", "location": "Centro", "objectives": [
-		{"type": "visit", "target": "kitchen", "count": 1, "text": "Visite a Cozinha"},
-		{"type": "visit", "target": "workshop", "count": 1, "text": "Visite a Oficina"},
-		{"type": "visit", "target": "well", "count": 1, "text": "Visite o Poço"},
-		{"type": "visit", "target": "tent", "count": 1, "text": "Visite sua Tenda"}
-	]},
-	"water_kitchen": {"title": "Água para a Cozinha", "giver": "Hanan", "location": "Poço / Cozinha", "objectives": [
-		{"type": "collect", "target": "agua", "count": 2, "text": "Recolha 2 Águas no Poço"},
-		{"type": "deliver", "target": "agua", "count": 2, "text": "Entregue 2 Águas a Hanan"}
-	]},
-	"wood_workshop": {"title": "Lenha para a Oficina", "giver": "Eliabe", "location": "Coleta / Oficina", "objectives": [
-		{"type": "collect", "target": "lenha", "count": 3, "text": "Recolha 3 Lenhas"},
-		{"type": "deliver", "target": "lenha", "count": 3, "text": "Entregue 3 Lenhas a Eliabe"}
-	]},
-	"meal_prep": {"title": "Preparativos da Refeição", "giver": "Miriã", "location": "Cozinha", "objectives": [
-		{"type": "inspect", "target": "kitchen", "count": 1, "text": "Inspecione a Cozinha"},
-		{"type": "stock", "target": "kitchen", "count": 1, "text": "Garanta Água e Lenha no estoque"},
-		{"type": "eat", "target": "meal", "count": 1, "text": "Receba e coma uma refeição"}
-	]},
-	"flock_care": {"title": "Cuidado do Rebanho", "giver": "Pastor", "location": "Curral", "objectives": [
-		{"type": "inspect", "target": "flock_a", "count": 1, "text": "Conte o primeiro grupo do rebanho"},
-		{"type": "inspect", "target": "flock_b", "count": 1, "text": "Conte o segundo grupo do rebanho"},
-		{"type": "inspect", "target": "flock_c", "count": 1, "text": "Conte o terceiro grupo do rebanho"}
-	]},
-	"center_service": {"title": "Serviço no Centro", "giver": "Ancião", "location": "Centro / Tenda do Estandarte", "objectives": [
-		{"type": "visit", "target": "service_center", "count": 1, "text": "Visite o Centro entre 12:00 e 18:00"},
-		{"type": "talk", "target": "Hanan", "count": 1, "text": "Fale com Hanan"},
-		{"type": "talk", "target": "Miriã", "count": 1, "text": "Fale com Miriã"}
-	]},
-	"dusk_return": {"title": "Recolher ao Entardecer", "giver": "Pastor", "location": "Curral", "objectives": [
-		{"type": "inspect", "target": "corral", "count": 1, "text": "Inspecione o Curral"},
-		{"type": "inspect", "target": "flock_a", "count": 1, "text": "Confira o rebanho"}
-	]},
-	"earned_rest": {"title": "Descanso Merecido", "giver": "Tenda", "location": "Tenda do Jogador", "objectives": [
-		{"type": "visit", "target": "tent", "count": 1, "text": "Volte à sua Tenda"},
-		{"type": "sleep", "target": "bed", "count": 1, "text": "Durma até a manhã"}
-	]},
-	"new_day": {"title": "Um Novo Dia", "giver": "Ancião", "location": "Centro", "objectives": [
-		{"type": "talk", "target": "Ancião", "count": 1, "text": "Fale com o Ancião na nova manhã"}
-	]}
-}
-
 var active_id: String = ""
 var completed: Dictionary = {}
 var progress: Dictionary = {}
+var content_db: Node
+var definitions: Dictionary = {}
+var order: Array[String] = []
+
+func configure(database: Node) -> void:
+	content_db = database
+	definitions.clear()
+	order.clear()
+	var ordered: Array[Dictionary] = content_db.all("quest")
+	ordered.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.get("order", 0)) < int(b.get("order", 0)))
+	for quest in ordered:
+		var quest_id := String(quest.get("id", ""))
+		definitions[quest_id] = quest
+		order.append(quest_id)
 
 func new_game() -> void:
 	active_id = ""
@@ -58,7 +28,7 @@ func new_game() -> void:
 	changed.emit("new_game")
 
 func definition(quest_id: String) -> Dictionary:
-	return DEFINITIONS.get(quest_id, {})
+	return definitions.get(quest_id, {})
 
 func state(quest_id: String, day: int = 1, minutes: float = 360.0) -> String:
 	if bool(completed.get(quest_id, false)):
@@ -67,17 +37,21 @@ func state(quest_id: String, day: int = 1, minutes: float = 360.0) -> String:
 		return "ready_to_turn_in" if ready_to_turn_in() else "active"
 	if active_id != "":
 		return "locked"
-	var index: int = ORDER.find(quest_id)
-	if index < 0 or (index > 0 and not bool(completed.get(ORDER[index - 1], false))):
+	var index: int = order.find(quest_id)
+	if index < 0:
 		return "locked"
-	if quest_id == "dusk_return" and (minutes < 1020.0 or minutes >= 1260.0):
+	for prerequisite in definition(quest_id).get("prerequisites", []):
+		if not bool(completed.get(String(prerequisite), false)):
+			return "locked"
+	var available_time: Dictionary = definition(quest_id).get("available_time", {})
+	if not available_time.is_empty() and (minutes < float(available_time.get("start", 0)) or minutes >= float(available_time.get("end", 1440))):
 		return "locked"
-	if quest_id == "new_day" and day < 2:
+	if day < int(definition(quest_id).get("min_day", 1)):
 		return "locked"
 	return "available"
 
 func next_available(day: int, minutes: float) -> String:
-	for quest_id in ORDER:
+	for quest_id in order:
 		if state(quest_id, day, minutes) == "available":
 			return quest_id
 	return ""
@@ -95,14 +69,14 @@ func start_for(giver: String, day: int, minutes: float) -> String:
 func record_event(event_type: String, target: String, amount: int = 1, minutes: float = 360.0) -> bool:
 	if active_id == "":
 		return false
-	if event_type == "visit" and target == "service_center" and (minutes < 720.0 or minutes >= 1080.0):
-		return false
 	var objectives: Array = definition(active_id).get("objectives", [])
 	var counts: Dictionary = progress.get(active_id, {})
 	var changed_any: bool = false
 	for index in objectives.size():
 		var objective: Dictionary = objectives[index]
 		if String(objective.get("type", "")) != event_type or String(objective.get("target", "")) != target:
+			continue
+		if objective.has("time_start") and (minutes < float(objective.get("time_start", 0)) or minutes >= float(objective.get("time_end", 1440))):
 			continue
 		var previous: int = int(counts.get(str(index), 0))
 		var updated: int = mini(int(objective.get("count", 1)), previous + amount)
@@ -198,7 +172,7 @@ func current_objective_text() -> String:
 
 func journal_text(completed_tab: bool = false) -> String:
 	var lines: Array[String] = []
-	for quest_id in ORDER:
+	for quest_id in order:
 		var quest_state: String = state(quest_id)
 		if completed_tab and quest_state == "completed":
 			lines.append("✓ %s" % definition(quest_id)["title"])
@@ -218,7 +192,7 @@ func snapshot() -> Dictionary:
 
 func restore(data: Dictionary) -> bool:
 	var next_active: String = String(data.get("active_quest_id", ""))
-	if next_active != "" and not DEFINITIONS.has(next_active):
+	if next_active != "" and not definitions.has(next_active):
 		return false
 	var next_completed: Dictionary = data.get("completed_quest_ids", {})
 	if not (next_completed is Dictionary):

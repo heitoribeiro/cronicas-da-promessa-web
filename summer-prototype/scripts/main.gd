@@ -69,6 +69,7 @@ var portable_self_test_summary := "PORTABLE: aguardando autoteste"
 var content_self_test_summary := "CONTENT: aguardando autoteste"
 var item_self_test_summary := "ITEMS: aguardando autoteste"
 var schedule_self_test_summary := "SCHEDULES: aguardando autoteste"
+var m2_quest_self_test_summary := "QUESTS: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
@@ -156,6 +157,8 @@ func _ready() -> void:
 	quest_manager = QuestManagerScript.new()
 	quest_manager.name = "QuestManager"
 	add_child(quest_manager)
+	quest_manager.configure(content_db)
+	_run_m2_quest_self_tests()
 	save_manager = SaveManagerScript.new()
 	save_manager.name = "SaveManager"
 	add_child(save_manager)
@@ -254,6 +257,28 @@ func _run_schedule_self_tests() -> void:
 			passed += 1
 	schedule_self_test_summary = "SCHEDULES %d/%d" % [passed, checks.size()]
 	print("[M2TEST] ", schedule_self_test_summary)
+
+func _run_m2_quest_self_tests() -> void:
+	var checks: Array[bool] = [
+		content_db.count("quest") == 9,
+		quest_manager.order.size() == 9,
+		quest_manager.order[0] == "camp_intro",
+		quest_manager.order[8] == "new_day",
+		quest_manager.definition("water_kitchen").get("giver_id", "") == "hanan",
+		quest_manager.definition("wood_workshop").get("objectives", []).size() == 2,
+		quest_manager.definition("center_service").get("objectives", []).size() == 3,
+		quest_manager.definition("earned_rest").get("objectives", [])[1].get("type", "") == "sleep",
+		quest_manager.state("dusk_return", 1, 900.0) == "locked",
+		quest_manager.state("new_day", 1, 360.0) == "locked",
+		quest_manager.definition("camp_intro").get("prerequisites", []).is_empty(),
+		quest_manager.definition("new_day").get("prerequisites", [])[0] == "earned_rest"
+	]
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+	m2_quest_self_test_summary = "QUESTS %d/%d" % [passed, checks.size()]
+	print("[M2TEST] ", m2_quest_self_test_summary)
 
 func _process(delta: float) -> void:
 	if not game_started or menu_paused:

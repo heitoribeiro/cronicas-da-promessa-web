@@ -112,6 +112,20 @@ func _validate_content() -> void:
 			var dialogue_id := String(get_npc(npc_id).get("dialogue_set", ""))
 			if not has("dialogue", dialogue_id):
 				_errors.append("NPC '%s' referencia diálogo ausente '%s'" % [npc_id, dialogue_id])
+	for quest_id in ids("quest"):
+		var quest := get_quest(quest_id)
+		var giver_id := String(quest.get("giver_id", ""))
+		if giver_id != "player_tent" and not has("npc", giver_id):
+			_errors.append("quest '%s' possui giver_id inválido '%s'" % [quest_id, giver_id])
+		for prerequisite in quest.get("prerequisites", []):
+			if not has("quest", String(prerequisite)):
+				_errors.append("quest '%s' possui pré-requisito ausente '%s'" % [quest_id, prerequisite])
+		for objective_value in quest.get("objectives", []):
+			var objective: Dictionary = objective_value
+			if not String(objective.get("type", "")) in ["talk", "visit", "collect", "deliver", "inspect", "interact", "wait_until_time", "sleep", "use_item", "produce", "relationship", "event_trigger", "stock", "eat"]:
+				_errors.append("quest '%s' possui objetivo inválido" % quest_id)
+			if String(objective.get("type", "")) in ["collect", "deliver", "use_item", "produce"] and not has("item", String(objective.get("target", ""))):
+				_errors.append("quest '%s' referencia item ausente '%s'" % [quest_id, objective.get("target", "")])
 
 func has(category_id: String, content_id: String) -> bool:
 	return _records.has(category_id) and (_records[category_id] as Dictionary).has(content_id)

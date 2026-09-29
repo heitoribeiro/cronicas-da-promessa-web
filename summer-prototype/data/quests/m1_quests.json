@@ -1,0 +1,42 @@
+[
+  {"id":"camp_intro","order":10,"title":"Conhecendo o Acampamento de Judá","giver":"Ancião","giver_id":"anciao","location":"Centro","prerequisites":[],"objectives":[
+    {"type":"visit","target":"kitchen","count":1,"text":"Visite a Cozinha"},
+    {"type":"visit","target":"workshop","count":1,"text":"Visite a Oficina"},
+    {"type":"visit","target":"well","count":1,"text":"Visite o Poço"},
+    {"type":"visit","target":"tent","count":1,"text":"Visite sua Tenda"}
+  ]},
+  {"id":"water_kitchen","order":20,"title":"Água para a Cozinha","giver":"Hanan","giver_id":"hanan","location":"Poço / Cozinha","prerequisites":["camp_intro"],"objectives":[
+    {"type":"collect","target":"agua","count":2,"text":"Recolha 2 Águas no Poço"},
+    {"type":"deliver","target":"agua","count":2,"text":"Entregue 2 Águas a Hanan"}
+  ]},
+  {"id":"wood_workshop","order":30,"title":"Lenha para a Oficina","giver":"Eliabe","giver_id":"eliabe","location":"Coleta / Oficina","prerequisites":["water_kitchen"],"objectives":[
+    {"type":"collect","target":"lenha","count":3,"text":"Recolha 3 Lenhas"},
+    {"type":"deliver","target":"lenha","count":3,"text":"Entregue 3 Lenhas a Eliabe"}
+  ]},
+  {"id":"meal_prep","order":40,"title":"Preparativos da Refeição","giver":"Miriã","giver_id":"miria","location":"Cozinha","prerequisites":["wood_workshop"],"objectives":[
+    {"type":"inspect","target":"kitchen","count":1,"text":"Inspecione a Cozinha"},
+    {"type":"stock","target":"kitchen","count":1,"text":"Garanta Água e Lenha no estoque"},
+    {"type":"eat","target":"meal","count":1,"text":"Receba e coma uma refeição"}
+  ]},
+  {"id":"flock_care","order":50,"title":"Cuidado do Rebanho","giver":"Pastor","giver_id":"pastor","location":"Curral","prerequisites":["meal_prep"],"objectives":[
+    {"type":"inspect","target":"flock_a","count":1,"text":"Conte o primeiro grupo do rebanho"},
+    {"type":"inspect","target":"flock_b","count":1,"text":"Conte o segundo grupo do rebanho"},
+    {"type":"inspect","target":"flock_c","count":1,"text":"Conte o terceiro grupo do rebanho"}
+  ]},
+  {"id":"center_service","order":60,"title":"Serviço no Centro","giver":"Ancião","giver_id":"anciao","location":"Centro / Tenda do Estandarte","prerequisites":["flock_care"],"objectives":[
+    {"type":"visit","target":"service_center","count":1,"text":"Visite o Centro entre 12:00 e 18:00","time_start":720,"time_end":1080},
+    {"type":"talk","target":"Hanan","count":1,"text":"Fale com Hanan"},
+    {"type":"talk","target":"Miriã","count":1,"text":"Fale com Miriã"}
+  ]},
+  {"id":"dusk_return","order":70,"title":"Recolher ao Entardecer","giver":"Pastor","giver_id":"pastor","location":"Curral","prerequisites":["center_service"],"available_time":{"start":1020,"end":1260},"objectives":[
+    {"type":"inspect","target":"corral","count":1,"text":"Inspecione o Curral"},
+    {"type":"inspect","target":"flock_a","count":1,"text":"Confira o rebanho"}
+  ]},
+  {"id":"earned_rest","order":80,"title":"Descanso Merecido","giver":"Tenda","giver_id":"player_tent","location":"Tenda do Jogador","prerequisites":["dusk_return"],"objectives":[
+    {"type":"visit","target":"tent","count":1,"text":"Volte à sua Tenda"},
+    {"type":"sleep","target":"bed","count":1,"text":"Durma até a manhã"}
+  ]},
+  {"id":"new_day","order":90,"title":"Um Novo Dia","giver":"Ancião","giver_id":"anciao","location":"Centro","prerequisites":["earned_rest"],"min_day":2,"objectives":[
+    {"type":"talk","target":"Ancião","count":1,"text":"Fale com o Ancião na nova manhã"}
+  ]}
+]
