@@ -36,7 +36,8 @@ var save_status_label: Label
 var active_interaction_target := ""
 var active_dialogue_npc: PrototypeNPC
 
-const SAVE_PATH := "user://cronicas_promessa_summer_save.json"
+const MANUAL_SAVE_PATH := "user://cronicas_promessa_manual_save.json"
+const AUTOSAVE_PATH := "user://cronicas_promessa_autosave.json"
 const RESOURCE_CAP := 20
 const PLAYER_RESOURCE_CAP := 8
 const WELL_POSITION := Vector2(640, 500)
@@ -163,11 +164,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F5:
-			_save_game("manual")
+			_save_game("manual", MANUAL_SAVE_PATH)
 			get_viewport().set_input_as_handled()
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F9:
-			_load_game()
+			_load_game(MANUAL_SAVE_PATH, "manual")
 			get_viewport().set_input_as_handled()
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_E:
@@ -514,7 +515,7 @@ func _apply_resource_effect(npc_name: String, routine_id: String, point_index: i
 
 	print("[RESOURCE] ", npc_name, " / ", routine_id, " -> ", ", ".join(PackedStringArray(parts)))
 	_update_resource_ui()
-	_save_game("camp_economy")
+	_save_game("camp_economy", AUTOSAVE_PATH)
 
 func _update_resource_ui() -> void:
 	if resource_label == null:
@@ -590,7 +591,7 @@ func _start_quest(quest_id: String) -> bool:
 	active_quest_id = quest_id
 	print("[QUEST] Iniciada: ", _quest_title(quest_id))
 	_update_inventory_ui()
-	_save_game("quest_start")
+	_save_game("quest_start", AUTOSAVE_PATH)
 	return true
 
 func _delivery_split(current_stock: int, amount: int) -> Vector2i:
@@ -624,7 +625,7 @@ func _deliver_quest_resources(quest_id: String) -> bool:
 	print("[QUEST] Concluída: ", _quest_title(quest_id))
 	_update_inventory_ui()
 	_update_resource_ui()
-	_save_game("quest_complete")
+	_save_game("quest_complete", AUTOSAVE_PATH)
 	return true
 
 func _next_available_quest_for_giver(giver_name: String) -> String:
@@ -685,7 +686,7 @@ func _collect_water_from_well() -> void:
 
 	var added := _player_add_resource("agua", 1)
 	print("[PLAYERRESOURCE] Água +", added, " • Bolsa=", player_inventory["agua"])
-	_save_game("resource_collect")
+	_save_game("resource_collect", AUTOSAVE_PATH)
 	_show_system_dialogue("Poço", "Você recolheu 1 unidade de Água. %s" % _quest_progress_text())
 
 func _collect_wood() -> void:
@@ -695,7 +696,7 @@ func _collect_wood() -> void:
 
 	var added := _player_add_resource("lenha", 1)
 	print("[PLAYERRESOURCE] Lenha +", added, " • Bolsa=", player_inventory["lenha"])
-	_save_game("resource_collect")
+	_save_game("resource_collect", AUTOSAVE_PATH)
 	_show_system_dialogue("Área de Coleta", "Você recolheu 1 unidade de Lenha. %s" % _quest_progress_text())
 
 func _open_npc_dialogue(npc: PrototypeNPC, title: String) -> void:
@@ -766,46 +767,48 @@ func _build_save_payload() -> Dictionary:
 		"completed_quest_ids": completed_quest_ids.duplicate(true)
 	}
 
-func _save_game(reason: String = "auto") -> bool:
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+func _save_game(reason: String = "auto", save_path: String = AUTOSAVE_PATH) -> bool:
+	var file := FileAccess.open(save_path, FileAccess.WRITE)
 	if file == null:
 		_set_save_status("Falha ao salvar")
-		print("[SAVE] falha ao abrir arquivo: ", FileAccess.get_open_error())
+		print("[SAVE] falha ao abrir arquivo: ", FileAccess.get_open_error(), " • ", save_path)
 		return false
 
 	var payload := _build_save_payload()
 	file.store_string(JSON.stringify(payload))
 	file.close()
-	_set_save_status("Salvo • %s" % reason)
-	print("[SAVE] sucesso • ", reason, " • ", SAVE_PATH)
+
+	var slot_name := "Manual" if save_path == MANUAL_SAVE_PATH else "Autosave"
+	_set_save_status("%s salvo • %s" % [slot_name, reason])
+	print("[SAVE] sucesso • ", slot_name.to_lower(), " • ", reason, " • ", save_path)
 	return true
 
-func _load_game() -> bool:
-	if not FileAccess.file_exists(SAVE_PATH):
-		_set_save_status("Nenhum save encontrado")
-		print("[SAVE] nenhum arquivo encontrado")
+func _load_game(save_path: String = MANUAL_SAVE_PATH, slot_name: String = "manual") -> bool:
+	if not FileAccess.file_exists(save_path):
+		_set_save_status("Nenhum save %s encontrado" % slot_name)
+		print("[SAVE] nenhum arquivo ", slot_name, " encontrado • ", save_path)
 		return false
 
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var file := FileAccess.open(save_path, FileAccess.READ)
 	if file == null:
-		_set_save_status("Falha ao carregar")
-		print("[SAVE] falha ao abrir save: ", FileAccess.get_open_error())
+		_set_save_status("Falha ao carregar %s" % slot_name)
+		print("[SAVE] falha ao abrir save: ", FileAccess.get_open_error(), " • ", save_path)
 		return false
 
 	var parsed = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not (parsed is Dictionary):
-		_set_save_status("Save inválido")
-		print("[SAVE] conteúdo inválido")
+		_set_save_status("Save %s inválido" % slot_name)
+		print("[SAVE] conteúdo inválido • ", save_path)
 		return false
 
 	var payload: Dictionary = parsed
 	if not _apply_save_payload(payload):
-		_set_save_status("Save incompatível")
+		_set_save_status("Save %s incompatível" % slot_name)
 		return false
 
-	_set_save_status("Save carregado")
-	print("[SAVE] carregado • ", SAVE_PATH)
+	_set_save_status("%s carregado" % slot_name.capitalize())
+	print("[SAVE] carregado • ", slot_name, " • ", save_path)
 	return true
 
 func _apply_save_payload(payload: Dictionary) -> bool:
@@ -874,7 +877,10 @@ func _run_save_self_tests() -> void:
 		int(decoded_inventory.get("lenha", 0)) == 3,
 		int(decoded_camp.get("materiais", 0)) == 4,
 		String(decoded.get("active_quest_id", "")) == SECOND_QUEST_ID,
-		bool(decoded_completed.get(FIRST_QUEST_ID, false))
+		bool(decoded_completed.get(FIRST_QUEST_ID, false)),
+		MANUAL_SAVE_PATH != AUTOSAVE_PATH,
+		MANUAL_SAVE_PATH.ends_with("manual_save.json"),
+		AUTOSAVE_PATH.ends_with("autosave.json")
 	]
 
 	var passed := 0
@@ -1087,7 +1093,7 @@ func _build_ui() -> void:
 	save_status_label.size = Vector2(650, 20)
 	save_status_label.add_theme_font_size_override("font_size", 11)
 	save_status_label.add_theme_color_override("font_color", Color("#b9d7a6"))
-	save_status_label.text = "Save: autosave ativo"
+	save_status_label.text = "Save: Manual F5/F9 • Autosave independente"
 	canvas.add_child(save_status_label)
 
 	clock_label = Label.new()
