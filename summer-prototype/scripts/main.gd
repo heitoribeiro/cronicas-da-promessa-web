@@ -32,11 +32,14 @@ var resource_label: Label
 var inventory_label: Label
 var quest_label: Label
 var active_interaction_target := ""
+var active_dialogue_npc: PrototypeNPC
 
 const RESOURCE_CAP := 20
 const PLAYER_RESOURCE_CAP := 8
 const WELL_POSITION := Vector2(640, 500)
+const WOOD_GATHER_POSITION := Vector2(1140, 540)
 const FIRST_QUEST_ID := "water_kitchen"
+const SECOND_QUEST_ID := "wood_workshop"
 
 const QUEST_DEFINITIONS := {
 	"water_kitchen": {
@@ -45,6 +48,13 @@ const QUEST_DEFINITIONS := {
 		"requirements": {"agua": 2},
 		"start_text": "A Cozinha precisa de água. Vá até o Poço, recolha 2 unidades de Água e traga-as para mim.",
 		"complete_text": "Muito bem. A Água foi entregue à Cozinha. A missão está concluída."
+	},
+	"wood_workshop": {
+		"title": "Lenha para a Oficina",
+		"giver": "Eliabe",
+		"requirements": {"lenha": 3},
+		"start_text": "Precisamos reforçar o trabalho da Oficina. Vá até a área de coleta e traga 3 unidades de Lenha.",
+		"complete_text": "Excelente. Essa Lenha manterá a Oficina funcionando. A missão está concluída."
 	}
 }
 
@@ -99,15 +109,23 @@ func _process(delta: float) -> void:
 	_update_resource_ui()
 
 	var hanan_nearby := player.global_position.distance_to(hanan.global_position) <= 82.0
+	var eliabe_nearby := eliabe != null and player.global_position.distance_to(eliabe.global_position) <= 82.0
 	var well_nearby := player.global_position.distance_to(WELL_POSITION) <= 92.0
+	var wood_nearby := player.global_position.distance_to(WOOD_GATHER_POSITION) <= 92.0
 
 	active_interaction_target = ""
 	if hanan_nearby:
 		active_interaction_target = "hanan"
 		prompt_label.text = "CLIQUE / E — Falar com Hanan"
+	elif eliabe_nearby:
+		active_interaction_target = "eliabe"
+		prompt_label.text = "CLIQUE / E — Falar com Eliabe"
 	elif well_nearby:
 		active_interaction_target = "well"
 		prompt_label.text = "CLIQUE / E — Recolher água do Poço"
+	elif wood_nearby:
+		active_interaction_target = "wood"
+		prompt_label.text = "CLIQUE / E — Recolher Lenha"
 
 	prompt_panel.visible = active_interaction_target != "" and not dialogue_panel.visible
 
@@ -115,12 +133,10 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if dialogue_panel.visible:
 		if event is InputEventKey and event.pressed:
-			dialogue_panel.visible = false
-			hanan.paused = false
+			_close_dialogue()
 			return
 		if event is InputEventMouseButton and event.pressed:
-			dialogue_panel.visible = false
-			hanan.paused = false
+			_close_dialogue()
 			return
 		return
 
@@ -182,6 +198,7 @@ func _build_world() -> void:
 	_create_static_rect("Curral", Vector2(165, 455), Vector2(300, 150), Color("#927046"))
 
 	_create_well(Vector2(640, 500))
+	_create_resource_pile(WOOD_GATHER_POSITION, "Coleta de Lenha")
 	_create_campfire(Vector2(640, 360))
 	_create_world_bounds()
 
@@ -595,10 +612,23 @@ func _deliver_quest_resources(quest_id: String) -> bool:
 	_update_resource_ui()
 	return true
 
+func _next_available_quest_for_giver(giver_name: String) -> String:
+	if giver_name == "Hanan":
+		if not _quest_is_completed(FIRST_QUEST_ID) and (active_quest_id == "" or active_quest_id == FIRST_QUEST_ID):
+			return FIRST_QUEST_ID
+	if giver_name == "Eliabe":
+		if not _quest_is_completed(FIRST_QUEST_ID):
+			return ""
+		if not _quest_is_completed(SECOND_QUEST_ID) and (active_quest_id == "" or active_quest_id == SECOND_QUEST_ID):
+			return SECOND_QUEST_ID
+	return ""
+
 func _quest_progress_text() -> String:
 	if active_quest_id == "":
+		if _quest_is_completed(SECOND_QUEST_ID):
+			return "Quests concluídas: %s • %s" % [_quest_title(FIRST_QUEST_ID), _quest_title(SECOND_QUEST_ID)]
 		if _quest_is_completed(FIRST_QUEST_ID):
-			return "Quest concluída: %s" % _quest_title(FIRST_QUEST_ID)
+			return "Quest concluída: %s • fale com Eliabe" % _quest_title(FIRST_QUEST_ID)
 		return "Quest: fale com Hanan"
 
 	var requirements := _quest_requirements(active_quest_id)
@@ -626,8 +656,12 @@ func _interact_current_target() -> void:
 	match active_interaction_target:
 		"hanan":
 			_interact_with_hanan()
+		"eliabe":
+			_interact_with_eliabe()
 		"well":
 			_collect_water_from_well()
+		"wood":
+			_collect_wood()
 
 func _collect_water_from_well() -> void:
 	if int(player_inventory.get("agua", 0)) >= PLAYER_RESOURCE_CAP:
@@ -638,7 +672,31 @@ func _collect_water_from_well() -> void:
 	print("[PLAYERRESOURCE] Água +", added, " • Bolsa=", player_inventory["agua"])
 	_show_system_dialogue("Poço", "Você recolheu 1 unidade de Água. %s" % _quest_progress_text())
 
+func _collect_wood() -> void:
+	if int(player_inventory.get("lenha", 0)) >= PLAYER_RESOURCE_CAP:
+		_show_system_dialogue("Área de Coleta", "Sua Bolsa já está no limite de Lenha.")
+		return
+
+	var added := _player_add_resource("lenha", 1)
+	print("[PLAYERRESOURCE] Lenha +", added, " • Bolsa=", player_inventory["lenha"])
+	_show_system_dialogue("Área de Coleta", "Você recolheu 1 unidade de Lenha. %s" % _quest_progress_text())
+
+func _open_npc_dialogue(npc: PrototypeNPC, title: String) -> void:
+	active_dialogue_npc = npc
+	if active_dialogue_npc != null:
+		active_dialogue_npc.paused = true
+	dialogue_panel.visible = true
+	prompt_panel.visible = false
+	dialogue_title.text = title
+
+func _close_dialogue() -> void:
+	dialogue_panel.visible = false
+	if active_dialogue_npc != null:
+		active_dialogue_npc.paused = false
+	active_dialogue_npc = null
+
 func _show_system_dialogue(title: String, text: String) -> void:
+	active_dialogue_npc = null
 	dialogue_title.text = title
 	dialogue_text.text = text
 	dialogue_panel.visible = true
@@ -649,14 +707,19 @@ func _run_player_quest_self_tests() -> void:
 	var one_water := {"agua": 1}
 	var enough_water := {"agua": 2}
 	var requirements := _quest_requirements(FIRST_QUEST_ID)
+	var wood_requirements := _quest_requirements(SECOND_QUEST_ID)
 	var overflow_split := _delivery_split(20, 2)
 	var partial_split := _delivery_split(19, 2)
 	var definition := _get_quest_definition(FIRST_QUEST_ID)
+	var wood_definition := _get_quest_definition(SECOND_QUEST_ID)
 
 	var checks: Array[bool] = [
 		not definition.is_empty(),
 		String(definition.get("giver", "")) == "Hanan",
 		int(requirements.get("agua", 0)) == 2,
+		not wood_definition.is_empty(),
+		String(wood_definition.get("giver", "")) == "Eliabe",
+		int(wood_requirements.get("lenha", 0)) == 3,
 		not _inventory_has_requirements(empty_inventory, requirements),
 		not _inventory_has_requirements(one_water, requirements),
 		_inventory_has_requirements(enough_water, requirements),
@@ -1054,10 +1117,7 @@ func _on_destination_failed(world_position: Vector2) -> void:
 	)
 
 func _interact_with_hanan() -> void:
-	hanan.paused = true
-	dialogue_panel.visible = true
-	prompt_panel.visible = false
-	dialogue_title.text = "Hanan — %s — %s" % [_format_game_time(), _activity_display_name(String(current_npc_activities.get("Hanan", "wait")))]
+	_open_npc_dialogue(hanan, "Hanan — %s — %s" % [_format_game_time(), _activity_display_name(String(current_npc_activities.get("Hanan", "wait")))])
 
 	if not _quest_is_completed(FIRST_QUEST_ID) and active_quest_id == "":
 		var definition := _get_quest_definition(FIRST_QUEST_ID)
@@ -1073,6 +1133,29 @@ func _interact_with_hanan() -> void:
 			dialogue_text.text = "Ainda precisamos dos recursos. %s" % _quest_progress_text()
 	elif _quest_is_completed(FIRST_QUEST_ID):
 		dialogue_text.text = "A Água já foi entregue. Continue ajudando o acampamento conforme as necessidades surgirem."
+	else:
+		dialogue_text.text = "Conclua a missão ativa antes de iniciar outra tarefa."
+
+func _interact_with_eliabe() -> void:
+	_open_npc_dialogue(eliabe, "Eliabe — %s — %s" % [_format_game_time(), _activity_display_name(String(current_npc_activities.get("Eliabe", "wait")))])
+
+	var quest_id := _next_available_quest_for_giver("Eliabe")
+	if quest_id == SECOND_QUEST_ID and active_quest_id == "":
+		var definition := _get_quest_definition(SECOND_QUEST_ID)
+		if _start_quest(SECOND_QUEST_ID):
+			dialogue_text.text = String(definition.get("start_text", "Uma nova missão foi iniciada."))
+	elif active_quest_id == SECOND_QUEST_ID:
+		var requirements := _quest_requirements(SECOND_QUEST_ID)
+		if _inventory_has_requirements(player_inventory, requirements):
+			if _deliver_quest_resources(SECOND_QUEST_ID):
+				var definition := _get_quest_definition(SECOND_QUEST_ID)
+				dialogue_text.text = String(definition.get("complete_text", "Missão concluída."))
+		else:
+			dialogue_text.text = "Ainda precisamos dos recursos. %s" % _quest_progress_text()
+	elif not _quest_is_completed(FIRST_QUEST_ID):
+		dialogue_text.text = "Hanan ainda precisa de sua ajuda na Cozinha. Conclua essa tarefa primeiro."
+	elif _quest_is_completed(SECOND_QUEST_ID):
+		dialogue_text.text = "A Lenha já foi entregue. A Oficina está abastecida."
 	else:
 		dialogue_text.text = "Conclua a missão ativa antes de iniciar outra tarefa."
 
@@ -1134,6 +1217,23 @@ func _create_well(center: Vector2) -> void:
 	visual.polygon = _regular_polygon(38.0, 20)
 	visual.color = Color("#496f7a")
 	body.add_child(visual)
+
+func _create_resource_pile(center: Vector2, label_text: String) -> void:
+	var visual := Polygon2D.new()
+	visual.position = center
+	visual.polygon = PackedVector2Array([
+		Vector2(-34, 18), Vector2(-22, -12), Vector2(0, -22),
+		Vector2(24, -10), Vector2(36, 18)
+	])
+	visual.color = Color("#7a4c2c")
+	add_child(visual)
+
+	var label := Label.new()
+	label.text = label_text
+	label.position = center + Vector2(-46, -50)
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", Color("#3c2a1b"))
+	add_child(label)
 
 func _create_campfire(center: Vector2) -> void:
 	var visual := Polygon2D.new()
