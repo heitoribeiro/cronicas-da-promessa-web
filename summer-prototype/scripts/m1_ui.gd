@@ -167,7 +167,7 @@ func show_settings(debug_visible: bool) -> void:
 	])
 
 func show_chapter_summary(day: int) -> void:
-	_show_page("chapter", "CAPÍTULO 1 CONCLUÍDO", "Um Novo Dia — Tina despertou para o dia %d. As nove tarefas do primeiro capítulo foram concluídas. O modo livre está disponível; o próximo capítulo virá depois." % day, [
-		{"id": "resume", "label": "Continuar em modo livre"},
+	_show_page("chapter", "CAPÍTULO 1 CONCLUÍDO", "Um Novo Dia — Tina despertou para o dia %d. As nove tarefas do primeiro capítulo foram concluídas. Urias, Noemi e Jael agora têm novos serviços para a comunidade." % day, [
+		{"id": "resume", "label": "Começar o Dia 2"},
 		{"id": "save", "label": "Salvar Progresso"}
 	])

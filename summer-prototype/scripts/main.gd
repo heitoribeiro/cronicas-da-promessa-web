@@ -216,6 +216,7 @@ func _ready() -> void:
 	_run_player_quest_self_tests()
 	_run_save_self_tests()
 	_run_portable_self_tests()
+	_run_m2_regression_summary()
 	_build_ui()
 	_setup_transfer_dialogs()
 	_spawn_player()
@@ -435,6 +436,125 @@ func _run_day2_self_tests() -> void:
 		if check: passed += 1
 	day2_self_test_summary = "DAY2 %d/%d" % [passed, checks.size()]
 	print("[M2TEST] ", day2_self_test_summary)
+
+func _run_m2_regression_summary() -> void:
+	var checks: Array[bool] = [
+		navigation_self_test_summary.begins_with("NAV 3/3"),
+		routine_self_test_summary == "ROTINA 12/12",
+		behavior_self_test_summary == "ESTADOS 12/12",
+		economy_self_test_summary == "ECONOMIA 5/5",
+		quest_self_test_summary == "QUESTSYS 12/12",
+		save_self_test_summary == "SAVESYS 10/10",
+		portable_self_test_summary == "PORTABLE 8/8",
+		content_db.errors().is_empty(),
+		quest_manager.definition("new_day").get("title", "") == "Um Novo Dia",
+		location_manager.has("tent") and location_manager.has("kitchen") and location_manager.has("workshop") and location_manager.has("council")
+	]
+	var passed := 0
+	for check in checks:
+		if check: passed += 1
+	print("[M2TEST] M1_REGRESSION %d/%d" % [passed, checks.size()])
+
+func run_controlled_m2_playthrough() -> Dictionary:
+	_start_new_game()
+	ui_overlay.close()
+	_set_game_paused(false)
+	var steps: Array[bool] = []
+
+	# Q1 — visita guiada.
+	steps.append(quest_manager.talk_to("Ancião", inventory_manager, 1, 360).contains("Nova missão"))
+	for target in ["kitchen", "workshop", "well", "tent"]:
+		quest_manager.record_event("visit", target, 1, 360)
+	steps.append(quest_manager.talk_to("Ancião", inventory_manager, 1, 360).contains("concluída"))
+
+	# Q2–Q3 — coleta e entrega.
+	steps.append(quest_manager.talk_to("Hanan", inventory_manager, 1, 420).contains("Água"))
+	inventory_manager.add_bag("agua", 2)
+	quest_manager.record_event("collect", "agua", 2, 420)
+	steps.append(quest_manager.talk_to("Hanan", inventory_manager, 1, 420).contains("concluída"))
+	steps.append(quest_manager.talk_to("Eliabe", inventory_manager, 1, 480).contains("Lenha"))
+	inventory_manager.add_bag("lenha", 3)
+	quest_manager.record_event("collect", "lenha", 3, 480)
+	steps.append(quest_manager.talk_to("Eliabe", inventory_manager, 1, 480).contains("concluída"))
+
+	# Q4–Q5 — refeição e rebanho.
+	quest_manager.talk_to("Miriã", inventory_manager, 1, 540)
+	quest_manager.record_event("inspect", "kitchen", 1, 540)
+	quest_manager.record_event("stock", "kitchen", 1, 540)
+	quest_manager.record_event("eat", "meal", 1, 540)
+	steps.append(quest_manager.talk_to("Miriã", inventory_manager, 1, 540).contains("concluída"))
+	quest_manager.talk_to("Pastor", inventory_manager, 1, 600)
+	for target in ["flock_a", "flock_b", "flock_c"]:
+		quest_manager.record_event("inspect", target, 1, 600)
+	steps.append(quest_manager.talk_to("Pastor", inventory_manager, 1, 600).contains("concluída"))
+
+	# Q6–Q7 — serviço e entardecer.
+	game_state.minutes = 720.0
+	game_minutes = 720.0
+	quest_manager.talk_to("Ancião", inventory_manager, 1, game_minutes)
+	quest_manager.record_event("visit", "service_center", 1, game_minutes)
+	quest_manager.talk_to("Hanan", inventory_manager, 1, game_minutes)
+	quest_manager.talk_to("Miriã", inventory_manager, 1, game_minutes)
+	steps.append(quest_manager.talk_to("Ancião", inventory_manager, 1, game_minutes).contains("concluída"))
+	game_state.minutes = 1080.0
+	game_minutes = 1080.0
+	quest_manager.talk_to("Pastor", inventory_manager, 1, game_minutes)
+	quest_manager.record_event("inspect", "corral", 1, game_minutes)
+	quest_manager.record_event("inspect", "flock_a", 1, game_minutes)
+	steps.append(quest_manager.talk_to("Pastor", inventory_manager, 1, game_minutes).contains("concluída"))
+
+	# Q8–Q9 — sono, novo dia e capítulo.
+	quest_manager.start_for("Tenda", 1, game_minutes)
+	quest_manager.record_event("visit", "tent", 1, game_minutes)
+	game_state.sleep_until_morning()
+	game_minutes = game_state.minutes
+	quest_manager.record_event("sleep", "bed", 1, game_minutes)
+	steps.append(bool(quest_manager.completed.get("earned_rest", false)))
+	quest_manager.talk_to("Ancião", inventory_manager, game_state.day, game_minutes)
+	game_state.chapter_complete = bool(quest_manager.completed.get("new_day", false))
+	event_manager.trigger("m1_chapter_complete", {"day":game_state.day, "minutes":game_minutes})
+	steps.append(game_state.chapter_complete)
+
+	# Dia 2 — três quests orientadas a dados.
+	quest_manager.talk_to("Urias", inventory_manager, 2, 480)
+	inventory_manager.add_bag("lenha", 2)
+	quest_manager.record_event("collect", "lenha", 2, 480)
+	steps.append(quest_manager.talk_to("Urias", inventory_manager, 2, 480).contains("concluída"))
+	quest_manager.talk_to("Noemi", inventory_manager, 2, 540)
+	quest_manager.talk_to("Jael", inventory_manager, 2, 540)
+	quest_manager.talk_to("Miriã", inventory_manager, 2, 540)
+	steps.append(quest_manager.talk_to("Noemi", inventory_manager, 2, 540).contains("concluída"))
+	quest_manager.talk_to("Jael", inventory_manager, 2, 600)
+	quest_manager.record_event("produce", "materiais", 1, 600)
+	inventory_manager.add_bag("materiais", 1)
+	steps.append(quest_manager.talk_to("Jael", inventory_manager, 2, 600).contains("concluída"))
+	steps.append(bool(event_manager.seen.get("day2_community_blessing", false)))
+	steps.append(relationship_manager.affinity_for("urias") >= 5 and relationship_manager.affinity_for("noemi") >= 5 and relationship_manager.affinity_for("jael") >= 6)
+
+	# Round-trip local e portátil.
+	player.global_position = Vector2(777, 333)
+	game_state.minutes = 615.0
+	game_minutes = 615.0
+	var expected: Dictionary = _build_save_payload()
+	var local_saved := _save_game("m2_controlled", AUTOSAVE_PATH)
+	player.global_position = Vector2(100, 100)
+	game_state.minutes = 900.0
+	inventory_manager.bag["agua"] = 0
+	var local_loaded := _load_game(AUTOSAVE_PATH, "autosave")
+	steps.append(local_saved and local_loaded and player.global_position == Vector2(777, 333) and is_equal_approx(game_state.minutes, 615.0))
+	var portable_path := "user://m2-controlled.cdpsave"
+	var exported: bool = save_manager.export_portable(portable_path, expected)
+	var imported: Dictionary = save_manager.read_portable(portable_path)
+	var imported_ok: bool = exported and bool(imported.get("ok", false)) and _apply_save_payload(imported.get("payload", {}))
+	if imported_ok: save_manager.imported(portable_path)
+	steps.append(imported_ok and bool(quest_manager.completed.get("day2_council_material", false)))
+
+	var passed := 0
+	for check in steps:
+		if check: passed += 1
+	var result := {"passed":passed, "total":steps.size(), "all_quests":quest_manager.completed.size(), "day":game_state.day, "event_seen":bool(event_manager.seen.get("day2_community_blessing", false)), "local_roundtrip":steps[steps.size()-2], "portable_roundtrip":steps[steps.size()-1]}
+	print("[M2PLAY] %d/%d • Q1-Q12=%d • evento=%s • save=%s • portátil=%s" % [passed, steps.size(), quest_manager.completed.size(), result["event_seen"], result["local_roundtrip"], result["portable_roundtrip"]])
+	return result
 
 func _on_event_action_requested(action: Dictionary) -> void:
 	match String(action.get("type", "")):
@@ -692,7 +812,7 @@ func _on_quest_changed(reason: String) -> void:
 		})
 	if game_started and reason != "load" and reason != "new_game":
 		_save_game(reason, AUTOSAVE_PATH)
-	if reason == "quest_complete" and game_state.chapter_complete:
+	if reason == "quest_complete" and quest_manager.last_completed_id == "new_day":
 		_set_game_paused(true)
 		ui_overlay.show_chapter_summary(game_state.day)
 
