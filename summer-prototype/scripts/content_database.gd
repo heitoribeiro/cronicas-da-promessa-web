@@ -132,6 +132,17 @@ func _validate_content() -> void:
 				_errors.append("quest '%s' possui objetivo inválido" % quest_id)
 			if String(objective.get("type", "")) in ["collect", "deliver", "use_item", "produce"] and not has("item", String(objective.get("target", ""))):
 				_errors.append("quest '%s' referencia item ausente '%s'" % [quest_id, objective.get("target", "")])
+	for location_id in ids("location"):
+		var location := get_location(location_id)
+		if String(location.get("scene", "")).is_empty() or not (location.get("spawn_points", {}) is Dictionary):
+			_errors.append("location '%s' possui scene/spawn_points inválidos" % location_id)
+	for event_id in ids("event"):
+		var event := get_definition("event", event_id)
+		if (event.get("actions", []) as Array).is_empty():
+			_errors.append("evento '%s' não possui ações" % event_id)
+		for action in event.get("actions", []):
+			if not String(action.get("type", "")) in ["dialogue", "move_player", "move_npc", "wait", "camera_focus", "give_item", "remove_item", "set_flag", "set_time", "set_location", "start_quest", "complete_objective", "fade", "play_animation"]:
+				_errors.append("evento '%s' possui ação inválida" % event_id)
 
 func has(category_id: String, content_id: String) -> bool:
 	return _records.has(category_id) and (_records[category_id] as Dictionary).has(content_id)

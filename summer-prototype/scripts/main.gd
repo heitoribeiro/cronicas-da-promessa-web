@@ -11,11 +11,15 @@ const ContentDatabaseScript = preload("res://scripts/content_database.gd")
 const NPCScheduleManagerScript = preload("res://scripts/npc_schedule_manager.gd")
 const RelationshipManagerScript = preload("res://scripts/relationship_manager.gd")
 const DialogueManagerScript = preload("res://scripts/dialogue_manager.gd")
+const LocationManagerScript = preload("res://scripts/location_manager.gd")
+const EventManagerScript = preload("res://scripts/event_manager.gd")
 
 var content_db: Node
 var schedule_manager: Node
 var relationship_manager: Node
 var dialogue_manager: Node
+var location_manager: Node
+var event_manager: Node
 var game_state: Node
 var inventory_manager: Node
 var quest_manager: Node
@@ -76,6 +80,8 @@ var schedule_self_test_summary := "SCHEDULES: aguardando autoteste"
 var m2_quest_self_test_summary := "QUESTS: aguardando autoteste"
 var relationship_self_test_summary := "RELATIONSHIPS: aguardando autoteste"
 var dialogue_self_test_summary := "DIALOGUES: aguardando autoteste"
+var event_self_test_summary := "EVENTS: aguardando autoteste"
+var location_self_test_summary := "LOCATIONS: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
@@ -174,6 +180,16 @@ func _ready() -> void:
 	add_child(dialogue_manager)
 	dialogue_manager.configure(content_db)
 	_run_relationship_dialogue_self_tests()
+	location_manager = LocationManagerScript.new()
+	location_manager.name = "LocationManager"
+	add_child(location_manager)
+	location_manager.configure(content_db)
+	event_manager = EventManagerScript.new()
+	event_manager.name = "EventManager"
+	add_child(event_manager)
+	event_manager.configure(content_db)
+	event_manager.action_requested.connect(_on_event_action_requested)
+	_run_event_location_self_tests()
 	save_manager = SaveManagerScript.new()
 	save_manager.name = "SaveManager"
 	add_child(save_manager)
@@ -328,6 +344,63 @@ func _run_relationship_dialogue_self_tests() -> void:
 	dialogue_self_test_summary = "DIALOGUES %d/%d" % [dialogue_passed, dialogue_checks.size()]
 	print("[M2TEST] ", dialogue_self_test_summary)
 
+func _run_event_location_self_tests() -> void:
+	var location_checks: Array[bool] = [
+		content_db.count("location") == 5,
+		location_manager.has("camp"),
+		location_manager.has("tent"),
+		location_manager.scene_path("kitchen") == "res://scenes/m1_kitchen.tscn",
+		location_manager.display_name("workshop") == "Oficina",
+		location_manager.spawn_position("camp", "from_tent") == Vector2(1100, 185),
+		location_manager.enter("council"),
+		not location_manager.enter("missing")
+	]
+	location_manager.enter("camp")
+	var location_passed := 0
+	for check in location_checks:
+		if check: location_passed += 1
+	location_self_test_summary = "LOCATIONS %d/%d" % [location_passed, location_checks.size()]
+	print("[M2TEST] ", location_self_test_summary)
+	var event_checks: Array[bool] = [
+		content_db.count("event") == 4,
+		event_manager.can_trigger("m1_opening", {"day":1}),
+		not event_manager.can_trigger("m1_opening", {"day":2}),
+		event_manager.can_trigger("m1_first_service", {"minutes":720}),
+		not event_manager.can_trigger("m1_first_service", {"minutes":1100}),
+		event_manager.action_types("m1_opening").has("dialogue"),
+		event_manager.action_types("m1_dusk_fire").has("camera_focus"),
+		event_manager.action_types("m1_chapter_complete").has("fade")
+	]
+	var event_passed := 0
+	for check in event_checks:
+		if check: event_passed += 1
+	event_self_test_summary = "EVENTS %d/%d" % [event_passed, event_checks.size()]
+	print("[M2TEST] ", event_self_test_summary)
+
+func _on_event_action_requested(action: Dictionary) -> void:
+	match String(action.get("type", "")):
+		"set_flag":
+			game_state.tutorial_flags[String(action.get("flag", ""))] = action.get("value", true)
+		"dialogue":
+			if game_started and dialogue_panel != null:
+				_show_system_dialogue(String(action.get("speaker", "Evento")), String(action.get("text", "")))
+		"set_time":
+			game_state.minutes = float(action.get("minutes", game_state.minutes))
+			game_minutes = game_state.minutes
+		"set_location":
+			_change_scene(String(action.get("location", "camp")))
+		"give_item":
+			inventory_manager.add_bag(String(action.get("item", "")), int(action.get("amount", 1)))
+		"remove_item":
+			var item_id := String(action.get("item", ""))
+			inventory_manager.bag[item_id] = maxi(0, int(inventory_manager.bag.get(item_id, 0)) - int(action.get("amount", 1)))
+		"start_quest":
+			quest_manager.start_for(String(action.get("giver", "")), game_state.day, game_minutes)
+		"complete_objective":
+			quest_manager.record_event(String(action.get("objective_type", "interact")), String(action.get("target", "")), int(action.get("amount", 1)), game_minutes)
+		_:
+			print("[EVENTACTION] ", action.get("type", ""), " • ", action)
+
 func _process(delta: float) -> void:
 	if not game_started or menu_paused:
 		return
@@ -453,6 +526,8 @@ func _start_new_game() -> void:
 	game_state.new_game()
 	inventory_manager.new_game()
 	quest_manager.new_game()
+	relationship_manager.new_game()
+	event_manager.new_game()
 	game_minutes = game_state.minutes
 	active_quest_id = ""
 	completed_quest_ids = quest_manager.completed
@@ -470,6 +545,7 @@ func _start_new_game() -> void:
 	game_started = true
 	_set_game_paused(true)
 	ui_overlay.show_briefing()
+	event_manager.trigger("m1_opening", {"day": game_state.day, "minutes": game_minutes})
 	print("[M1] Novo Jogo • Dia 1 • 06:00")
 
 func _on_ui_action(action: String) -> void:
@@ -509,7 +585,7 @@ func _on_ui_action(action: String) -> void:
 			ui_overlay.show_inventory(inventory_manager.bag, inventory_manager.chest, chest_open)
 		"map":
 			_set_game_paused(true)
-			ui_overlay.show_map(game_state.scene_id)
+			ui_overlay.show_map(location_manager.display_name(game_state.scene_id))
 		"relationships":
 			_set_game_paused(true)
 			var lines: Array[String] = []
@@ -1701,6 +1777,7 @@ func _interact_target(target_id: String) -> void:
 		"workbench": _show_system_dialogue("Oficina", "Ferramentas e materiais prontos para o trabalho de Eliabe.")
 		"table":
 			quest_manager.record_event("visit", "service_center", 1, game_minutes)
+			event_manager.trigger("m1_first_service", {"day":game_state.day, "minutes":game_minutes})
 			_show_system_dialogue("Mesa do Conselho", "O serviço do centro foi registrado. %s" % _quest_progress_text())
 
 func _talk_to_npc(npc_name: String) -> void:
@@ -1721,6 +1798,7 @@ func _talk_to_npc(npc_name: String) -> void:
 	dialogue_text.text = "%s\n\n%s" % [context_text, quest_text] if not context_text.is_empty() else quest_text
 	if not game_state.chapter_complete and bool(quest_manager.completed.get("new_day", false)):
 		game_state.chapter_complete = true
+		event_manager.trigger("m1_chapter_complete", {"day":game_state.day, "minutes":game_minutes})
 		_save_game("chapter_complete", AUTOSAVE_PATH)
 		_close_dialogue()
 		_set_game_paused(true)
@@ -1729,7 +1807,7 @@ func _talk_to_npc(npc_name: String) -> void:
 	_update_resource_ui()
 
 func _change_scene(scene_id: String, move_player: bool = true) -> void:
-	if not scene_id in ["camp", "tent", "kitchen", "workshop", "council"]:
+	if not location_manager.has(scene_id):
 		return
 	var previous_scene: String = game_state.scene_id
 	if player != null:
@@ -1738,6 +1816,7 @@ func _change_scene(scene_id: String, move_player: bool = true) -> void:
 		interior_root.queue_free()
 		interior_root = null
 	game_state.scene_id = scene_id
+	location_manager.enter(scene_id)
 	for npc_name in interior_npc_positions.keys():
 		if registered_npcs.has(npc_name):
 			(registered_npcs[npc_name] as PrototypeNPC).global_position = interior_npc_positions[npc_name]
@@ -1752,10 +1831,10 @@ func _change_scene(scene_id: String, move_player: bool = true) -> void:
 		(npc as PrototypeNPC).paused = scene_id != "camp" or menu_paused
 	if scene_id == "camp":
 		if move_player and player != null:
-			player.global_position = {"tent": Vector2(1100, 185), "kitchen": Vector2(315, 335), "workshop": Vector2(920, 550), "council": Vector2(520, 165)}.get(String(game_state.tutorial_flags.get("last_interior", "tent")), Vector2(640, 595))
+			player.global_position = location_manager.spawn_position("camp", "from_%s" % String(game_state.tutorial_flags.get("last_interior", "tent")))
 	else:
 		if move_player: game_state.tutorial_flags["last_interior"] = scene_id
-		interior_root = load(INTERIOR_SCENES[scene_id]).instantiate()
+		interior_root = load(location_manager.scene_path(scene_id)).instantiate()
 		add_child(interior_root)
 		_build_interior(scene_id)
 		var present_name := ""
@@ -1770,7 +1849,7 @@ func _change_scene(scene_id: String, move_player: bool = true) -> void:
 			present_npc.collision_layer = 4
 			present_npc.paused = true
 		if move_player and player != null:
-			player.global_position = Vector2(640, 560)
+			player.global_position = location_manager.spawn_position(scene_id, "entry")
 		if move_player and scene_id == "tent" and quest_manager.active_id == "":
 			var next_quest_id: String = quest_manager.next_available(game_state.day, game_minutes)
 			if next_quest_id != "" and String(quest_manager.definition(next_quest_id).get("giver", "")) == "Tenda":

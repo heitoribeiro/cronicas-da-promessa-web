@@ -1,0 +1,21 @@
+[
+  {"id":"m1_opening","once":true,"conditions":{"day":1},"actions":[
+    {"type":"set_flag","flag":"m1_opening_seen","value":true},
+    {"type":"dialogue","speaker":"Ancião","text":"Bem-vinda a Judá. Conheça o acampamento e sirva ao lado do nosso povo."}
+  ]},
+  {"id":"m1_first_service","once":true,"conditions":{"min_time":720,"max_time":1080},"actions":[
+    {"type":"set_flag","flag":"m1_service_seen","value":true},
+    {"type":"camera_focus","target":"service_center"},
+    {"type":"dialogue","speaker":"Serviço no Centro","text":"O centro reúne trabalho, conselho e cuidado comunitário."}
+  ]},
+  {"id":"m1_dusk_fire","once":true,"conditions":{"min_time":1080,"max_time":1260},"actions":[
+    {"type":"set_flag","flag":"m1_dusk_seen","value":true},
+    {"type":"camera_focus","target":"campfire"},
+    {"type":"dialogue","speaker":"Entardecer","text":"A fogueira chama as famílias enquanto o rebanho retorna ao curral."}
+  ]},
+  {"id":"m1_chapter_complete","once":true,"conditions":{"min_day":2},"actions":[
+    {"type":"set_flag","flag":"m1_complete","value":true},
+    {"type":"fade","duration":0.5},
+    {"type":"dialogue","speaker":"Um Novo Dia","text":"O primeiro capítulo terminou, mas a vida em Judá apenas começou."}
+  ]}
+]

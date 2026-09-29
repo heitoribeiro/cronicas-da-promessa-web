@@ -1,0 +1,7 @@
+[
+  {"id":"camp","display_name":"Acampamento de Judá","scene":"res://scenes/main.tscn","map_position":[640,360],"exits":{"tent":"door_tent","kitchen":"door_kitchen","workshop":"door_workshop","council":"door_council"},"spawn_points":{"default":[640,595],"from_tent":[1100,185],"from_kitchen":[315,335],"from_workshop":[920,550],"from_council":[520,165]},"services":["well","wood_collection","corral","campfire"],"tags":["exterior","judah"]},
+  {"id":"tent","display_name":"Tenda de Tina","scene":"res://scenes/m1_tent.tscn","map_position":[1100,90],"exits":{"camp":"exit"},"spawn_points":{"entry":[640,560]},"services":["bed","chest"],"tags":["interior","home"]},
+  {"id":"kitchen","display_name":"Cozinha","scene":"res://scenes/m1_kitchen.tscn","map_position":[315,245],"exits":{"camp":"exit"},"spawn_points":{"entry":[640,560]},"services":["eat","inspect"],"tags":["interior","service"]},
+  {"id":"workshop","display_name":"Oficina","scene":"res://scenes/m1_workshop.tscn","map_position":[920,455],"exits":{"camp":"exit"},"spawn_points":{"entry":[640,560]},"services":["workbench"],"tags":["interior","service"]},
+  {"id":"council","display_name":"Tenda do Estandarte","scene":"res://scenes/m1_council.tscn","map_position":[520,65],"exits":{"camp":"exit"},"spawn_points":{"entry":[640,560]},"services":["council_table"],"tags":["interior","story"]}
+]
