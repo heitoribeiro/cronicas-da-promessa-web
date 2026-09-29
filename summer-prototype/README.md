@@ -270,3 +270,30 @@ Diálogos:
 
 Validação:
 - o autoteste de quests passa a ser `QUESTSYS 12/12`
+
+
+## Salvamento persistente do protótipo
+
+O protótipo Summer possui persistência local em `user://cronicas_promessa_summer_save.json`.
+
+Conteúdo salvo:
+- horário do jogo
+- posição do jogador
+- Bolsa do jogador
+- estoque do acampamento
+- quest ativa
+- histórico de quests concluídas
+
+Controles:
+- `F5`: salvamento manual
+- `F9`: carregar último save
+
+Autosave:
+- ao iniciar uma quest
+- ao concluir uma quest
+- ao coletar recursos
+- quando a economia dos NPCs altera o estoque do acampamento
+
+Validação:
+- `[SAVETEST] SAVESYS 7/7` valida a serialização básica do estado
+- logs `[SAVE]` registram gravação, carregamento e falhas
