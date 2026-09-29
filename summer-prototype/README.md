@@ -274,7 +274,9 @@ Validação:
 
 ## Salvamento persistente do protótipo
 
-O protótipo Summer possui persistência local em `user://cronicas_promessa_summer_save.json`.
+O protótipo Summer possui dois slots locais independentes:
+- manual: `user://cronicas_promessa_manual_save.json`
+- autosave: `user://cronicas_promessa_autosave.json`
 
 Conteúdo salvo:
 - horário do jogo
@@ -285,8 +287,8 @@ Conteúdo salvo:
 - histórico de quests concluídas
 
 Controles:
-- `F5`: salvamento manual
-- `F9`: carregar último save
+- `F5`: grava somente o slot manual
+- `F9`: carrega somente o slot manual
 
 Autosave:
 - ao iniciar uma quest
@@ -297,3 +299,13 @@ Autosave:
 Validação:
 - `[SAVETEST] SAVESYS 7/7` valida a serialização básica do estado
 - logs `[SAVE]` registram gravação, carregamento e falhas
+
+
+### Separação entre manual e autosave
+
+O autosave nunca sobrescreve o slot manual. Isso garante que um snapshot criado com F5 permaneça intacto mesmo que o jogador colete recursos, conclua quests ou a economia dos NPCs continue avançando depois.
+
+- F5/F9 operam apenas no slot manual
+- eventos automáticos escrevem apenas no slot autosave
+- o HUD identifica qual tipo de save foi gravado ou carregado
+- `[SAVETEST] SAVESYS 10/10` valida também a separação dos dois arquivos
