@@ -7,7 +7,9 @@ const InventoryManagerScript = preload("res://scripts/inventory_manager.gd")
 const QuestManagerScript = preload("res://scripts/quest_manager.gd")
 const SaveManagerScript = preload("res://scripts/save_manager.gd")
 const M1UIScript = preload("res://scripts/m1_ui.gd")
+const ContentDatabaseScript = preload("res://scripts/content_database.gd")
 
+var content_db: Node
 var game_state: Node
 var inventory_manager: Node
 var quest_manager: Node
@@ -62,6 +64,7 @@ var economy_self_test_summary := "ECONOMIA: aguardando autoteste"
 var quest_self_test_summary := "QUEST: aguardando autoteste"
 var save_self_test_summary := "SAVE: aguardando autoteste"
 var portable_self_test_summary := "PORTABLE: aguardando autoteste"
+var content_self_test_summary := "CONTENT: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
@@ -128,6 +131,11 @@ var active_quest_id := ""
 var completed_quest_ids: Dictionary = {}
 
 func _ready() -> void:
+	content_db = ContentDatabaseScript.new()
+	content_db.name = "ContentDatabase"
+	add_child(content_db)
+	content_db.load_all()
+	_run_content_self_tests()
 	game_state = GameStateScript.new()
 	game_state.name = "GameState"
 	add_child(game_state)
@@ -177,6 +185,24 @@ func _ready() -> void:
 	quest_manager.changed.connect(_on_quest_changed)
 	_set_game_paused(true)
 	ui_overlay.show_main_menu(save_manager.has_local("manual") or save_manager.has_local("autosave"))
+
+func _run_content_self_tests() -> void:
+	var checks: Array[bool] = [
+		content_db.errors().is_empty(),
+		content_db.schema_version() == 1,
+		content_db.content_version() == "m2.0",
+		content_db.count("npc") == 5,
+		String(content_db.get_npc("hanan").get("role", "")) == "cozinheiro",
+		String(content_db.get_npc("eliabe").get("schedule_id", "")) == "eliabe_default",
+		String(content_db.get_npc("miria").get("dialogue_set", "")) == "miria_dialogues",
+		content_db.has("npc", "anciao") and content_db.has("npc", "pastor")
+	]
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+	content_self_test_summary = "CONTENT %d/%d" % [passed, checks.size()]
+	print("[M2TEST] ", content_self_test_summary)
 
 func _process(delta: float) -> void:
 	if not game_started or menu_paused:

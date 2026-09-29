@@ -1,0 +1,62 @@
+[
+  {
+    "id": "hanan",
+    "name": "Hanan",
+    "tribe": "juda",
+    "role": "cozinheiro",
+    "home": "judah_camp",
+    "schedule_id": "hanan_default",
+    "dialogue_set": "hanan_dialogues",
+    "quest_giver": true,
+    "sprite_set": "placeholder_adult",
+    "portrait": ""
+  },
+  {
+    "id": "eliabe",
+    "name": "Eliabe",
+    "tribe": "juda",
+    "role": "artesão",
+    "home": "judah_camp",
+    "schedule_id": "eliabe_default",
+    "dialogue_set": "eliabe_dialogues",
+    "quest_giver": true,
+    "sprite_set": "placeholder_adult",
+    "portrait": ""
+  },
+  {
+    "id": "miria",
+    "name": "Miriã",
+    "tribe": "juda",
+    "role": "cuidadora",
+    "home": "judah_camp",
+    "schedule_id": "miria_default",
+    "dialogue_set": "miria_dialogues",
+    "quest_giver": true,
+    "sprite_set": "placeholder_adult",
+    "portrait": ""
+  },
+  {
+    "id": "anciao",
+    "name": "Ancião",
+    "tribe": "juda",
+    "role": "líder",
+    "home": "judah_camp",
+    "schedule_id": "anciao_default",
+    "dialogue_set": "anciao_dialogues",
+    "quest_giver": true,
+    "sprite_set": "placeholder_elder",
+    "portrait": ""
+  },
+  {
+    "id": "pastor",
+    "name": "Pastor",
+    "tribe": "juda",
+    "role": "pastor de rebanho",
+    "home": "judah_camp",
+    "schedule_id": "pastor_default",
+    "dialogue_set": "pastor_dialogues",
+    "quest_giver": true,
+    "sprite_set": "placeholder_adult",
+    "portrait": ""
+  }
+]
