@@ -6,11 +6,36 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const InventoryManagerScript = preload("res://scripts/inventory_manager.gd")
 const QuestManagerScript = preload("res://scripts/quest_manager.gd")
 const SaveManagerScript = preload("res://scripts/save_manager.gd")
+const M1UIScript = preload("res://scripts/m1_ui.gd")
 
 var game_state: Node
 var inventory_manager: Node
 var quest_manager: Node
 var save_manager: Node
+var ui_overlay: Node
+var game_started: bool = false
+var menu_paused: bool = false
+var chest_open: bool = false
+var needs_label: Label
+var world_root: Node2D
+var interior_root: Node2D
+var elder: PrototypeNPC
+var shepherd: PrototypeNPC
+var pending_interaction: String = ""
+var interior_npc_positions: Dictionary = {}
+const INTERIOR_SCENES := {"tent": "res://scenes/m1_tent.tscn", "kitchen": "res://scenes/m1_kitchen.tscn", "workshop": "res://scenes/m1_workshop.tscn", "council": "res://scenes/m1_council.tscn"}
+const EXTERIOR_TARGETS := {
+	"door_kitchen": {"position": Vector2(315, 335), "label": "Entrar na Cozinha", "scene": "kitchen"},
+	"door_workshop": {"position": Vector2(920, 550), "label": "Entrar na Oficina", "scene": "workshop"},
+	"door_council": {"position": Vector2(520, 165), "label": "Entrar na Tenda do Estandarte", "scene": "council"},
+	"door_tent": {"position": Vector2(1100, 185), "label": "Entrar na sua Tenda", "scene": "tent"},
+	"well": {"position": Vector2(670, 570), "label": "Recolher água do Poço"},
+	"wood": {"position": Vector2(900, 650), "label": "Recolher Lenha"},
+	"corral": {"position": Vector2(350, 565), "label": "Inspecionar o Curral"},
+	"flock_a": {"position": Vector2(105, 560), "label": "Contar o primeiro grupo"},
+	"flock_b": {"position": Vector2(215, 560), "label": "Contar o segundo grupo"},
+	"flock_c": {"position": Vector2(330, 605), "label": "Contar o terceiro grupo"}
+}
 
 var player: PrototypePlayer
 var hanan: PrototypeNPC
@@ -29,7 +54,7 @@ var destination_marker: Node2D
 var navigation_debug_line: Line2D
 var npc_navigation_debug_line: Line2D
 var navigation_debug_label: Label
-var navigation_debug_visible := true
+var navigation_debug_visible := false
 var navigation_self_test_summary := "NAV: aguardando autoteste"
 var routine_self_test_summary := "ROTINA: aguardando autoteste"
 var behavior_self_test_summary := "ESTADOS: aguardando autoteste"
@@ -119,7 +144,13 @@ func _ready() -> void:
 	camp_resources = inventory_manager.camp
 	completed_quest_ids = quest_manager.completed
 	game_minutes = game_state.minutes
+	world_root = Node2D.new()
+	world_root.name = "CampExterior"
+	add_child(world_root)
 	_build_world()
+	for child in get_children():
+		if child is Node2D and child != world_root:
+			child.reparent(world_root, true)
 	_build_navigation_grid()
 	_run_navigation_self_tests()
 	_run_routine_self_tests()
@@ -133,43 +164,67 @@ func _ready() -> void:
 	_spawn_player()
 	_spawn_hanan()
 	_spawn_additional_npcs()
+	elder = _spawn_scheduled_npc("Ancião", Vector2(680, 240))
+	shepherd = _spawn_scheduled_npc("Pastor", Vector2(390, 570))
 	_apply_all_npc_routines(true)
 	_create_destination_marker()
 	_create_navigation_debug_line()
+	ui_overlay = M1UIScript.new()
+	ui_overlay.name = "M1UI"
+	ui_overlay.action_requested.connect(_on_ui_action)
+	ui_overlay.chest_requested.connect(_on_chest_requested)
+	add_child(ui_overlay)
+	quest_manager.changed.connect(_on_quest_changed)
+	_set_game_paused(true)
+	ui_overlay.show_main_menu(save_manager.has_local("manual") or save_manager.has_local("autosave"))
 
 func _process(delta: float) -> void:
+	if not game_started or menu_paused:
+		return
 	_advance_game_clock(delta)
 
 	if player == null or hanan == null:
 		return
 
 	_apply_all_npc_routines(false)
+	_update_daylight()
+	if game_state.scene_id == "camp" and player != null and player.global_position.distance_to(WELL_POSITION) <= 100.0:
+		quest_manager.record_event("visit", "well", 1, game_minutes)
 	_update_clock_ui()
 	_update_resource_ui()
+	_update_needs_ui()
+	player.move_speed = maxf(110.0, 190.0 * (0.5 + game_state.energy / 200.0))
 
-	var hanan_nearby := player.global_position.distance_to(hanan.global_position) <= 82.0
-	var eliabe_nearby := eliabe != null and player.global_position.distance_to(eliabe.global_position) <= 82.0
-	var well_nearby := player.global_position.distance_to(WELL_POSITION) <= 92.0
-	var wood_nearby := player.global_position.distance_to(WOOD_GATHER_POSITION) <= 92.0
-
-	active_interaction_target = ""
-	if hanan_nearby:
-		active_interaction_target = "hanan"
-		prompt_label.text = "CLIQUE / E — Falar com Hanan"
-	elif eliabe_nearby:
-		active_interaction_target = "eliabe"
-		prompt_label.text = "CLIQUE / E — Falar com Eliabe"
-	elif well_nearby:
-		active_interaction_target = "well"
-		prompt_label.text = "CLIQUE / E — Recolher água do Poço"
-	elif wood_nearby:
-		active_interaction_target = "wood"
-		prompt_label.text = "CLIQUE / E — Recolher Lenha"
+	active_interaction_target = _nearest_interaction(player.global_position, 82.0)
+	if active_interaction_target != "":
+		prompt_label.text = "CLIQUE / E — %s" % _interaction_label(active_interaction_target)
 
 	prompt_panel.visible = active_interaction_target != "" and not dialogue_panel.visible
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if ui_overlay != null and ui_overlay.is_open():
+		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE and ui_overlay.current_page != "main_menu":
+			_on_ui_action("resume")
+			get_viewport().set_input_as_handled()
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			_on_ui_action("pause")
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode == KEY_J:
+			_on_ui_action("journal")
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode == KEY_I:
+			_on_ui_action("inventory")
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode == KEY_M:
+			_on_ui_action("map")
+			get_viewport().set_input_as_handled()
+			return
 	if dialogue_panel.visible:
 		if event is InputEventKey and event.pressed:
 			_close_dialogue()
@@ -236,6 +291,113 @@ func _on_prompt_gui_input(event: InputEvent) -> void:
 				_interact_current_target()
 				get_viewport().set_input_as_handled()
 
+func _set_game_paused(value: bool) -> void:
+	menu_paused = value
+	if player != null:
+		player.process_mode = Node.PROCESS_MODE_DISABLED if value else Node.PROCESS_MODE_INHERIT
+	for npc in registered_npcs.values():
+		(npc as PrototypeNPC).paused = value or npc == active_dialogue_npc or game_state.scene_id != "camp"
+
+func _start_new_game() -> void:
+	game_started = false
+	game_state.new_game()
+	inventory_manager.new_game()
+	quest_manager.new_game()
+	game_minutes = game_state.minutes
+	active_quest_id = ""
+	completed_quest_ids = quest_manager.completed
+	player.cancel_navigation()
+	player.global_position = Vector2(640, 595)
+	_change_scene("camp", false)
+	chest_open = false
+	for npc in registered_npcs.values():
+		(npc as PrototypeNPC).paused = false
+	_apply_all_npc_routines(true)
+	_update_clock_ui()
+	_update_resource_ui()
+	_update_inventory_ui()
+	_update_needs_ui()
+	game_started = true
+	_set_game_paused(true)
+	ui_overlay.show_briefing()
+	print("[M1] Novo Jogo • Dia 1 • 06:00")
+
+func _on_ui_action(action: String) -> void:
+	match action:
+		"new_game":
+			if save_manager.has_local("manual") or save_manager.has_local("autosave"):
+				ui_overlay.show_new_game_confirmation()
+			else:
+				_start_new_game()
+		"confirm_new_game":
+			_start_new_game()
+		"continue":
+			var slot: String = "manual" if save_manager.has_local("manual") else "autosave"
+			if _load_game(MANUAL_SAVE_PATH if slot == "manual" else AUTOSAVE_PATH, slot):
+				game_started = true
+				ui_overlay.close()
+				_set_game_paused(false)
+		"import":
+			_open_import_dialog()
+		"resume":
+			ui_overlay.close()
+			_set_game_paused(false)
+		"pause":
+			if game_started:
+				_set_game_paused(true)
+				ui_overlay.show_pause()
+			else:
+				ui_overlay.show_main_menu(save_manager.has_local("manual") or save_manager.has_local("autosave"))
+		"journal", "journal_active":
+			_set_game_paused(true)
+			ui_overlay.show_journal(quest_manager.journal_text(false), quest_manager.journal_text(true), false)
+		"journal_completed":
+			_set_game_paused(true)
+			ui_overlay.show_journal(quest_manager.journal_text(false), quest_manager.journal_text(true), true)
+		"inventory":
+			_set_game_paused(true)
+			ui_overlay.show_inventory(inventory_manager.bag, inventory_manager.chest, chest_open)
+		"map":
+			_set_game_paused(true)
+			ui_overlay.show_map(game_state.scene_id)
+		"settings":
+			_set_game_paused(true)
+			ui_overlay.show_settings(navigation_debug_visible)
+		"toggle_debug":
+			navigation_debug_visible = not navigation_debug_visible
+			if navigation_debug_label != null:
+				navigation_debug_label.visible = navigation_debug_visible
+			ui_overlay.show_settings(navigation_debug_visible)
+		"save":
+			_save_game("manual", MANUAL_SAVE_PATH)
+			ui_overlay.show_pause()
+		"export":
+			_open_export_dialog()
+		"main_menu":
+			game_started = false
+			_set_game_paused(true)
+			ui_overlay.show_main_menu(save_manager.has_local("manual") or save_manager.has_local("autosave"))
+
+func _on_chest_requested(resource_id: String, to_chest: bool) -> void:
+	if inventory_manager.transfer(resource_id, to_chest):
+		_save_game("chest_transfer", AUTOSAVE_PATH)
+	_update_inventory_ui()
+	ui_overlay.show_inventory(inventory_manager.bag, inventory_manager.chest, true)
+
+func _on_quest_changed(reason: String) -> void:
+	active_quest_id = quest_manager.active_id
+	completed_quest_ids = quest_manager.completed
+	_update_inventory_ui()
+	if game_started and reason != "load" and reason != "new_game":
+		_save_game(reason, AUTOSAVE_PATH)
+	if reason == "quest_complete" and game_state.chapter_complete:
+		_set_game_paused(true)
+		ui_overlay.show_chapter_summary(game_state.day)
+
+func _update_needs_ui() -> void:
+	if needs_label != null:
+		needs_label.text = "Dia %d • %s • Energia %d/100 • Fome %d/100" % [game_state.day, game_state.phase(), int(game_state.energy), int(game_state.hunger)]
+
 func _build_world() -> void:
 	var ground := Polygon2D.new()
 	ground.polygon = PackedVector2Array([
@@ -251,11 +413,18 @@ func _build_world() -> void:
 	_create_static_rect("Cozinha", Vector2(315, 245), Vector2(210, 105), Color("#efe0b6"))
 	_create_static_rect("Oficina", Vector2(920, 455), Vector2(220, 120), Color("#ead4a5"))
 	_create_static_rect("Tenda do Estandarte", Vector2(520, 65), Vector2(250, 125), Color("#e8d8ad"))
+	_create_static_rect("Tenda de Tina", Vector2(1100, 90), Vector2(160, 100), Color("#dbc895"))
 	_create_static_rect("Curral", Vector2(165, 455), Vector2(300, 150), Color("#927046"))
 
 	_create_well(Vector2(640, 500))
 	_create_resource_pile(WOOD_GATHER_POSITION, "Coleta de Lenha")
 	_create_campfire(Vector2(640, 360))
+	for marker_id in ["flock_a", "flock_b", "flock_c"]:
+		var marker := Polygon2D.new()
+		marker.position = EXTERIOR_TARGETS[marker_id]["position"]
+		marker.polygon = _regular_polygon(12.0, 8)
+		marker.color = Color("#eee4cb")
+		add_child(marker)
 	_create_world_bounds()
 
 	var title := Label.new()
@@ -301,6 +470,14 @@ func _get_npc_routine_id(npc_name: String, total_minutes: int) -> String:
 			if total_minutes >= 1080 and total_minutes < 1260:
 				return "fogueira_entardecer"
 			return "repouso"
+		"Ancião":
+			if total_minutes >= 360 and total_minutes < 1080: return "conselho_dia"
+			if total_minutes >= 1080 and total_minutes < 1260: return "conselho_tarde"
+			return "repouso"
+		"Pastor":
+			if total_minutes >= 360 and total_minutes < 1080: return "rebanho_dia"
+			if total_minutes >= 1080 and total_minutes < 1260: return "curral_tarde"
+			return "repouso"
 	return "repouso"
 
 func _npc_route_for(npc_name: String, routine_id: String) -> Array[Vector2]:
@@ -335,6 +512,14 @@ func _npc_route_for(npc_name: String, routine_id: String) -> Array[Vector2]:
 					return [Vector2(720, 330), Vector2(760, 360), Vector2(720, 390)]
 				_:
 					return [Vector2(1040, 150)]
+		"Ancião":
+			if routine_id == "conselho_dia": return [Vector2(660, 230), Vector2(740, 230), Vector2(740, 310), Vector2(660, 310)]
+			if routine_id == "conselho_tarde": return [Vector2(680, 340), Vector2(730, 370)]
+			return [Vector2(680, 220)]
+		"Pastor":
+			if routine_id == "rebanho_dia": return [Vector2(390, 565), Vector2(420, 620), Vector2(335, 625), Vector2(390, 565)]
+			if routine_id == "curral_tarde": return [Vector2(365, 575), Vector2(395, 600)]
+			return [Vector2(390, 640)]
 	return [Vector2(640, 600)]
 
 func _routine_short_name(npc_name: String, routine_id: String) -> String:
@@ -357,6 +542,8 @@ func _routine_short_name(npc_name: String, routine_id: String) -> String:
 				"agua_tarde": return "Água"
 				"fogueira_entardecer": return "Fogueira"
 				_: return "Repouso"
+		"Ancião": return "Conselho" if routine_id != "repouso" else "Repouso"
+		"Pastor": return "Rebanho" if routine_id != "repouso" else "Repouso"
 	return routine_id
 
 func _npc_routine_display_name(npc_name: String, routine_id: String) -> String:
@@ -379,6 +566,8 @@ func _npc_routine_display_name(npc_name: String, routine_id: String) -> String:
 				"agua_tarde": return "Miriã: busca de água"
 				"fogueira_entardecer": return "Miriã: reunião junto à fogueira"
 				_: return "Miriã: repouso"
+		"Ancião": return "Ancião: conselho" if routine_id != "repouso" else "Ancião: repouso"
+		"Pastor": return "Pastor: rebanho" if routine_id != "repouso" else "Pastor: repouso"
 	return "%s: rotina" % npc_name
 
 func _npc_activity_for(npc_name: String, routine_id: String) -> String:
@@ -411,6 +600,8 @@ func _npc_activity_for(npc_name: String, routine_id: String) -> String:
 					return "socialize"
 				_:
 					return "rest"
+		"Ancião": return "work" if routine_id == "conselho_dia" else ("socialize" if routine_id == "conselho_tarde" else "rest")
+		"Pastor": return "work" if routine_id == "rebanho_dia" else ("travel" if routine_id == "curral_tarde" else "rest")
 	return "wait"
 
 func _activity_display_name(activity_id: String) -> String:
@@ -454,7 +645,7 @@ func _apply_npc_routine(npc_name: String, force: bool) -> void:
 
 func _update_clock_ui() -> void:
 	if clock_label != null:
-		clock_label.text = "Hora %s" % _format_game_time()
+		clock_label.text = "Dia %d • %s" % [game_state.day, _format_game_time()]
 	if routine_label != null:
 		var h_id: String = String(current_npc_routines.get("Hanan", ""))
 		var e_id: String = String(current_npc_routines.get("Eliabe", ""))
@@ -684,22 +875,12 @@ func _next_available_quest_for_giver(giver_name: String) -> String:
 	return ""
 
 func _quest_progress_text() -> String:
-	if active_quest_id == "":
-		if _quest_is_completed(SECOND_QUEST_ID):
-			return "Quests concluídas: %s • %s" % [_quest_title(FIRST_QUEST_ID), _quest_title(SECOND_QUEST_ID)]
-		if _quest_is_completed(FIRST_QUEST_ID):
-			return "Quest concluída: %s • fale com Eliabe" % _quest_title(FIRST_QUEST_ID)
-		return "Quest: fale com Hanan"
-
-	var requirements := _quest_requirements(active_quest_id)
-	var pieces: Array[String] = []
-	for resource_key in requirements.keys():
-		var resource_id := String(resource_key)
-		var current := int(player_inventory.get(resource_id, 0))
-		var required := int(requirements[resource_key])
-		pieces.append("%s %d/%d" % [resource_id.capitalize(), current, required])
-
-	return "Quest: %s • %s" % [_quest_title(active_quest_id), " • ".join(PackedStringArray(pieces))]
+	if quest_manager.active_id != "":
+		return "Quest: %s • %s" % [quest_manager.definition(quest_manager.active_id)["title"], quest_manager.current_objective_text()]
+	var next_id: String = quest_manager.next_available(game_state.day, game_state.minutes)
+	if next_id != "":
+		return "Próxima tarefa: fale com %s" % quest_manager.definition(next_id)["giver"]
+	return "Capítulo 1 concluído • modo livre" if game_state.chapter_complete else "Aguarde o próximo horário de tarefa"
 
 func _update_inventory_ui() -> void:
 	if inventory_label != null:
@@ -713,15 +894,7 @@ func _update_inventory_ui() -> void:
 		quest_label.text = _quest_progress_text()
 
 func _interact_current_target() -> void:
-	match active_interaction_target:
-		"hanan":
-			_interact_with_hanan()
-		"eliabe":
-			_interact_with_eliabe()
-		"well":
-			_collect_water_from_well()
-		"wood":
-			_collect_wood()
+	_interact_target(active_interaction_target)
 
 func _collect_water_from_well() -> void:
 	if int(player_inventory.get("agua", 0)) >= PLAYER_RESOURCE_CAP:
@@ -729,6 +902,8 @@ func _collect_water_from_well() -> void:
 		return
 
 	var added := _player_add_resource("agua", 1)
+	game_state.work()
+	quest_manager.record_event("collect", "agua", added, game_minutes)
 	print("[PLAYERRESOURCE] Água +", added, " • Bolsa=", player_inventory["agua"])
 	_save_game("resource_collect", AUTOSAVE_PATH)
 	_show_system_dialogue("Poço", "Você recolheu 1 unidade de Água. %s" % _quest_progress_text())
@@ -739,6 +914,8 @@ func _collect_wood() -> void:
 		return
 
 	var added := _player_add_resource("lenha", 1)
+	game_state.work()
+	quest_manager.record_event("collect", "lenha", added, game_minutes)
 	print("[PLAYERRESOURCE] Lenha +", added, " • Bolsa=", player_inventory["lenha"])
 	_save_game("resource_collect", AUTOSAVE_PATH)
 	_show_system_dialogue("Área de Coleta", "Você recolheu 1 unidade de Lenha. %s" % _quest_progress_text())
@@ -836,6 +1013,7 @@ func _apply_save_payload(payload: Dictionary) -> bool:
 		return false
 	if not inventory_manager.restore(payload) or not game_state.restore(payload) or not quest_manager.restore(payload):
 		return false
+	_change_scene(next_scene, false)
 	game_minutes = game_state.minutes
 	active_quest_id = quest_manager.active_id
 	completed_quest_ids = quest_manager.completed
@@ -1007,6 +1185,7 @@ func _build_navigation_grid() -> void:
 	_mark_rect_blocked(Vector2(315, 245), Vector2(210, 105), NAV_AGENT_PADDING)
 	_mark_rect_blocked(Vector2(920, 455), Vector2(220, 120), NAV_AGENT_PADDING)
 	_mark_rect_blocked(Vector2(520, 65), Vector2(250, 125), NAV_AGENT_PADDING)
+	_mark_rect_blocked(Vector2(1100, 90), Vector2(160, 100), NAV_AGENT_PADDING)
 	_mark_rect_blocked(Vector2(165, 455), Vector2(300, 150), NAV_AGENT_PADDING)
 	_mark_circle_blocked(Vector2(640, 500), 38.0 + NAV_AGENT_PADDING)
 
@@ -1203,6 +1382,14 @@ func _build_ui() -> void:
 	save_status_label.text = "Save: Manual F5/F9 • Autosave independente"
 	canvas.add_child(save_status_label)
 
+	needs_label = Label.new()
+	needs_label.position = Vector2(24, 120)
+	needs_label.size = Vector2(550, 22)
+	needs_label.add_theme_font_size_override("font_size", 13)
+	needs_label.add_theme_color_override("font_color", Color("#f6e3b6"))
+	canvas.add_child(needs_label)
+	_update_needs_ui()
+
 	clock_label = Label.new()
 	clock_label.position = Vector2(1090, 18)
 	clock_label.add_theme_font_size_override("font_size", 17)
@@ -1361,7 +1548,15 @@ func _create_destination_marker() -> void:
 	add_child(destination_marker)
 
 func _on_navigation_requested(world_position: Vector2) -> void:
-	if not navigation_ready or player == null:
+	if player == null:
+		return
+	var target_id: String = _nearest_interaction(world_position, 32.0)
+	pending_interaction = target_id
+	if game_state.scene_id != "camp":
+		var destination := world_position.clamp(Vector2(50, 90), Vector2(1230, 660))
+		player.set_navigation_path(PackedVector2Array([destination]), destination)
+		return
+	if not navigation_ready:
 		return
 
 	var result := _compute_navigation_path(player.global_position, world_position)
@@ -1376,6 +1571,10 @@ func _on_destination_changed(world_position: Vector2) -> void:
 
 func _on_destination_reached(_world_position: Vector2) -> void:
 	destination_marker.visible = false
+	if pending_interaction != "" and player.global_position.distance_to(_interaction_position(pending_interaction)) <= 86.0:
+		var target_id := pending_interaction
+		pending_interaction = ""
+		_interact_target(target_id)
 
 func _on_destination_failed(world_position: Vector2) -> void:
 	destination_marker.global_position = world_position
@@ -1388,47 +1587,222 @@ func _on_destination_failed(world_position: Vector2) -> void:
 	)
 
 func _interact_with_hanan() -> void:
-	_open_npc_dialogue(hanan, "Hanan — %s — %s" % [_format_game_time(), _activity_display_name(String(current_npc_activities.get("Hanan", "wait")))])
-
-	if not _quest_is_completed(FIRST_QUEST_ID) and active_quest_id == "":
-		var definition := _get_quest_definition(FIRST_QUEST_ID)
-		if _start_quest(FIRST_QUEST_ID):
-			dialogue_text.text = String(definition.get("start_text", "Uma nova missão foi iniciada."))
-	elif active_quest_id == FIRST_QUEST_ID:
-		var requirements := _quest_requirements(FIRST_QUEST_ID)
-		if _inventory_has_requirements(player_inventory, requirements):
-			if _deliver_quest_resources(FIRST_QUEST_ID):
-				var definition := _get_quest_definition(FIRST_QUEST_ID)
-				dialogue_text.text = String(definition.get("complete_text", "Missão concluída."))
-		else:
-			dialogue_text.text = "Ainda precisamos dos recursos. %s" % _quest_progress_text()
-	elif _quest_is_completed(FIRST_QUEST_ID):
-		dialogue_text.text = "A Água já foi entregue. Continue ajudando o acampamento conforme as necessidades surgirem."
-	else:
-		dialogue_text.text = "Conclua a missão ativa antes de iniciar outra tarefa."
+	_talk_to_npc("Hanan")
 
 func _interact_with_eliabe() -> void:
-	_open_npc_dialogue(eliabe, "Eliabe — %s — %s" % [_format_game_time(), _activity_display_name(String(current_npc_activities.get("Eliabe", "wait")))])
+	_talk_to_npc("Eliabe")
 
-	var quest_id := _next_available_quest_for_giver("Eliabe")
-	if quest_id == SECOND_QUEST_ID and active_quest_id == "":
-		var definition := _get_quest_definition(SECOND_QUEST_ID)
-		if _start_quest(SECOND_QUEST_ID):
-			dialogue_text.text = String(definition.get("start_text", "Uma nova missão foi iniciada."))
-	elif active_quest_id == SECOND_QUEST_ID:
-		var requirements := _quest_requirements(SECOND_QUEST_ID)
-		if _inventory_has_requirements(player_inventory, requirements):
-			if _deliver_quest_resources(SECOND_QUEST_ID):
-				var definition := _get_quest_definition(SECOND_QUEST_ID)
-				dialogue_text.text = String(definition.get("complete_text", "Missão concluída."))
-		else:
-			dialogue_text.text = "Ainda precisamos dos recursos. %s" % _quest_progress_text()
-	elif not _quest_is_completed(FIRST_QUEST_ID):
-		dialogue_text.text = "Hanan ainda precisa de sua ajuda na Cozinha. Conclua essa tarefa primeiro."
-	elif _quest_is_completed(SECOND_QUEST_ID):
-		dialogue_text.text = "A Lenha já foi entregue. A Oficina está abastecida."
+func _interaction_position(target_id: String) -> Vector2:
+	if target_id.begins_with("npc_"):
+		var npc_name: String = target_id.trim_prefix("npc_")
+		if registered_npcs.has(npc_name):
+			return (registered_npcs[npc_name] as PrototypeNPC).global_position
+	if game_state.scene_id == "camp":
+		return EXTERIOR_TARGETS.get(target_id, {}).get("position", Vector2(-1000, -1000))
+	return {"exit": Vector2(640, 625), "bed": Vector2(420, 310), "chest": Vector2(830, 310), "eat": Vector2(510, 305), "kitchen_inspect": Vector2(780, 305), "workbench": Vector2(650, 305), "table": Vector2(650, 305)}.get(target_id, Vector2(-1000, -1000))
+
+func _interaction_label(target_id: String) -> String:
+	if target_id.begins_with("npc_"):
+		return "Falar com %s" % target_id.trim_prefix("npc_")
+	if target_id == "exit": return "Sair para o Acampamento"
+	if target_id == "bed": return "Dormir até a manhã"
+	if target_id == "chest": return "Abrir o Baú"
+	if target_id == "eat": return "Comer na Cozinha"
+	if target_id == "kitchen_inspect": return "Inspecionar a Cozinha"
+	if target_id == "workbench": return "Inspecionar a Oficina"
+	if target_id == "table": return "Inspecionar a Mesa do Conselho"
+	return EXTERIOR_TARGETS.get(target_id, {}).get("label", "Interagir")
+
+func _nearest_interaction(probe_position: Vector2, radius: float) -> String:
+	var best_id := ""
+	var best_distance := radius
+	var candidates: Array[String] = []
+	if game_state.scene_id == "camp":
+		for npc_name in registered_npcs.keys():
+			candidates.append("npc_%s" % npc_name)
+		for target_id in EXTERIOR_TARGETS.keys():
+			candidates.append(String(target_id))
 	else:
-		dialogue_text.text = "Conclua a missão ativa antes de iniciar outra tarefa."
+		candidates.append("exit")
+		match game_state.scene_id:
+			"tent": candidates.append_array(["bed", "chest"])
+			"kitchen": candidates.append_array(["eat", "kitchen_inspect"])
+			"workshop": candidates.append("workbench")
+			"council": candidates.append("table")
+		if game_state.scene_id == "kitchen" and current_npc_routines.get("Hanan", "") == "cozinha_manha":
+			candidates.append("npc_Hanan")
+		if game_state.scene_id == "workshop" and current_npc_routines.get("Eliabe", "") == "oficina_manha":
+			candidates.append("npc_Eliabe")
+		if game_state.scene_id == "council":
+			candidates.append("npc_Ancião")
+	for target_id in candidates:
+		var distance: float = probe_position.distance_to(_interaction_position(target_id))
+		if distance < best_distance:
+			best_distance = distance
+			best_id = target_id
+	return best_id
+
+func _interact_target(target_id: String) -> void:
+	if target_id == "" or player.global_position.distance_to(_interaction_position(target_id)) > 90.0:
+		return
+	if target_id.begins_with("npc_"):
+		_talk_to_npc(target_id.trim_prefix("npc_"))
+		return
+	if target_id.begins_with("door_"):
+		_change_scene(String(EXTERIOR_TARGETS[target_id]["scene"]))
+		return
+	match target_id:
+		"exit": _change_scene("camp")
+		"well":
+			quest_manager.record_event("visit", "well", 1, game_minutes)
+			_collect_water_from_well()
+		"wood": _collect_wood()
+		"corral", "flock_a", "flock_b", "flock_c":
+			quest_manager.record_event("inspect", target_id, 1, game_minutes)
+			_show_system_dialogue("Rebanho", "Observação registrada. %s" % _quest_progress_text())
+		"kitchen_inspect":
+			quest_manager.record_event("inspect", "kitchen", 1, game_minutes)
+			if int(camp_resources.get("agua", 0)) > 0 and int(camp_resources.get("lenha", 0)) > 0:
+				quest_manager.record_event("stock", "kitchen", 1, game_minutes)
+			_show_system_dialogue("Cozinha", "Estoque: Água %d, Lenha %d. %s" % [camp_resources["agua"], camp_resources["lenha"], _quest_progress_text()])
+		"eat":
+			var from_stock: bool = inventory_manager.take_meal()
+			if not from_stock:
+				print("[MEAL] ração de emergência consumida")
+			game_state.eat()
+			quest_manager.record_event("eat", "meal", 1, game_minutes)
+			_update_resource_ui()
+			_save_game("meal", AUTOSAVE_PATH)
+			_show_system_dialogue("Refeição", "Tina se alimentou e recuperou energia. %s" % _quest_progress_text())
+		"bed":
+			if not game_state.can_sleep() and quest_manager.active_id != "earned_rest":
+				_show_system_dialogue("Cama", "Ainda não é hora de dormir. Volte ao entardecer.")
+				return
+			_save_game("before_sleep", AUTOSAVE_PATH)
+			game_state.sleep_until_morning()
+			game_minutes = game_state.minutes
+			quest_manager.record_event("sleep", "bed", 1, game_minutes)
+			_apply_all_npc_routines(true)
+			_update_clock_ui()
+			_save_game("after_sleep", AUTOSAVE_PATH)
+			_show_system_dialogue("Novo amanhecer", "Tina acordou descansada. Procure o Ancião.")
+		"chest":
+			chest_open = true
+			_set_game_paused(true)
+			ui_overlay.show_inventory(inventory_manager.bag, inventory_manager.chest, true)
+		"workbench": _show_system_dialogue("Oficina", "Ferramentas e materiais prontos para o trabalho de Eliabe.")
+		"table":
+			quest_manager.record_event("visit", "service_center", 1, game_minutes)
+			_show_system_dialogue("Mesa do Conselho", "O serviço do centro foi registrado. %s" % _quest_progress_text())
+
+func _talk_to_npc(npc_name: String) -> void:
+	var npc: PrototypeNPC = registered_npcs.get(npc_name)
+	if npc == null:
+		return
+	_open_npc_dialogue(npc, "%s — %s" % [npc_name, _format_game_time()])
+	dialogue_text.text = quest_manager.talk_to(npc_name, inventory_manager, game_state.day, game_minutes)
+	if not game_state.chapter_complete and bool(quest_manager.completed.get("new_day", false)):
+		game_state.chapter_complete = true
+		_save_game("chapter_complete", AUTOSAVE_PATH)
+		_close_dialogue()
+		_set_game_paused(true)
+		ui_overlay.show_chapter_summary(game_state.day)
+	_update_inventory_ui()
+	_update_resource_ui()
+
+func _change_scene(scene_id: String, move_player: bool = true) -> void:
+	if not scene_id in ["camp", "tent", "kitchen", "workshop", "council"]:
+		return
+	var previous_scene: String = game_state.scene_id
+	if player != null:
+		player.cancel_navigation()
+	if interior_root != null:
+		interior_root.queue_free()
+		interior_root = null
+	game_state.scene_id = scene_id
+	for npc_name in interior_npc_positions.keys():
+		if registered_npcs.has(npc_name):
+			(registered_npcs[npc_name] as PrototypeNPC).global_position = interior_npc_positions[npc_name]
+	interior_npc_positions.clear()
+	world_root.visible = scene_id == "camp"
+	for child in world_root.get_children():
+		if child is StaticBody2D:
+			child.collision_layer = 2 if scene_id == "camp" else 0
+	for npc in registered_npcs.values():
+		(npc as PrototypeNPC).visible = scene_id == "camp"
+		(npc as PrototypeNPC).collision_layer = 4 if scene_id == "camp" else 0
+		(npc as PrototypeNPC).paused = scene_id != "camp" or menu_paused
+	if scene_id == "camp":
+		if move_player and player != null:
+			player.global_position = {"tent": Vector2(1100, 185), "kitchen": Vector2(315, 335), "workshop": Vector2(920, 550), "council": Vector2(520, 165)}.get(String(game_state.tutorial_flags.get("last_interior", "tent")), Vector2(640, 595))
+	else:
+		if move_player: game_state.tutorial_flags["last_interior"] = scene_id
+		interior_root = load(INTERIOR_SCENES[scene_id]).instantiate()
+		add_child(interior_root)
+		_build_interior(scene_id)
+		var present_name := ""
+		if scene_id == "kitchen" and current_npc_routines.get("Hanan", "") == "cozinha_manha": present_name = "Hanan"
+		if scene_id == "workshop" and current_npc_routines.get("Eliabe", "") == "oficina_manha": present_name = "Eliabe"
+		if scene_id == "council": present_name = "Ancião"
+		if present_name != "" and registered_npcs.has(present_name):
+			var present_npc: PrototypeNPC = registered_npcs[present_name]
+			interior_npc_positions[present_name] = present_npc.global_position
+			present_npc.global_position = Vector2(900, 460)
+			present_npc.visible = true
+			present_npc.collision_layer = 4
+			present_npc.paused = true
+		if move_player and player != null:
+			player.global_position = Vector2(640, 560)
+		if move_player and scene_id == "tent" and quest_manager.active_id == "":
+			var next_quest_id: String = quest_manager.next_available(game_state.day, game_minutes)
+			if next_quest_id != "" and String(quest_manager.definition(next_quest_id).get("giver", "")) == "Tenda":
+				quest_manager.start_for("Tenda", game_state.day, game_minutes)
+		if move_player: quest_manager.record_event("visit", scene_id, 1, game_minutes)
+	_update_inventory_ui()
+	if scene_id == "camp" and previous_scene != "camp": _apply_all_npc_routines(true)
+	if game_started and move_player:
+		_save_game("scene_change", AUTOSAVE_PATH)
+
+func _build_interior(scene_id: String) -> void:
+	var background := Polygon2D.new()
+	background.polygon = PackedVector2Array([Vector2(0, 0), Vector2(1280, 0), Vector2(1280, 720), Vector2(0, 720)])
+	background.color = Color("#baa77d")
+	interior_root.add_child(background)
+	for rect in [Rect2(25, 70, 1230, 18), Rect2(25, 675, 1230, 18), Rect2(25, 70, 18, 620), Rect2(1237, 70, 18, 620)]:
+		var wall := StaticBody2D.new()
+		wall.position = rect.position + rect.size * 0.5
+		wall.collision_layer = 2
+		var shape := CollisionShape2D.new()
+		var rectangle := RectangleShape2D.new()
+		rectangle.size = rect.size
+		shape.shape = rectangle
+		wall.add_child(shape)
+		interior_root.add_child(wall)
+	var title := Label.new()
+	title.text = {"tent": "Tenda de Tina", "kitchen": "Cozinha", "workshop": "Oficina", "council": "Tenda do Estandarte"}[scene_id]
+	title.position = Vector2(520, 150)
+	title.add_theme_font_size_override("font_size", 28)
+	interior_root.add_child(title)
+	var target_ids: Array[String] = ["exit"]
+	match scene_id:
+		"tent": target_ids.append_array(["bed", "chest"])
+		"kitchen": target_ids.append_array(["eat", "kitchen_inspect"])
+		"workshop": target_ids.append("workbench")
+		"council": target_ids.append("table")
+	for target_id in target_ids:
+		var marker := Polygon2D.new()
+		marker.position = _interaction_position(target_id)
+		marker.polygon = _regular_polygon(27.0, 12)
+		marker.color = Color("#926544") if target_id != "exit" else Color("#498c7b")
+		interior_root.add_child(marker)
+		var label := Label.new()
+		label.text = _interaction_label(target_id)
+		label.position = marker.position + Vector2(-75, -60)
+		interior_root.add_child(label)
+
+func _update_daylight() -> void:
+	if world_root != null:
+		world_root.modulate = {"manhã": Color.WHITE, "tarde": Color("#f5dfa8"), "entardecer": Color("#b78479"), "noite": Color("#777aab")}.get(game_state.phase(), Color.WHITE)
 
 func _create_path(rect: Rect2, color: Color) -> void:
 	var polygon := Polygon2D.new()
