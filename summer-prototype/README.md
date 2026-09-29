@@ -309,3 +309,38 @@ O autosave nunca sobrescreve o slot manual. Isso garante que um snapshot criado 
 - eventos automáticos escrevem apenas no slot autosave
 - o HUD identifica qual tipo de save foi gravado ou carregado
 - `[SAVETEST] SAVESYS 10/10` valida também a separação dos dois arquivos
+
+
+## Save portátil entre dispositivos
+
+O protótipo agora pode exportar e importar progresso por arquivo próprio do jogo.
+
+Controles:
+- `F6`: abre o diálogo **Exportar save portátil**
+- `F10`: abre o diálogo **Importar save portátil**
+- extensão: `.cdpsave`
+
+O arquivo portátil contém:
+- horário do jogo
+- posição do jogador
+- Bolsa
+- estoque do acampamento
+- quest ativa
+- quests concluídas
+
+Integridade:
+- o pacote possui identificador de formato
+- versão portátil independente
+- payload JSON interno
+- checksum SHA-256 do payload
+- arquivos corrompidos, alterados ou de outro formato são recusados antes de aplicar qualquer estado
+
+Após uma importação válida:
+- o estado importado é aplicado
+- o slot manual local passa a usar esse estado
+- o autosave recebe a mesma base
+- a partir daí o jogo continua normalmente no novo dispositivo
+
+Validação:
+- `[PORTABLETEST] PORTABLE 8/8`
+- logs `[PORTABLE]` registram exportação, importação e recusas
