@@ -65,6 +65,7 @@ var quest_self_test_summary := "QUEST: aguardando autoteste"
 var save_self_test_summary := "SAVE: aguardando autoteste"
 var portable_self_test_summary := "PORTABLE: aguardando autoteste"
 var content_self_test_summary := "CONTENT: aguardando autoteste"
+var item_self_test_summary := "ITEMS: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
@@ -142,6 +143,8 @@ func _ready() -> void:
 	inventory_manager = InventoryManagerScript.new()
 	inventory_manager.name = "InventoryManager"
 	add_child(inventory_manager)
+	inventory_manager.configure(content_db)
+	_run_item_self_tests()
 	quest_manager = QuestManagerScript.new()
 	quest_manager.name = "QuestManager"
 	add_child(quest_manager)
@@ -203,6 +206,26 @@ func _run_content_self_tests() -> void:
 			passed += 1
 	content_self_test_summary = "CONTENT %d/%d" % [passed, checks.size()]
 	print("[M2TEST] ", content_self_test_summary)
+
+func _run_item_self_tests() -> void:
+	var test_inventory: Node = InventoryManagerScript.new()
+	test_inventory.configure(content_db)
+	var checks: Array[bool] = [
+		content_db.count("item") == 5,
+		String(content_db.get_item("agua").get("name", "")) == "Água",
+		int(content_db.get_item("lenha").get("stack_max", 0)) == 8,
+		bool(content_db.get_item("refeicoes").get("consumable", false)),
+		int(content_db.get_item("refeicoes").get("effects", {}).get("energy", 0)) == 12,
+		not bool(content_db.get_item("selo_servico").get("transferable", true)),
+		test_inventory.add_bag("agua", 20) == 8,
+		not test_inventory.transfer("selo_servico", true)
+	]
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+	item_self_test_summary = "ITEMS %d/%d" % [passed, checks.size()]
+	print("[M2TEST] ", item_self_test_summary)
 
 func _process(delta: float) -> void:
 	if not game_started or menu_paused:

@@ -73,6 +73,15 @@ func _register(category_id: String, definition: Dictionary, path: String) -> voi
 	category[content_id] = stored
 
 func _validate_content() -> void:
+	for item_id in ids("item"):
+		var item := get_item(item_id)
+		for required_key in ["name", "category", "description"]:
+			if String(item.get(required_key, "")).strip_edges().is_empty():
+				_errors.append("item '%s' sem campo obrigatório '%s'" % [item_id, required_key])
+		if int(item.get("stack_max", 0)) < 1:
+			_errors.append("item '%s' possui stack_max inválido" % item_id)
+		if not (item.get("effects", {}) is Dictionary) or not (item.get("tags", []) is Array):
+			_errors.append("item '%s' possui effects/tags inválidos" % item_id)
 	for npc_id in ids("npc"):
 		var npc := get_npc(npc_id)
 		for required_key in ["name", "tribe", "role", "home", "schedule_id", "dialogue_set"]:
