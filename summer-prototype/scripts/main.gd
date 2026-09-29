@@ -27,17 +27,24 @@ var behavior_self_test_summary := "ESTADOS: aguardando autoteste"
 var economy_self_test_summary := "ECONOMIA: aguardando autoteste"
 var quest_self_test_summary := "QUEST: aguardando autoteste"
 var save_self_test_summary := "SAVE: aguardando autoteste"
+var portable_self_test_summary := "PORTABLE: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
 var inventory_label: Label
 var quest_label: Label
 var save_status_label: Label
+var export_dialog: FileDialog
+var import_dialog: FileDialog
 var active_interaction_target := ""
 var active_dialogue_npc: PrototypeNPC
 
 const MANUAL_SAVE_PATH := "user://cronicas_promessa_manual_save.json"
 const AUTOSAVE_PATH := "user://cronicas_promessa_autosave.json"
+const PORTABLE_SAVE_FORMAT := "cronicas-da-promessa-save"
+const PORTABLE_FORMAT_VERSION := 1
+const PORTABLE_EXTENSION := ".cdpsave"
+const PORTABLE_DEFAULT_FILENAME := "cronicas-da-promessa.cdpsave"
 const RESOURCE_CAP := 20
 const PLAYER_RESOURCE_CAP := 8
 const WELL_POSITION := Vector2(640, 500)
@@ -95,7 +102,9 @@ func _ready() -> void:
 	_run_economy_self_tests()
 	_run_player_quest_self_tests()
 	_run_save_self_tests()
+	_run_portable_self_tests()
 	_build_ui()
+	_setup_transfer_dialogs()
 	_spawn_player()
 	_spawn_hanan()
 	_spawn_additional_npcs()
@@ -167,8 +176,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			_save_game("manual", MANUAL_SAVE_PATH)
 			get_viewport().set_input_as_handled()
 			return
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F6:
+			_open_export_dialog()
+			get_viewport().set_input_as_handled()
+			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F9:
 			_load_game(MANUAL_SAVE_PATH, "manual")
+			get_viewport().set_input_as_handled()
+			return
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F10:
+			_open_import_dialog()
 			get_viewport().set_input_as_handled()
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_E:
@@ -812,9 +829,7 @@ func _load_game(save_path: String = MANUAL_SAVE_PATH, slot_name: String = "manua
 	return true
 
 func _apply_save_payload(payload: Dictionary) -> bool:
-	if int(payload.get("version", 0)) != 1:
-		return false
-	if not payload.has("player_inventory") or not payload.has("camp_resources"):
+	if not _is_save_payload_compatible(payload):
 		return false
 
 	game_minutes = float(payload.get("game_minutes", game_minutes))
@@ -889,6 +904,176 @@ func _run_save_self_tests() -> void:
 			passed += 1
 	save_self_test_summary = "SAVESYS %d/%d" % [passed, checks.size()]
 	print("[SAVETEST] ", save_self_test_summary)
+
+func _setup_transfer_dialogs() -> void:
+	export_dialog = FileDialog.new()
+	export_dialog.title = "Exportar save portátil"
+	export_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	export_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	export_dialog.filters = PackedStringArray(["*%s ; Crônicas da Promessa Save" % PORTABLE_EXTENSION])
+	export_dialog.current_file = PORTABLE_DEFAULT_FILENAME
+	export_dialog.file_selected.connect(_on_export_file_selected)
+	add_child(export_dialog)
+
+	import_dialog = FileDialog.new()
+	import_dialog.title = "Importar save portátil"
+	import_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	import_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	import_dialog.filters = PackedStringArray(["*%s ; Crônicas da Promessa Save" % PORTABLE_EXTENSION])
+	import_dialog.file_selected.connect(_on_import_file_selected)
+	add_child(import_dialog)
+
+func _open_export_dialog() -> void:
+	if export_dialog == null:
+		return
+	export_dialog.current_file = PORTABLE_DEFAULT_FILENAME
+	export_dialog.popup_centered_ratio(0.72)
+
+func _open_import_dialog() -> void:
+	if import_dialog == null:
+		return
+	import_dialog.popup_centered_ratio(0.72)
+
+func _on_export_file_selected(path: String) -> void:
+	_export_portable_save(path)
+
+func _on_import_file_selected(path: String) -> void:
+	_import_portable_save(path)
+
+func _build_portable_package(payload: Dictionary) -> Dictionary:
+	var payload_json := JSON.stringify(payload)
+	return {
+		"format": PORTABLE_SAVE_FORMAT,
+		"format_version": PORTABLE_FORMAT_VERSION,
+		"payload_json": payload_json,
+		"checksum": payload_json.sha256_text()
+	}
+
+func _validate_portable_package(package: Dictionary) -> Dictionary:
+	if String(package.get("format", "")) != PORTABLE_SAVE_FORMAT:
+		return {"ok": false, "error": "formato desconhecido"}
+	if int(package.get("format_version", 0)) != PORTABLE_FORMAT_VERSION:
+		return {"ok": false, "error": "versão portátil incompatível"}
+
+	var payload_json := String(package.get("payload_json", ""))
+	if payload_json.is_empty():
+		return {"ok": false, "error": "conteúdo ausente"}
+
+	var expected_checksum := String(package.get("checksum", ""))
+	if expected_checksum.is_empty() or payload_json.sha256_text() != expected_checksum:
+		return {"ok": false, "error": "integridade inválida"}
+
+	var parsed_payload = JSON.parse_string(payload_json)
+	if not (parsed_payload is Dictionary):
+		return {"ok": false, "error": "estado do jogo inválido"}
+
+	var payload: Dictionary = parsed_payload
+	if not _is_save_payload_compatible(payload):
+		return {"ok": false, "error": "save incompatível"}
+
+	return {"ok": true, "error": "", "payload": payload}
+
+func _is_save_payload_compatible(payload: Dictionary) -> bool:
+	if int(payload.get("version", 0)) != 1:
+		return false
+	if not payload.has("player_inventory") or not (payload.get("player_inventory") is Dictionary):
+		return false
+	if not payload.has("camp_resources") or not (payload.get("camp_resources") is Dictionary):
+		return false
+	if not payload.has("player_position") or not (payload.get("player_position") is Dictionary):
+		return false
+	return true
+
+func _export_portable_save(path: String) -> bool:
+	var export_path := path
+	if not export_path.to_lower().ends_with(PORTABLE_EXTENSION):
+		export_path += PORTABLE_EXTENSION
+
+	var package := _build_portable_package(_build_save_payload())
+	var file := FileAccess.open(export_path, FileAccess.WRITE)
+	if file == null:
+		_set_save_status("Falha ao exportar")
+		print("[PORTABLE] falha ao exportar • ", FileAccess.get_open_error(), " • ", export_path)
+		return false
+
+	file.store_string(JSON.stringify(package, "\t"))
+	file.close()
+	_set_save_status("Save exportado")
+	print("[PORTABLE] exportado • ", export_path)
+	return true
+
+func _import_portable_save(path: String) -> bool:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		_set_save_status("Falha ao importar")
+		print("[PORTABLE] falha ao abrir • ", FileAccess.get_open_error(), " • ", path)
+		return false
+
+	var parsed_package = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not (parsed_package is Dictionary):
+		_set_save_status("Arquivo portátil inválido")
+		print("[PORTABLE] pacote JSON inválido • ", path)
+		return false
+
+	var validation := _validate_portable_package(parsed_package)
+	if not bool(validation.get("ok", false)):
+		var error_text := String(validation.get("error", "arquivo inválido"))
+		_set_save_status("Importação recusada: %s" % error_text)
+		print("[PORTABLE] importação recusada • ", error_text, " • ", path)
+		return false
+
+	var payload: Dictionary = validation.get("payload", {})
+	if not _apply_save_payload(payload):
+		_set_save_status("Importação recusada")
+		print("[PORTABLE] payload recusado após validação • ", path)
+		return false
+
+	# Após a validação completa, o estado importado passa a ser o save local atual.
+	_save_game("imported", MANUAL_SAVE_PATH)
+	_save_game("imported", AUTOSAVE_PATH)
+	_set_save_status("Save importado e aplicado")
+	print("[PORTABLE] importado • ", path)
+	return true
+
+func _run_portable_self_tests() -> void:
+	var sample := {
+		"version": 1,
+		"game_minutes": 480.0,
+		"player_position": {"x": 444.0, "y": 333.0},
+		"player_inventory": {"agua": 2, "lenha": 1, "materiais": 0, "refeicoes": 0},
+		"camp_resources": {"agua": 5, "lenha": 6, "materiais": 2, "refeicoes": 1},
+		"active_quest_id": FIRST_QUEST_ID,
+		"completed_quest_ids": {}
+	}
+	var package := _build_portable_package(sample)
+	var validation := _validate_portable_package(package)
+
+	var corrupted := package.duplicate(true)
+	corrupted["checksum"] = "checksum-invalido"
+	var corrupted_validation := _validate_portable_package(corrupted)
+
+	var wrong_format := package.duplicate(true)
+	wrong_format["format"] = "outro-jogo"
+	var wrong_format_validation := _validate_portable_package(wrong_format)
+
+	var checks: Array[bool] = [
+		String(package.get("format", "")) == PORTABLE_SAVE_FORMAT,
+		int(package.get("format_version", 0)) == PORTABLE_FORMAT_VERSION,
+		not String(package.get("payload_json", "")).is_empty(),
+		String(package.get("checksum", "")).length() == 64,
+		bool(validation.get("ok", false)),
+		validation.get("payload", {}) is Dictionary,
+		not bool(corrupted_validation.get("ok", true)),
+		not bool(wrong_format_validation.get("ok", true))
+	]
+
+	var passed := 0
+	for check in checks:
+		if check:
+			passed += 1
+	portable_self_test_summary = "PORTABLE %d/%d" % [passed, checks.size()]
+	print("[PORTABLETEST] ", portable_self_test_summary)
 
 func _build_navigation_grid() -> void:
 	navigation_grid.region = Rect2i(0, 0, int(ceil(1280.0 / NAV_CELL_SIZE)), int(ceil(720.0 / NAV_CELL_SIZE)))
@@ -1058,7 +1243,7 @@ func _build_ui() -> void:
 	add_child(canvas)
 
 	var instructions := Label.new()
-	instructions.text = "Clique: pathfinding • WASD/setas • E interagir • F3 rotas • F4 +6h • F5 salvar • F9 carregar"
+	instructions.text = "Clique: pathfinding • WASD/setas • E interagir • F3 rotas • F4 +6h • F5 salvar • F6 exportar • F9 carregar • F10 importar"
 	instructions.position = Vector2(24, 675)
 	instructions.add_theme_font_size_override("font_size", 14)
 	instructions.add_theme_color_override("font_color", Color.WHITE)
@@ -1111,7 +1296,7 @@ func _build_ui() -> void:
 	canvas.add_child(routine_label)
 
 	navigation_debug_label = Label.new()
-	navigation_debug_label.text = "%s • %s • %s • %s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary, economy_self_test_summary, quest_self_test_summary, save_self_test_summary]
+	navigation_debug_label.text = "%s • %s • %s • %s • %s • %s • %s" % [navigation_self_test_summary, routine_self_test_summary, behavior_self_test_summary, economy_self_test_summary, quest_self_test_summary, save_self_test_summary, portable_self_test_summary]
 	navigation_debug_label.position = Vector2(24, 642)
 	navigation_debug_label.add_theme_font_size_override("font_size", 13)
 	navigation_debug_label.add_theme_color_override("font_color", Color("#7ee0ff"))
