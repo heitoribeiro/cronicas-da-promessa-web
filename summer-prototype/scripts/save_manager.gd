@@ -6,6 +6,8 @@ const AUTO_PATH: String = "user://cronicas_promessa_autosave.json"
 const PORTABLE_FORMAT: String = "cronicas-da-promessa-save"
 const PORTABLE_VERSION: int = 1
 const EXTENSION: String = ".cdpsave"
+const SCHEMA_VERSION: int = 2
+const CONTENT_VERSION: String = "m2.0"
 
 var last_status: String = ""
 
@@ -42,14 +44,21 @@ func read_local(slot: String = "manual") -> Dictionary:
 		return {"ok": false, "error": last_status}
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
-	if not (parsed is Dictionary) or not validate_payload(parsed):
+	if not (parsed is Dictionary):
 		last_status = "Save %s incompatível" % slot
 		return {"ok": false, "error": last_status}
-	return {"ok": true, "payload": parsed}
+	var migrated := migrate_payload(parsed)
+	if not validate_payload(migrated):
+		last_status = "Save %s incompatível" % slot
+		return {"ok": false, "error": last_status}
+	return {"ok": true, "payload": migrated}
 
 func validate_payload(payload: Dictionary) -> bool:
 	var version: int = int(payload.get("version", 0))
 	if version != 1 and version != 2:
+		return false
+	var schema_version := int(payload.get("schema_version", 1))
+	if schema_version < 1 or schema_version > SCHEMA_VERSION:
 		return false
 	if not (payload.get("player_position") is Dictionary):
 		return false
@@ -66,7 +75,39 @@ func validate_payload(payload: Dictionary) -> bool:
 			return false
 		if not payload.has("current_scene") or not payload.has("day"):
 			return false
+	if schema_version == SCHEMA_VERSION:
+		for dictionary_key in ["relationships", "reputation", "events_seen", "quest_objectives", "flags"]:
+			if not (payload.get(dictionary_key) is Dictionary):
+				return false
+		if String(payload.get("current_location", "")).is_empty() or String(payload.get("content_version", "")).is_empty():
+			return false
 	return true
+
+func migrate_payload(source: Dictionary) -> Dictionary:
+	var migrated := source.duplicate(true)
+	var source_schema := int(migrated.get("schema_version", 1))
+	if source_schema > SCHEMA_VERSION:
+		return migrated
+	if not migrated.has("version"):
+		migrated["version"] = 2
+	if not migrated.has("current_scene"):
+		migrated["current_scene"] = "camp"
+	if not migrated.has("day"):
+		migrated["day"] = 1
+	if not migrated.has("chest_storage"):
+		migrated["chest_storage"] = {}
+	if not migrated.has("quest_progress"):
+		migrated["quest_progress"] = {}
+	migrated["schema_version"] = SCHEMA_VERSION
+	migrated["content_version"] = String(migrated.get("content_version", CONTENT_VERSION))
+	migrated["current_location"] = String(migrated.get("current_location", migrated.get("current_scene", "camp")))
+	migrated["quest_objectives"] = Dictionary(migrated.get("quest_objectives", migrated.get("quest_progress", {}))).duplicate(true)
+	migrated["relationships"] = Dictionary(migrated.get("relationships", {})).duplicate(true)
+	migrated["reputation"] = Dictionary(migrated.get("reputation", {})).duplicate(true)
+	migrated["events_seen"] = Dictionary(migrated.get("events_seen", {})).duplicate(true)
+	migrated["flags"] = Dictionary(migrated.get("flags", migrated.get("tutorial_flags", {}))).duplicate(true)
+	migrated["version"] = 2
+	return migrated
 
 func package_portable(payload: Dictionary) -> Dictionary:
 	var payload_json: String = JSON.stringify(payload)
@@ -86,9 +127,12 @@ func validate_portable(package: Dictionary) -> Dictionary:
 	if payload_json.sha256_text() != String(package.get("checksum", "")):
 		return {"ok": false, "error": "integridade inválida"}
 	var parsed: Variant = JSON.parse_string(payload_json)
-	if not (parsed is Dictionary) or not validate_payload(parsed):
+	if not (parsed is Dictionary):
 		return {"ok": false, "error": "save incompatível"}
-	return {"ok": true, "payload": parsed}
+	var migrated := migrate_payload(parsed)
+	if not validate_payload(migrated):
+		return {"ok": false, "error": "save incompatível"}
+	return {"ok": true, "payload": migrated}
 
 func export_portable(path: String, payload: Dictionary) -> bool:
 	if not validate_payload(payload):

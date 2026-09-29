@@ -191,7 +191,7 @@ func journal_text(completed_tab: bool = false) -> String:
 	return "\n".join(PackedStringArray(lines))
 
 func snapshot() -> Dictionary:
-	return {"active_quest_id": active_id, "completed_quest_ids": completed.duplicate(true), "quest_progress": progress.duplicate(true)}
+	return {"active_quest_id": active_id, "completed_quest_ids": completed.duplicate(true), "quest_progress": progress.duplicate(true), "quest_objectives": progress.duplicate(true)}
 
 func restore(data: Dictionary) -> bool:
 	var next_active: String = String(data.get("active_quest_id", ""))
@@ -200,7 +200,7 @@ func restore(data: Dictionary) -> bool:
 	var next_completed: Dictionary = data.get("completed_quest_ids", {})
 	if not (next_completed is Dictionary):
 		return false
-	var next_progress: Dictionary = data.get("quest_progress", {})
+	var next_progress: Dictionary = data.get("quest_objectives", data.get("quest_progress", {}))
 	if not (next_progress is Dictionary):
 		return false
 	active_id = next_active

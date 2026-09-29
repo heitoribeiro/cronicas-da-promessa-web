@@ -82,6 +82,7 @@ var relationship_self_test_summary := "RELATIONSHIPS: aguardando autoteste"
 var dialogue_self_test_summary := "DIALOGUES: aguardando autoteste"
 var event_self_test_summary := "EVENTS: aguardando autoteste"
 var location_self_test_summary := "LOCATIONS: aguardando autoteste"
+var m2_save_self_test_summary := "SAVE: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
@@ -193,6 +194,7 @@ func _ready() -> void:
 	save_manager = SaveManagerScript.new()
 	save_manager.name = "SaveManager"
 	add_child(save_manager)
+	_run_m2_save_self_tests()
 	player_inventory = inventory_manager.bag
 	camp_resources = inventory_manager.camp
 	completed_quest_ids = quest_manager.completed
@@ -376,6 +378,31 @@ func _run_event_location_self_tests() -> void:
 		if check: event_passed += 1
 	event_self_test_summary = "EVENTS %d/%d" % [event_passed, event_checks.size()]
 	print("[M2TEST] ", event_self_test_summary)
+
+func _run_m2_save_self_tests() -> void:
+	var legacy := {
+		"version":1, "game_minutes":735.0, "player_position":{"x":10.0,"y":20.0},
+		"player_inventory":{"agua":1}, "camp_resources":{"agua":4},
+		"active_quest_id":"water_kitchen", "completed_quest_ids":{"camp_intro":true}
+	}
+	var migrated: Dictionary = save_manager.migrate_payload(legacy)
+	var checks: Array[bool] = [
+		int(migrated.get("schema_version", 0)) == 2,
+		String(migrated.get("content_version", "")) == "m2.0",
+		int(migrated.get("version", 0)) == 2,
+		String(migrated.get("current_location", "")) == "camp",
+		migrated.get("relationships") is Dictionary,
+		migrated.get("reputation") is Dictionary,
+		migrated.get("events_seen") is Dictionary,
+		migrated.get("quest_objectives") is Dictionary,
+		migrated.get("flags") is Dictionary,
+		save_manager.validate_payload(migrated)
+	]
+	var passed := 0
+	for check in checks:
+		if check: passed += 1
+	m2_save_self_test_summary = "SAVE %d/%d" % [passed, checks.size()]
+	print("[M2TEST] ", m2_save_self_test_summary)
 
 func _on_event_action_requested(action: Dictionary) -> void:
 	match String(action.get("type", "")):
@@ -1053,10 +1080,14 @@ func _build_save_payload() -> Dictionary:
 	var player_position := Vector2(640, 595)
 	if player != null:
 		player_position = player.global_position
-	var payload: Dictionary = {"version": 2, "player_position": {"x": player_position.x, "y": player_position.y}}
+	var payload: Dictionary = {"version": 2, "schema_version": 2, "content_version": content_db.content_version(), "player_position": {"x": player_position.x, "y": player_position.y}}
 	payload.merge(game_state.snapshot())
 	payload.merge(inventory_manager.snapshot())
 	payload.merge(quest_manager.snapshot())
+	payload.merge(relationship_manager.snapshot())
+	payload.merge(event_manager.snapshot())
+	payload.merge(location_manager.snapshot())
+	payload["flags"] = game_state.tutorial_flags.duplicate(true)
 	return payload
 
 func _save_game(reason: String = "auto", save_path: String = AUTOSAVE_PATH) -> bool:
@@ -1088,6 +1119,8 @@ func _apply_save_payload(payload: Dictionary) -> bool:
 	if next_quest != "" and quest_manager.definition(next_quest).is_empty():
 		return false
 	if not inventory_manager.restore(payload) or not game_state.restore(payload) or not quest_manager.restore(payload):
+		return false
+	if not relationship_manager.restore(payload) or not event_manager.restore(payload) or not location_manager.restore(payload):
 		return false
 	_change_scene(next_scene, false)
 	game_minutes = game_state.minutes
