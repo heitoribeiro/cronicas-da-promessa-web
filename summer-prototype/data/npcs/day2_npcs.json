@@ -1,0 +1,5 @@
+[
+  {"id":"urias","name":"Urias","tribe":"juda","role":"trabalhador e coletor","home":"judah_camp","schedule_id":"urias_day2","dialogue_set":"urias_dialogues","quest_giver":true,"available_from_day":2,"start_position":[880,620],"sprite_set":"placeholder_worker","portrait":""},
+  {"id":"noemi","name":"Noemi","tribe":"juda","role":"cuidadora das tendas","home":"judah_camp","schedule_id":"noemi_day2","dialogue_set":"noemi_dialogues","quest_giver":true,"available_from_day":2,"start_position":[1020,250],"sprite_set":"placeholder_adult","portrait":""},
+  {"id":"jael","name":"Jael","tribe":"juda","role":"auxiliar do serviço","home":"judah_camp","schedule_id":"jael_day2","dialogue_set":"jael_dialogues","quest_giver":true,"available_from_day":2,"start_position":[610,280],"sprite_set":"placeholder_adult","portrait":""}
+]

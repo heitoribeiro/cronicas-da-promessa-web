@@ -38,8 +38,11 @@ func work(cost: float = 1.0) -> void:
 	hunger = clampf(hunger + cost * 0.4, 0.0, 100.0)
 
 func eat() -> void:
-	hunger = clampf(hunger - 38.0, 0.0, 100.0)
-	energy = clampf(energy + 12.0, 0.0, 100.0)
+	apply_effects({"hunger": -38.0, "energy": 12.0})
+
+func apply_effects(effects: Dictionary) -> void:
+	energy = clampf(energy + float(effects.get("energy", 0.0)), 0.0, 100.0)
+	hunger = clampf(hunger + float(effects.get("hunger", 0.0)), 0.0, 100.0)
 
 func can_sleep() -> bool:
 	return minutes >= 1020.0 or minutes < 360.0

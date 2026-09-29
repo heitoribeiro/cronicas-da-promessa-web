@@ -1,0 +1,20 @@
+[
+  {"id":"urias_day2","npc_id":"urias","fallback":"repouso","entries":[
+    {"start":0,"end":360,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Urias: repouso","pause":4.0,"route":[[880,650]]},
+    {"start":360,"end":1080,"routine_id":"coleta_dia","location":"judah_camp","activity":"travel","priority":10,"short_name":"Coleta","display_name":"Urias: coleta comunitária","pause":0.2,"route":[[850,620],[1010,620],[1040,520],[850,520]]},
+    {"start":1080,"end":1260,"routine_id":"fogueira","location":"judah_camp","activity":"socialize","priority":10,"short_name":"Fogueira","display_name":"Urias: convívio ao entardecer","pause":1.8,"route":[[850,390],[810,360]]},
+    {"start":1260,"end":1440,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Urias: repouso","pause":4.0,"route":[[880,650]]}
+  ]},
+  {"id":"noemi_day2","npc_id":"noemi","fallback":"repouso","entries":[
+    {"start":0,"end":360,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Noemi: repouso","pause":4.0,"route":[[1020,250]]},
+    {"start":360,"end":1080,"routine_id":"tendas_dia","location":"judah_camp","activity":"work","priority":10,"short_name":"Tendas","display_name":"Noemi: cuidado das famílias","pause":1.0,"route":[[840,220],[1020,220],[1020,300],[840,300]]},
+    {"start":1080,"end":1260,"routine_id":"fogueira","location":"judah_camp","activity":"socialize","priority":10,"short_name":"Fogueira","display_name":"Noemi: convívio ao entardecer","pause":1.8,"route":[[700,390],[740,410]]},
+    {"start":1260,"end":1440,"routine_id":"repouso","location":"judah_camp","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Noemi: repouso","pause":4.0,"route":[[1020,250]]}
+  ]},
+  {"id":"jael_day2","npc_id":"jael","fallback":"repouso","entries":[
+    {"start":0,"end":360,"routine_id":"repouso","location":"council","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Jael: repouso","pause":4.0,"route":[[610,230]]},
+    {"start":360,"end":1080,"routine_id":"servico_dia","location":"judah_camp","activity":"work","priority":10,"short_name":"Centro","display_name":"Jael: auxílio no serviço","pause":0.8,"route":[[560,280],[650,280],[650,400],[560,400]]},
+    {"start":1080,"end":1260,"routine_id":"conselho_tarde","location":"council","activity":"socialize","priority":10,"short_name":"Conselho","display_name":"Jael: apoio ao conselho","pause":1.8,"route":[[600,300],[650,330]]},
+    {"start":1260,"end":1440,"routine_id":"repouso","location":"council","activity":"rest","priority":0,"short_name":"Repouso","display_name":"Jael: repouso","pause":4.0,"route":[[610,230]]}
+  ]}
+]

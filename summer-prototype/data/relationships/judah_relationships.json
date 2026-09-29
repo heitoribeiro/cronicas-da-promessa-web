@@ -4,7 +4,7 @@
     "tribe_id": "juda",
     "display_name": "Tribo de Judá",
     "initial_reputation": 0,
-    "npc_ids": ["hanan", "eliabe", "miria", "anciao", "pastor"],
+    "npc_ids": ["hanan", "eliabe", "miria", "anciao", "pastor", "urias", "noemi", "jael"],
     "initial_affinity": 0
   }
 ]

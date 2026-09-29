@@ -83,6 +83,7 @@ var dialogue_self_test_summary := "DIALOGUES: aguardando autoteste"
 var event_self_test_summary := "EVENTS: aguardando autoteste"
 var location_self_test_summary := "LOCATIONS: aguardando autoteste"
 var m2_save_self_test_summary := "SAVE: aguardando autoteste"
+var day2_self_test_summary := "DAY2: aguardando autoteste"
 var clock_label: Label
 var routine_label: Label
 var resource_label: Label
@@ -191,6 +192,7 @@ func _ready() -> void:
 	event_manager.configure(content_db)
 	event_manager.action_requested.connect(_on_event_action_requested)
 	_run_event_location_self_tests()
+	_run_day2_self_tests()
 	save_manager = SaveManagerScript.new()
 	save_manager.name = "SaveManager"
 	add_child(save_manager)
@@ -221,6 +223,7 @@ func _ready() -> void:
 	_spawn_additional_npcs()
 	elder = _spawn_scheduled_npc_from_data("anciao")
 	shepherd = _spawn_scheduled_npc_from_data("pastor")
+	_spawn_data_driven_npcs()
 	_apply_all_npc_routines(true)
 	_create_destination_marker()
 	_create_navigation_debug_line()
@@ -238,7 +241,7 @@ func _run_content_self_tests() -> void:
 		content_db.errors().is_empty(),
 		content_db.schema_version() == 1,
 		content_db.content_version() == "m2.0",
-		content_db.count("npc") == 5,
+		content_db.count("npc") == 8,
 		String(content_db.get_npc("hanan").get("role", "")) == "cozinheiro",
 		String(content_db.get_npc("eliabe").get("schedule_id", "")) == "eliabe_default",
 		String(content_db.get_npc("miria").get("dialogue_set", "")) == "miria_dialogues",
@@ -273,7 +276,7 @@ func _run_item_self_tests() -> void:
 
 func _run_schedule_self_tests() -> void:
 	var checks: Array[bool] = [
-		content_db.count("schedule") == 5,
+		content_db.count("schedule") == 8,
 		String(schedule_manager.entry_at("Hanan", 360).get("routine_id", "")) == "cozinha_manha",
 		String(schedule_manager.entry_at("Hanan", 720).get("activity", "")) == "work",
 		String(schedule_manager.entry_at("Eliabe", 720).get("routine_id", "")) == "coleta_tarde",
@@ -293,8 +296,8 @@ func _run_schedule_self_tests() -> void:
 
 func _run_m2_quest_self_tests() -> void:
 	var checks: Array[bool] = [
-		content_db.count("quest") == 9,
-		quest_manager.order.size() == 9,
+		content_db.count("quest") == 12,
+		quest_manager.order.size() == 12,
 		quest_manager.order[0] == "camp_intro",
 		quest_manager.order[8] == "new_day",
 		quest_manager.definition("water_kitchen").get("giver_id", "") == "hanan",
@@ -304,7 +307,9 @@ func _run_m2_quest_self_tests() -> void:
 		quest_manager.state("dusk_return", 1, 900.0) == "locked",
 		quest_manager.state("new_day", 1, 360.0) == "locked",
 		quest_manager.definition("camp_intro").get("prerequisites", []).is_empty(),
-		quest_manager.definition("new_day").get("prerequisites", [])[0] == "earned_rest"
+		quest_manager.definition("new_day").get("prerequisites", [])[0] == "earned_rest",
+		quest_manager.definition("day2_shared_wood").get("min_day", 0) == 2,
+		quest_manager.definition("day2_council_material").get("objectives", [])[0].get("type", "") == "produce"
 	]
 	var passed := 0
 	for check in checks:
@@ -316,7 +321,7 @@ func _run_m2_quest_self_tests() -> void:
 func _run_relationship_dialogue_self_tests() -> void:
 	var relation_checks: Array[bool] = [
 		content_db.count("relationship") == 1,
-		relationship_manager.affinity.size() == 5,
+		relationship_manager.affinity.size() == 8,
 		relationship_manager.reputation.has("juda"),
 		relationship_manager.affinity_for("hanan") == 0,
 		relationship_manager.add_affinity("hanan", 5, "self_test") == 5,
@@ -331,7 +336,7 @@ func _run_relationship_dialogue_self_tests() -> void:
 	relationship_self_test_summary = "RELATIONSHIPS %d/%d" % [relation_passed, relation_checks.size()]
 	print("[M2TEST] ", relationship_self_test_summary)
 	var dialogue_checks: Array[bool] = [
-		content_db.count("dialogue") == 5,
+		content_db.count("dialogue") == 8,
 		dialogue_manager.resolve("hanan", {"activity":"work", "relationship":0}).contains("serviço"),
 		dialogue_manager.resolve("eliabe", {"activity":"travel", "relationship":0}).contains("material"),
 		dialogue_manager.resolve("miria", {"daypart":"entardecer", "relationship":0}).contains("entardecer"),
@@ -364,7 +369,7 @@ func _run_event_location_self_tests() -> void:
 	location_self_test_summary = "LOCATIONS %d/%d" % [location_passed, location_checks.size()]
 	print("[M2TEST] ", location_self_test_summary)
 	var event_checks: Array[bool] = [
-		content_db.count("event") == 4,
+		content_db.count("event") == 5,
 		event_manager.can_trigger("m1_opening", {"day":1}),
 		not event_manager.can_trigger("m1_opening", {"day":2}),
 		event_manager.can_trigger("m1_first_service", {"minutes":720}),
@@ -403,6 +408,33 @@ func _run_m2_save_self_tests() -> void:
 		if check: passed += 1
 	m2_save_self_test_summary = "SAVE %d/%d" % [passed, checks.size()]
 	print("[M2TEST] ", m2_save_self_test_summary)
+
+func _run_day2_self_tests() -> void:
+	var test_quests: Node = QuestManagerScript.new()
+	test_quests.configure(content_db)
+	for quest_id in ["camp_intro", "water_kitchen", "wood_workshop", "meal_prep", "flock_care", "center_service", "dusk_return", "earned_rest", "new_day"]:
+		test_quests.completed[quest_id] = true
+	var test_relations: Node = RelationshipManagerScript.new()
+	test_relations.configure(content_db)
+	var test_events: Node = EventManagerScript.new()
+	test_events.configure(content_db)
+	var checks: Array[bool] = [
+		content_db.has("npc", "urias") and content_db.has("npc", "noemi") and content_db.has("npc", "jael"),
+		int(content_db.get_npc("urias").get("available_from_day", 0)) == 2,
+		String(test_quests.next_available(2, 480)) == "day2_shared_wood",
+		String(test_quests.definition("day2_shared_wood").get("objectives", [])[0].get("type", "")) == "collect",
+		String(test_quests.definition("day2_listening_round").get("objectives", [])[0].get("type", "")) == "talk",
+		String(test_quests.definition("day2_council_material").get("objectives", [])[0].get("type", "")) == "produce",
+		String(test_quests.definition("day2_council_material").get("objectives", [])[1].get("type", "")) == "deliver",
+		int(test_quests.definition("day2_shared_wood").get("rewards", {}).get("affinity", {}).get("urias", 0)) == 5,
+		test_events.can_trigger("day2_community_blessing", {"day":2, "completed_quests":{"day2_shared_wood":true,"day2_listening_round":true}, "relationship":5}),
+		test_relations.affinity.has("urias") and test_relations.affinity.has("noemi") and test_relations.affinity.has("jael")
+	]
+	var passed := 0
+	for check in checks:
+		if check: passed += 1
+	day2_self_test_summary = "DAY2 %d/%d" % [passed, checks.size()]
+	print("[M2TEST] ", day2_self_test_summary)
 
 func _on_event_action_requested(action: Dictionary) -> void:
 	match String(action.get("type", "")):
@@ -649,11 +681,17 @@ func _on_quest_changed(reason: String) -> void:
 	active_quest_id = quest_manager.active_id
 	completed_quest_ids = quest_manager.completed
 	_update_inventory_ui()
-	if game_started and reason != "load" and reason != "new_game":
-		_save_game(reason, AUTOSAVE_PATH)
 	if reason == "quest_complete" and relationship_manager != null:
 		var completed_definition: Dictionary = quest_manager.definition(quest_manager.last_completed_id)
 		relationship_manager.apply_rewards(Dictionary(completed_definition.get("rewards", {})), "quest:%s" % quest_manager.last_completed_id)
+		event_manager.trigger("day2_community_blessing", {
+			"day": game_state.day,
+			"minutes": game_minutes,
+			"completed_quests": quest_manager.completed,
+			"relationship": relationship_manager.affinity_for("noemi")
+		})
+	if game_started and reason != "load" and reason != "new_game":
+		_save_game(reason, AUTOSAVE_PATH)
 	if reason == "quest_complete" and game_state.chapter_complete:
 		_set_game_paused(true)
 		ui_overlay.show_chapter_summary(game_state.day)
@@ -751,6 +789,13 @@ func _apply_npc_routine(npc_name: String, force: bool) -> void:
 		return
 
 	var npc: PrototypeNPC = registered_npcs[npc_name]
+	var npc_id: String = String(schedule_manager.npc_id_for_name(npc_name))
+	var available: bool = game_state.day >= int(content_db.get_npc(npc_id).get("available_from_day", 1))
+	npc.visible = available and game_state.scene_id == "camp"
+	npc.collision_layer = 4 if npc.visible else 0
+	npc.paused = not available or menu_paused or game_state.scene_id != "camp" or npc == active_dialogue_npc
+	if not available:
+		return
 	var routine_id: String = _get_npc_routine_id(npc_name, int(floor(game_minutes)))
 	var current_id: String = String(current_npc_routines.get(npc_name, ""))
 	if not force and routine_id == current_id:
@@ -1600,6 +1645,13 @@ func _spawn_additional_npcs() -> void:
 	eliabe = _spawn_scheduled_npc_from_data("eliabe")
 	miria = _spawn_scheduled_npc_from_data("miria")
 
+func _spawn_data_driven_npcs() -> void:
+	for npc_id in content_db.ids("npc"):
+		var definition: Dictionary = content_db.get_npc(npc_id)
+		var npc_name := String(definition.get("name", npc_id))
+		if not registered_npcs.has(npc_name):
+			_spawn_scheduled_npc_from_data(npc_id)
+
 func _spawn_scheduled_npc_from_data(npc_id: String) -> PrototypeNPC:
 	var definition: Dictionary = content_db.get_npc(npc_id)
 	var start: Array = definition.get("start_position", [640, 600])
@@ -1786,7 +1838,7 @@ func _interact_target(target_id: String) -> void:
 			var from_stock: bool = inventory_manager.take_meal()
 			if not from_stock:
 				print("[MEAL] ração de emergência consumida")
-			game_state.eat()
+			game_state.apply_effects(inventory_manager.item_effects("refeicoes"))
 			quest_manager.record_event("eat", "meal", 1, game_minutes)
 			_update_resource_ui()
 			_save_game("meal", AUTOSAVE_PATH)
@@ -1807,7 +1859,13 @@ func _interact_target(target_id: String) -> void:
 			chest_open = true
 			_set_game_paused(true)
 			ui_overlay.show_inventory(inventory_manager.bag, inventory_manager.chest, true)
-		"workbench": _show_system_dialogue("Oficina", "Ferramentas e materiais prontos para o trabalho de Eliabe.")
+		"workbench":
+			if quest_manager.record_event("produce", "materiais", 1, game_minutes):
+				inventory_manager.add_bag("materiais", 1)
+				_save_game("production", AUTOSAVE_PATH)
+				_show_system_dialogue("Oficina", "Tina produziu 1 Material. %s" % _quest_progress_text())
+			else:
+				_show_system_dialogue("Oficina", "Ferramentas e materiais prontos para o trabalho de Eliabe.")
 		"table":
 			quest_manager.record_event("visit", "service_center", 1, game_minutes)
 			event_manager.trigger("m1_first_service", {"day":game_state.day, "minutes":game_minutes})

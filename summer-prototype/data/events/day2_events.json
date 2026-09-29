@@ -1,0 +1,3 @@
+[
+  {"id":"day2_community_blessing","once":true,"conditions":{"min_day":2,"quests_completed":["day2_shared_wood","day2_listening_round"],"relationship_min":5},"actions":[{"type":"set_flag","flag":"day2_community_blessing","value":true},{"type":"dialogue","speaker":"Comunidade de Judá","text":"O trabalho e a escuta aproximaram você das famílias. A comunidade oferece uma refeição."},{"type":"give_item","item":"refeicoes","amount":1}]}
+]
