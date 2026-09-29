@@ -514,6 +514,7 @@ func _apply_resource_effect(npc_name: String, routine_id: String, point_index: i
 
 	print("[RESOURCE] ", npc_name, " / ", routine_id, " -> ", ", ".join(PackedStringArray(parts)))
 	_update_resource_ui()
+	_save_game("camp_economy")
 
 func _update_resource_ui() -> void:
 	if resource_label == null:
@@ -860,16 +861,20 @@ func _run_save_self_tests() -> void:
 		"completed_quest_ids": {FIRST_QUEST_ID: true}
 	}
 	var encoded := JSON.stringify(sample)
-	var decoded = JSON.parse_string(encoded)
+	var decoded_variant = JSON.parse_string(encoded)
+	var decoded: Dictionary = decoded_variant if decoded_variant is Dictionary else {}
+	var decoded_inventory: Dictionary = decoded.get("player_inventory", {})
+	var decoded_camp: Dictionary = decoded.get("camp_resources", {})
+	var decoded_completed: Dictionary = decoded.get("completed_quest_ids", {})
 
 	var checks: Array[bool] = [
-		decoded is Dictionary,
+		not decoded.is_empty(),
 		int(decoded.get("version", 0)) == 1,
 		int(decoded.get("game_minutes", 0)) == 735,
-		int(decoded.get("player_inventory", {}).get("lenha", 0)) == 3,
-		int(decoded.get("camp_resources", {}).get("materiais", 0)) == 4,
+		int(decoded_inventory.get("lenha", 0)) == 3,
+		int(decoded_camp.get("materiais", 0)) == 4,
 		String(decoded.get("active_quest_id", "")) == SECOND_QUEST_ID,
-		bool(decoded.get("completed_quest_ids", {}).get(FIRST_QUEST_ID, false))
+		bool(decoded_completed.get(FIRST_QUEST_ID, false))
 	]
 
 	var passed := 0
