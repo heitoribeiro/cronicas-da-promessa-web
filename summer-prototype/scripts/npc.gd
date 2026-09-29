@@ -6,8 +6,8 @@ signal navigation_path_updated(path: PackedVector2Array, resolved_target: Vector
 signal patrol_point_reached(index: int, world_position: Vector2)
 signal routine_changed(routine_id: String)
 signal activity_changed(activity_id: String)
-signal action_started(activity_id: String, routine_id: String, world_position: Vector2)
-signal action_completed(activity_id: String, routine_id: String, world_position: Vector2)
+signal action_started(activity_id: String, routine_id: String, point_index: int, world_position: Vector2)
+signal action_completed(activity_id: String, routine_id: String, point_index: int, world_position: Vector2)
 
 @export var npc_name := "Hanan"
 @export var patrol_speed := 42.0
@@ -27,6 +27,7 @@ var _pause_remaining := 0.0
 var _stuck_time := 0.0
 var _action_active := false
 var _action_world_position := Vector2.ZERO
+var _action_point_index := -1
 
 func _ready() -> void:
 	collision_layer = 4
@@ -94,7 +95,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		if _pause_remaining <= 0.0 and _action_active:
 			_action_active = false
-			action_completed.emit(active_activity_id, active_routine_id, _action_world_position)
+			action_completed.emit(active_activity_id, active_routine_id, _action_point_index, _action_world_position)
 		return
 
 	if patrol_points.is_empty() or _settled:
@@ -151,7 +152,7 @@ func _finish_current_patrol_point() -> void:
 	_stuck_time = 0.0
 	velocity = Vector2.ZERO
 	patrol_point_reached.emit(reached_index, reached_position)
-	_begin_point_action(reached_position)
+	_begin_point_action(reached_index, reached_position)
 
 	if patrol_points.size() == 1 and _activity_is_stationary(active_activity_id):
 		_settled = true
@@ -160,11 +161,12 @@ func _finish_current_patrol_point() -> void:
 
 	navigation_path_updated.emit(PackedVector2Array(), reached_position)
 
-func _begin_point_action(world_position: Vector2) -> void:
+func _begin_point_action(point_index: int, world_position: Vector2) -> void:
+	_action_point_index = point_index
 	_action_world_position = world_position
 	_action_active = true
 	_pause_remaining = maxf(0.05, patrol_pause_seconds)
-	action_started.emit(active_activity_id, active_routine_id, world_position)
+	action_started.emit(active_activity_id, active_routine_id, point_index, world_position)
 
 func _advance_patrol() -> void:
 	if patrol_points.is_empty():
