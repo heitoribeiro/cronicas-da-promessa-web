@@ -168,3 +168,29 @@ Logs:
 O diálogo pausa o contador da ação de Hanan e a ação continua normalmente quando a conversa termina.
 
 O HUD de rotinas foi compactado em três linhas para evitar corte na lateral direita.
+
+
+## Economia inicial do acampamento
+
+A primeira economia interna foi ligada às ações concretas dos NPCs.
+
+Recursos:
+- água
+- lenha
+- materiais
+- refeições
+- capacidade inicial de 20 unidades por recurso
+
+Fluxos atuais:
+- Hanan / Cozinha: consome 1 água + 1 lenha e produz 1 refeição
+- Eliabe / Oficina: produz 1 material
+- Eliabe / Coleta: produz 1 lenha
+- Miriã / Água: produz 1 água
+
+Regras:
+- o efeito econômico só ocorre no ponto 0 da rota, uma vez por volta
+- produção e consumo acontecem apenas após a conclusão da ação
+- Hanan não produz refeição se faltar água ou lenha
+- o HUD mostra os estoques do acampamento
+- logs `[RESOURCE]` registram produção, consumo e bloqueios
+- `[ECONOMYTEST] ECONOMIA 5/5` valida o mapeamento básico de recursos
