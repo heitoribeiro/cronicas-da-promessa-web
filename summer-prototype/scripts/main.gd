@@ -2,6 +2,15 @@ extends Node2D
 
 const PlayerScript = preload("res://scripts/player.gd")
 const NpcScript = preload("res://scripts/npc.gd")
+const GameStateScript = preload("res://scripts/game_state.gd")
+const InventoryManagerScript = preload("res://scripts/inventory_manager.gd")
+const QuestManagerScript = preload("res://scripts/quest_manager.gd")
+const SaveManagerScript = preload("res://scripts/save_manager.gd")
+
+var game_state: Node
+var inventory_manager: Node
+var quest_manager: Node
+var save_manager: Node
 
 var player: PrototypePlayer
 var hanan: PrototypeNPC
@@ -94,6 +103,22 @@ var active_quest_id := ""
 var completed_quest_ids: Dictionary = {}
 
 func _ready() -> void:
+	game_state = GameStateScript.new()
+	game_state.name = "GameState"
+	add_child(game_state)
+	inventory_manager = InventoryManagerScript.new()
+	inventory_manager.name = "InventoryManager"
+	add_child(inventory_manager)
+	quest_manager = QuestManagerScript.new()
+	quest_manager.name = "QuestManager"
+	add_child(quest_manager)
+	save_manager = SaveManagerScript.new()
+	save_manager.name = "SaveManager"
+	add_child(save_manager)
+	player_inventory = inventory_manager.bag
+	camp_resources = inventory_manager.camp
+	completed_quest_ids = quest_manager.completed
+	game_minutes = game_state.minutes
 	_build_world()
 	_build_navigation_grid()
 	_run_navigation_self_tests()
@@ -168,6 +193,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F4:
 			game_minutes = fmod(game_minutes + 360.0, 1440.0)
+			game_state.minutes = game_minutes
 			_apply_all_npc_routines(true)
 			_update_clock_ui()
 			get_viewport().set_input_as_handled()
@@ -240,7 +266,8 @@ func _build_world() -> void:
 	add_child(title)
 
 func _advance_game_clock(delta: float) -> void:
-	game_minutes = fmod(game_minutes + delta * GAME_MINUTES_PER_REAL_SECOND, 1440.0)
+	game_state.tick(delta, player != null and player.velocity.length() > 0.1)
+	game_minutes = game_state.minutes
 
 func _format_game_time() -> String:
 	var total: int = int(floor(game_minutes))
@@ -773,82 +800,45 @@ func _build_save_payload() -> Dictionary:
 	var player_position := Vector2(640, 595)
 	if player != null:
 		player_position = player.global_position
-
-	return {
-		"version": 1,
-		"game_minutes": game_minutes,
-		"player_position": {"x": player_position.x, "y": player_position.y},
-		"player_inventory": player_inventory.duplicate(true),
-		"camp_resources": camp_resources.duplicate(true),
-		"active_quest_id": active_quest_id,
-		"completed_quest_ids": completed_quest_ids.duplicate(true)
-	}
+	var payload: Dictionary = {"version": 2, "player_position": {"x": player_position.x, "y": player_position.y}}
+	payload.merge(game_state.snapshot())
+	payload.merge(inventory_manager.snapshot())
+	payload.merge(quest_manager.snapshot())
+	return payload
 
 func _save_game(reason: String = "auto", save_path: String = AUTOSAVE_PATH) -> bool:
-	var file := FileAccess.open(save_path, FileAccess.WRITE)
-	if file == null:
-		_set_save_status("Falha ao salvar")
-		print("[SAVE] falha ao abrir arquivo: ", FileAccess.get_open_error(), " • ", save_path)
-		return false
-
-	var payload := _build_save_payload()
-	file.store_string(JSON.stringify(payload))
-	file.close()
-
-	var slot_name := "Manual" if save_path == MANUAL_SAVE_PATH else "Autosave"
-	_set_save_status("%s salvo • %s" % [slot_name, reason])
-	print("[SAVE] sucesso • ", slot_name.to_lower(), " • ", reason, " • ", save_path)
-	return true
+	var slot: String = "manual" if save_path == MANUAL_SAVE_PATH else "autosave"
+	var succeeded: bool = save_manager.write_local(slot, _build_save_payload(), reason)
+	_set_save_status(save_manager.last_status)
+	return succeeded
 
 func _load_game(save_path: String = MANUAL_SAVE_PATH, slot_name: String = "manual") -> bool:
-	if not FileAccess.file_exists(save_path):
-		_set_save_status("Nenhum save %s encontrado" % slot_name)
-		print("[SAVE] nenhum arquivo ", slot_name, " encontrado • ", save_path)
+	var slot: String = "manual" if save_path == MANUAL_SAVE_PATH else "autosave"
+	var result: Dictionary = save_manager.read_local(slot)
+	if not bool(result.get("ok", false)):
+		_set_save_status(save_manager.last_status)
 		return false
-
-	var file := FileAccess.open(save_path, FileAccess.READ)
-	if file == null:
-		_set_save_status("Falha ao carregar %s" % slot_name)
-		print("[SAVE] falha ao abrir save: ", FileAccess.get_open_error(), " • ", save_path)
-		return false
-
-	var parsed = JSON.parse_string(file.get_as_text())
-	file.close()
-	if not (parsed is Dictionary):
-		_set_save_status("Save %s inválido" % slot_name)
-		print("[SAVE] conteúdo inválido • ", save_path)
-		return false
-
-	var payload: Dictionary = parsed
-	if not _apply_save_payload(payload):
+	if not _apply_save_payload(result["payload"]):
 		_set_save_status("Save %s incompatível" % slot_name)
 		return false
-
-	_set_save_status("%s carregado" % slot_name.capitalize())
-	print("[SAVE] carregado • ", slot_name, " • ", save_path)
+	save_manager.loaded(slot)
+	_set_save_status(save_manager.last_status)
 	return true
 
 func _apply_save_payload(payload: Dictionary) -> bool:
 	if not _is_save_payload_compatible(payload):
 		return false
-
-	game_minutes = float(payload.get("game_minutes", game_minutes))
-
-	var loaded_inventory = payload.get("player_inventory", {})
-	var loaded_camp = payload.get("camp_resources", {})
-	if loaded_inventory is Dictionary:
-		for resource_id in player_inventory.keys():
-			player_inventory[resource_id] = clampi(int(loaded_inventory.get(resource_id, 0)), 0, PLAYER_RESOURCE_CAP)
-	if loaded_camp is Dictionary:
-		for resource_id in camp_resources.keys():
-			camp_resources[resource_id] = clampi(int(loaded_camp.get(resource_id, 0)), 0, RESOURCE_CAP)
-
-	active_quest_id = String(payload.get("active_quest_id", ""))
-	var loaded_completed = payload.get("completed_quest_ids", {})
-	completed_quest_ids.clear()
-	if loaded_completed is Dictionary:
-		for quest_key in loaded_completed.keys():
-			completed_quest_ids[String(quest_key)] = bool(loaded_completed[quest_key])
+	var next_scene: String = String(payload.get("current_scene", "camp"))
+	var next_quest: String = String(payload.get("active_quest_id", ""))
+	if not next_scene in ["camp", "tent", "kitchen", "workshop", "council"]:
+		return false
+	if next_quest != "" and quest_manager.definition(next_quest).is_empty():
+		return false
+	if not inventory_manager.restore(payload) or not game_state.restore(payload) or not quest_manager.restore(payload):
+		return false
+	game_minutes = game_state.minutes
+	active_quest_id = quest_manager.active_id
+	completed_quest_ids = quest_manager.completed
 
 	var position_data = payload.get("player_position", {})
 	if player != null and position_data is Dictionary:
@@ -907,8 +897,8 @@ func _run_save_self_tests() -> void:
 
 func _setup_transfer_dialogs() -> void:
 	export_dialog = FileDialog.new()
-	export_dialog.title = "Exportar save portátil"
 	export_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	export_dialog.title = "Exportar save portátil"
 	export_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	export_dialog.filters = PackedStringArray(["*%s ; Crônicas da Promessa Save" % PORTABLE_EXTENSION])
 	export_dialog.current_file = PORTABLE_DEFAULT_FILENAME
@@ -916,8 +906,8 @@ func _setup_transfer_dialogs() -> void:
 	add_child(export_dialog)
 
 	import_dialog = FileDialog.new()
-	import_dialog.title = "Importar save portátil"
 	import_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	import_dialog.title = "Importar save portátil"
 	import_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	import_dialog.filters = PackedStringArray(["*%s ; Crônicas da Promessa Save" % PORTABLE_EXTENSION])
 	import_dialog.file_selected.connect(_on_import_file_selected)
@@ -941,99 +931,31 @@ func _on_import_file_selected(path: String) -> void:
 	_import_portable_save(path)
 
 func _build_portable_package(payload: Dictionary) -> Dictionary:
-	var payload_json := JSON.stringify(payload)
-	return {
-		"format": PORTABLE_SAVE_FORMAT,
-		"format_version": PORTABLE_FORMAT_VERSION,
-		"payload_json": payload_json,
-		"checksum": payload_json.sha256_text()
-	}
+	return save_manager.package_portable(payload)
 
 func _validate_portable_package(package: Dictionary) -> Dictionary:
-	if String(package.get("format", "")) != PORTABLE_SAVE_FORMAT:
-		return {"ok": false, "error": "formato desconhecido"}
-	if int(package.get("format_version", 0)) != PORTABLE_FORMAT_VERSION:
-		return {"ok": false, "error": "versão portátil incompatível"}
-
-	var payload_json := String(package.get("payload_json", ""))
-	if payload_json.is_empty():
-		return {"ok": false, "error": "conteúdo ausente"}
-
-	var expected_checksum := String(package.get("checksum", ""))
-	if expected_checksum.is_empty() or payload_json.sha256_text() != expected_checksum:
-		return {"ok": false, "error": "integridade inválida"}
-
-	var parsed_payload = JSON.parse_string(payload_json)
-	if not (parsed_payload is Dictionary):
-		return {"ok": false, "error": "estado do jogo inválido"}
-
-	var payload: Dictionary = parsed_payload
-	if not _is_save_payload_compatible(payload):
-		return {"ok": false, "error": "save incompatível"}
-
-	return {"ok": true, "error": "", "payload": payload}
+	return save_manager.validate_portable(package)
 
 func _is_save_payload_compatible(payload: Dictionary) -> bool:
-	if int(payload.get("version", 0)) != 1:
-		return false
-	if not payload.has("player_inventory") or not (payload.get("player_inventory") is Dictionary):
-		return false
-	if not payload.has("camp_resources") or not (payload.get("camp_resources") is Dictionary):
-		return false
-	if not payload.has("player_position") or not (payload.get("player_position") is Dictionary):
-		return false
-	return true
+	return save_manager.validate_payload(payload)
 
 func _export_portable_save(path: String) -> bool:
-	var export_path := path
-	if not export_path.to_lower().ends_with(PORTABLE_EXTENSION):
-		export_path += PORTABLE_EXTENSION
-
-	var package := _build_portable_package(_build_save_payload())
-	var file := FileAccess.open(export_path, FileAccess.WRITE)
-	if file == null:
-		_set_save_status("Falha ao exportar")
-		print("[PORTABLE] falha ao exportar • ", FileAccess.get_open_error(), " • ", export_path)
-		return false
-
-	file.store_string(JSON.stringify(package, "\t"))
-	file.close()
-	_set_save_status("Save exportado")
-	print("[PORTABLE] exportado • ", export_path)
-	return true
+	var succeeded: bool = save_manager.export_portable(path, _build_save_payload())
+	_set_save_status(save_manager.last_status)
+	return succeeded
 
 func _import_portable_save(path: String) -> bool:
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		_set_save_status("Falha ao importar")
-		print("[PORTABLE] falha ao abrir • ", FileAccess.get_open_error(), " • ", path)
-		return false
-
-	var parsed_package = JSON.parse_string(file.get_as_text())
-	file.close()
-	if not (parsed_package is Dictionary):
-		_set_save_status("Arquivo portátil inválido")
-		print("[PORTABLE] pacote JSON inválido • ", path)
-		return false
-
-	var validation := _validate_portable_package(parsed_package)
+	var validation: Dictionary = save_manager.read_portable(path)
 	if not bool(validation.get("ok", false)):
-		var error_text := String(validation.get("error", "arquivo inválido"))
-		_set_save_status("Importação recusada: %s" % error_text)
-		print("[PORTABLE] importação recusada • ", error_text, " • ", path)
+		_set_save_status(save_manager.last_status)
 		return false
-
-	var payload: Dictionary = validation.get("payload", {})
-	if not _apply_save_payload(payload):
-		_set_save_status("Importação recusada")
-		print("[PORTABLE] payload recusado após validação • ", path)
+	if not _apply_save_payload(validation["payload"]):
+		_set_save_status("Importação recusada: estado incompatível")
 		return false
-
-	# Após a validação completa, o estado importado passa a ser o save local atual.
 	_save_game("imported", MANUAL_SAVE_PATH)
 	_save_game("imported", AUTOSAVE_PATH)
-	_set_save_status("Save importado e aplicado")
-	print("[PORTABLE] importado • ", path)
+	save_manager.imported(path)
+	_set_save_status(save_manager.last_status)
 	return true
 
 func _run_portable_self_tests() -> void:
