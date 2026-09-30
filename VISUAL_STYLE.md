@@ -138,3 +138,20 @@ Foram definidos dois padrões oficiais:
 - [REFERENCE_REPOS.md](REFERENCE_REPOS.md): repositórios externos avaliados e política de uso.
 
 A nova arquitetura mantém a aparência Pixel RPG bíblico-desértico aprovada e prepara o projeto para personagens personalizáveis, NPCs consistentes e mapas modulares.
+
+
+## Aplicação — Fase 8
+
+A arquitetura de sprites passa a existir também no runtime Web, não apenas na documentação.
+
+- criado `assets/art/pixel/metadata/sprite_manifest.json`;
+- criado `src/sprite-system.js`;
+- NPCs agora recebem metadados de canvas, pivô, direção, ação e quantidade de frames;
+- o controlador aceita 4 ou 8 direções;
+- o modo atual `static_legacy` mantém os sprites existentes enquanto os novos sheets são produzidos;
+- o modo `sequence` já está preparado para carregar arquivos `<npc>/<ação>/<direção>/<frame>.png`;
+- Y-sort e colisão continuam independentes do tamanho total do canvas.
+
+A correção de escala presente nos NPCs antigos foi movida para o manifesto como compatibilidade temporária. Os novos sprites deverão usar escala 1.0 e resolver diferenças por canvas, pivô e offset, seguindo o padrão documentado em `SPRITE_STANDARD.md`.
+
+Versão visual: **Web Alpha 0.25**.
