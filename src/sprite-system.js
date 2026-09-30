@@ -428,7 +428,10 @@ export class NpcSpriteController {
 export function createNpcSpriteControllers(agents, manifest) {
   const controllers = {};
   Object.entries(agents || {}).forEach(([id, agent]) => {
-    if (agent?.el) controllers[id] = new NpcSpriteController(agent.el, id, manifest || DEFAULT_MANIFEST);
+    if (!agent?.el) return;
+    const controller = new NpcSpriteController(agent.el, id, manifest || DEFAULT_MANIFEST);
+    controller.setMotion(0,0,performance.now(),false);
+    controllers[id] = controller;
   });
   return controllers;
 }
