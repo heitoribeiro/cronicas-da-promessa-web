@@ -1,4 +1,4 @@
-import { loadSpriteManifest, createNpcSpriteControllers } from './sprite-system.js?v=0.25';
+import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.25';
 import { findGridPath } from './pathfinding.js?v=0.25';
 import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.25';
 
@@ -1119,13 +1119,22 @@ function game() {
     { id:'well-look', x:900,y:825,r:120, action:'Examinar poço', run:()=>dialogue('Poço de Judá','Água fresca é retirada em turnos ao longo do dia. Jarros e barris permanecem próximos para o abastecimento.') }
   ];
 
+  const npcSpawn = MAP_MANIFEST.spawnPoints || {};
+  const spawnOf = (id,fallback) => npcSpawn[id] || fallback;
+  const elderSpawn=spawnOf('elder',{x:890,y:292});
+  const eliabeSpawn=spawnOf('eliabe',{x:1325,y:890});
+  const childSpawn=spawnOf('child',{x:445,y:780});
+  const miriaSpawn=spawnOf('miria',{x:1245,y:420});
+  const hananSpawn=spawnOf('hanan',{x:520,y:715});
+  const guardSpawn=spawnOf('guard',{x:820,y:1015});
+
   const npcAgents = {
-    elder: { el:$('.npc-elder'), x:890, y:292, route:[[890,292]], target:0, speed:.34, scheduleTag:'' },
-    eliabe:{ el:$('.npc-eliabe'),x:1325,y:890,route:[[1325,890]],target:0,speed:.42, scheduleTag:'' },
-    child: { el:$('.npc-child'), x:445, y:780, route:[[445,780]], target:0, speed:.45, scheduleTag:'' },
-    miria: { el:$('.npc-miria'), x:1245,y:420,route:[[1245,420]],target:0,speed:.38, scheduleTag:'' },
-    hanan: { el:$('.npc-hanan'), x:520,y:715,route:[[520,715]],target:0,speed:.30, scheduleTag:'' },
-    guard: { el:$('.npc-guard'), x:820,y:1015,route:[[820,1015]],target:0,speed:.48, scheduleTag:'' }
+    elder: { el:$('.npc-elder'), x:elderSpawn.x, y:elderSpawn.y, route:[[elderSpawn.x,elderSpawn.y]], target:0, speed:.34, scheduleTag:'' },
+    eliabe:{ el:$('.npc-eliabe'),x:eliabeSpawn.x,y:eliabeSpawn.y,route:[[eliabeSpawn.x,eliabeSpawn.y]],target:0,speed:.42, scheduleTag:'' },
+    child: { el:$('.npc-child'), x:childSpawn.x, y:childSpawn.y, route:[[childSpawn.x,childSpawn.y]], target:0, speed:.45, scheduleTag:'' },
+    miria: { el:$('.npc-miria'), x:miriaSpawn.x,y:miriaSpawn.y,route:[[miriaSpawn.x,miriaSpawn.y]],target:0,speed:.38, scheduleTag:'' },
+    hanan: { el:$('.npc-hanan'), x:hananSpawn.x,y:hananSpawn.y,route:[[hananSpawn.x,hananSpawn.y]],target:0,speed:.30, scheduleTag:'' },
+    guard: { el:$('.npc-guard'), x:guardSpawn.x,y:guardSpawn.y,route:[[guardSpawn.x,guardSpawn.y]],target:0,speed:.48, scheduleTag:'' }
   };
 
   // Arquitetura inspirada em SPR/ACT: cada NPC passa a ter metadados de
@@ -2148,15 +2157,14 @@ function game() {
 
   refreshHud();
   const playerSprite = player.querySelector('.player-sprite');
-  let playerFacing = 'down';
+  let playerDirection = 's';
   let playerFrame = 1;
   let lastPlayerFrame = 0;
 
   function updatePlayerSprite(dx,dy,now) {
     const moving = Boolean(dx || dy);
     if (moving) {
-      if (Math.abs(dx) > Math.abs(dy)) playerFacing = dx < 0 ? 'left' : 'right';
-      else playerFacing = dy < 0 ? 'up' : 'down';
+      playerDirection = directionFromVector(dx,dy,true);
       if (now - lastPlayerFrame > 165) {
         playerFrame = playerFrame === 1 ? 2 : 1;
         lastPlayerFrame = now;
@@ -2164,10 +2172,19 @@ function game() {
     } else {
       playerFrame = 1;
     }
-    const row = ({down:0,left:1,right:2,up:3})[playerFacing] ?? 0;
+
+    // O atlas atual ainda possui 4 direções. A direção lógica já é 8-way e
+    // será usada diretamente quando o novo atlas for substituído.
+    const legacyFacing = ({
+      s:'down',sw:'left',w:'left',nw:'up',
+      n:'up',ne:'up',e:'right',se:'right'
+    })[playerDirection] || 'down';
+    const row = ({down:0,left:1,right:2,up:3})[legacyFacing] ?? 0;
     const col = playerFrame === 2 ? 1 : 0;
     if (playerSprite) playerSprite.style.backgroundPosition = `${-col * 64}px ${-row * 88}px`;
-    player.dataset.facing = playerFacing;
+    player.dataset.direction = playerDirection;
+    player.dataset.facing = legacyFacing;
+    player.dataset.action = moving ? 'walk' : 'idle';
   }
 
   let last = performance.now();
