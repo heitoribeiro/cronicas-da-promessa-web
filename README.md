@@ -125,3 +125,11 @@ A direção visual Pixel RPG bíblico-desértico agora possui documentação e r
 - `REFERENCE_REPOS.md` — referências externas e política de uso.
 - `assets/art/pixel/metadata/sprite_manifest.json` — metadados consumidos pelo jogo.
 - `src/sprite-system.js` — controlador de direção/animação preparado para 4/8 direções.
+
+
+### Runtime de mapas
+
+- `assets/maps/tribes_manifest.json` — registro central das 12 tribos e seus mapas.
+- `assets/maps/judah/map_manifest.json` — estado atual do mapa jogável de Judá.
+- `src/map-system.js` — limites, conversão de coordenadas e Y-sort pela linha dos pés.
+- `src/pathfinding.js` — A* em oito direções sobre a grade de navegação de 8 px.
