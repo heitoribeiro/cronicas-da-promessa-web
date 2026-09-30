@@ -1346,3 +1346,43 @@ img{user-select:none;-webkit-user-drag:none}
   color:#f3d778!important;
   box-shadow:0 3px 0 #0007!important;
 }
+
+
+/* === PIXEL RPG VISUAL PHASE 8 — SPR/ACT-LIKE SPRITE CONTROLLERS === */
+
+/*
+  A caixa visual deixa de ser a fonte de verdade. O manifesto de sprites define
+  canvas, pivô e correções transitórias. Quando os novos sheets forem concluídos,
+  legacy-scale será 1 para todos os adultos.
+*/
+.npc{
+  --sprite-frame-w:64px;
+  --sprite-frame-h:88px;
+  --sprite-pivot-x:32px;
+  --sprite-pivot-y:84px;
+  --sprite-legacy-scale:1;
+  --sprite-shift-x:0px;
+  --sprite-shift-y:0px;
+  width:var(--sprite-frame-w)!important;
+  height:var(--sprite-frame-h)!important;
+  overflow:visible!important;
+}
+.npc img{
+  width:var(--sprite-frame-w)!important;
+  height:var(--sprite-frame-h)!important;
+  object-fit:contain!important;
+  image-rendering:pixelated!important;
+  transform:translate(var(--sprite-shift-x),var(--sprite-shift-y)) scale(var(--sprite-legacy-scale))!important;
+  transform-origin:50% 100%!important;
+}
+.npc.face-left img{
+  transform:translate(var(--sprite-shift-x),var(--sprite-shift-y)) scaleX(-1) scale(var(--sprite-legacy-scale))!important;
+}
+.npc.face-right img,.npc.face-up img,.npc.face-down img{
+  transform:translate(var(--sprite-shift-x),var(--sprite-shift-y)) scale(var(--sprite-legacy-scale))!important;
+}
+.npc[data-sprite-mode="sequence"] img{object-fit:contain!important}
+@media(max-width:700px){
+  .npc{width:var(--sprite-frame-w)!important;height:var(--sprite-frame-h)!important}
+  .npc img{width:var(--sprite-frame-w)!important;height:var(--sprite-frame-h)!important}
+}
