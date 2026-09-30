@@ -114,3 +114,14 @@ O projeto adota agora o **estilo Pixel RPG bíblico-desértico**, com HUD escura
 - Bolsa exibe nível, XP, turnos concluídos, barra de progresso e benefícios desbloqueados
 - HUD compacto exibe o nível atual da vocação
 - saves anteriores são migrados automaticamente com progressão iniciada no Nível 1
+
+
+## Arquitetura visual
+
+A direção visual Pixel RPG bíblico-desértico agora possui documentação e runtime próprios:
+
+- `SPRITE_STANDARD.md` — ações, direções, frames, layers, pivôs e personalização.
+- `MAP_STANDARD.md` — terreno, colisão, objetos, profundidade e estrutura de mapas.
+- `REFERENCE_REPOS.md` — referências externas e política de uso.
+- `assets/art/pixel/metadata/sprite_manifest.json` — metadados consumidos pelo jogo.
+- `src/sprite-system.js` — controlador de direção/animação preparado para 4/8 direções.
