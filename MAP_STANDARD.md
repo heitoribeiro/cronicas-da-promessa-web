@@ -61,6 +61,12 @@ Equivalente ao papel do RSW:
 - `Transitions`: saídas leste, oeste, sul etc.
 - `Navigation`: NavigationRegion2D quando necessário
 
+## Estado atual do protótipo Web
+
+A cena Web atualmente jogável de Judá ainda usa um mundo lógico de **1800 × 1200 px**, com coordenadas, colisões e rotas já implementadas nessa base. Esse tamanho permanece durante a migração para evitar regressões mecânicas.
+
+O padrão abaixo é o **alvo de produção para os mapas definitivos das tribos**. A migração será feita por etapas, com conversão de coordenadas, validação da câmera e preservação da jogabilidade.
+
 ## 3. Tamanho oficial dos mapas de tribo
 
 Padrão aprovado anteriormente:
