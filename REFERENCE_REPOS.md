@@ -85,3 +85,19 @@ A análise do código confirmou dois conceitos importantes para nosso runtime:
 - frames podem ter dimensões diferentes sem alterar a posição lógica do personagem.
 
 Esses princípios fundamentam o novo `sprite_manifest.json` e o controlador de sprites do projeto.
+
+
+### adsonpleal/latamvisuais
+
+Licença: MIT.
+
+Utilidade para Crônicas da Promessa:
+
+- implementação Web moderna de navegação A* em oito direções sobre grade equivalente ao GAT;
+- bloqueio de corte diagonal em quinas;
+- agrupamento de passos diagonais para evitar animação serrilhada;
+- separação entre posição lógica do agente e sprite exibido;
+- uso de direção em oito sentidos para a caminhada;
+- simulador de mapas que separa parsers de GAT/GND/RSW/RSM e renderização.
+
+O projeto reforçou a decisão de usar uma **grade de navegação de 8 px** no protótipo Web e um controlador de direção independente da imagem visual.
