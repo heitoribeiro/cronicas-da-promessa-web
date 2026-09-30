@@ -155,3 +155,15 @@ A arquitetura de sprites passa a existir também no runtime Web, não apenas na 
 A correção de escala presente nos NPCs antigos foi movida para o manifesto como compatibilidade temporária. Os novos sprites deverão usar escala 1.0 e resolver diferenças por canvas, pivô e offset, seguindo o padrão documentado em `SPRITE_STANDARD.md`.
 
 Versão visual: **Web Alpha 0.25**.
+
+
+## Aplicação — Fase 9
+
+A arquitetura de mapas inspirada em GND/GAT/RSW passa a ser usada pelo runtime Web:
+
+- `assets/maps/judah/map_manifest.json` centraliza dimensões, grade, layers, distritos, spawn points e transições;
+- `src/map-system.js` converte coordenadas e fornece limites/y-sort orientados pela linha dos pés;
+- `src/pathfinding.js` substitui a busca em grade grossa por A* de 8 px em oito direções;
+- o protótipo continua em 1800×1200 para não quebrar a mecânica atual, enquanto 3072×1536 permanece como alvo dos mapas definitivos.
+
+Essa etapa aproxima a engenharia do jogo da separação clássica `terreno / navegação / mundo`, mantendo toda a arte original de Crônicas da Promessa.
