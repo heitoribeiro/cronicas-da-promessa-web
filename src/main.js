@@ -1,7 +1,9 @@
 import { loadSpriteManifest, createNpcSpriteControllers } from './sprite-system.js?v=0.25';
 import { findGridPath } from './pathfinding.js?v=0.25';
+import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.25';
 
 const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.25');
+const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.25');
 
 const app = document.querySelector('#app');
 const SAVE = 'cronicas-promessa-save-v3';
@@ -1271,8 +1273,8 @@ function game() {
   addEventListener('resize', sortScenery);
 
   function updateDepth() {
-    player.style.zIndex = String(100 + Math.floor(currentScene === 'outdoor' ? state.y : indoorPos.y));
-    Object.values(npcAgents).forEach(agent => agent.el.style.zIndex = String(100 + Math.floor(agent.y)));
+    player.style.zIndex = ySortFromFeet(currentScene === 'outdoor' ? state.y : indoorPos.y);
+    Object.values(npcAgents).forEach(agent => agent.el.style.zIndex = ySortFromFeet(agent.y));
   }
 
   const PLAYER_RADIUS = 20;
@@ -1343,10 +1345,10 @@ function game() {
   }
 
   function sceneBounds() {
-    // Grade fina de 8 px: equivalente conceitual ao GAT do Ragnarok, que usa
-    // resolução 2× em relação ao terreno principal de 16 px.
+    // A cena externa recebe limites e resolução diretamente do manifesto de
+    // mapa. Interiores mantêm uma grade local de 8 px.
     return currentScene === 'outdoor'
-      ? {minX:135,maxX:1665,minY:95,maxY:1085,step:8}
+      ? prototypeBounds(MAP_MANIFEST)
       : {minX:85,maxX:915,minY:135,maxY:630,step:8};
   }
 
