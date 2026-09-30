@@ -159,3 +159,18 @@ O jogador passa:
 - `Tokeiburu/browedit/brolib/BroLib/Map.cpp`
 
 Estas fontes são usadas para compreender a arquitetura. Os mapas e assets de Crônicas da Promessa são originais.
+
+
+## 9. Navegação A* no protótipo Web
+
+A navegação por clique foi migrada para uma grade de **8 × 8 px**, coerente com a ideia de GAT em resolução 2× sobre tiles visuais de 16 px.
+
+O módulo `src/pathfinding.js` implementa:
+
+- A* em oito direções;
+- heurística octile;
+- bloqueio de diagonais que atravessariam quinas;
+- limite de nós por busca para proteger o frame;
+- reorganização de passos equivalentes para favorecer sequências diagonais e reduzir troca excessiva de direção do sprite.
+
+O mapa de Judá passa a expor seus limites, resolução de navegação, layers, distritos, spawn points e saídas planejadas em `assets/maps/judah/map_manifest.json`. O runtime lê esse manifesto através de `src/map-system.js`.
