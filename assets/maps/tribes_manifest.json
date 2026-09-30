@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "project": "Crônicas da Promessa",
+  "common": {
+    "productionWorld": {
+      "width": 3072,
+      "height": 1536
+    },
+    "visualTilePx": 16,
+    "navCellPx": 8,
+    "cameraBase": {
+      "width": 1280,
+      "height": 720
+    },
+    "directionOrder": [
+      "n",
+      "ne",
+      "e",
+      "se",
+      "s",
+      "sw",
+      "w",
+      "nw"
+    ]
+  },
+  "tribes": [
+    {
+      "id": "reuben",
+      "name": "Rúben",
+      "status": "planned",
+      "map": "./reuben/map_manifest.json"
+    },
+    {
+      "id": "simeon",
+      "name": "Simeão",
+      "status": "planned",
+      "map": "./simeon/map_manifest.json"
+    },
+    {
+      "id": "levi",
+      "name": "Levi",
+      "status": "planned",
+      "map": "./levi/map_manifest.json"
+    },
+    {
+      "id": "judah",
+      "name": "Judá",
+      "status": "prototype-active",
+      "map": "./judah/map_manifest.json"
+    },
+    {
+      "id": "dan",
+      "name": "Dã",
+      "status": "planned",
+      "map": "./dan/map_manifest.json"
+    },
+    {
+      "id": "naphtali",
+      "name": "Naftali",
+      "status": "planned",
+      "map": "./naphtali/map_manifest.json"
+    },
+    {
+      "id": "gad",
+      "name": "Gade",
+      "status": "planned",
+      "map": "./gad/map_manifest.json"
+    },
+    {
+      "id": "asher",
+      "name": "Aser",
+      "status": "planned",
+      "map": "./asher/map_manifest.json"
+    },
+    {
+      "id": "issachar",
+      "name": "Issacar",
+      "status": "planned",
+      "map": "./issachar/map_manifest.json"
+    },
+    {
+      "id": "zebulun",
+      "name": "Zebulom",
+      "status": "planned",
+      "map": "./zebulun/map_manifest.json"
+    },
+    {
+      "id": "joseph",
+      "name": "José",
+      "status": "planned",
+      "map": "./joseph/map_manifest.json"
+    },
+    {
+      "id": "benjamin",
+      "name": "Benjamim",
+      "status": "planned",
+      "map": "./benjamin/map_manifest.json"
+    }
+  ]
+}
