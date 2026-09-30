@@ -125,3 +125,16 @@ A linguagem pixel art aprovada passa a abranger os últimos elementos ainda visi
 - Interior da tenda do jogador redesenhado, preservando cama, baú e saída nas áreas usadas pela mecânica.
 
 Os interiores permanecem em canvas lógico de **1000×700**, portanto câmera, colisões e coordenadas de interação existentes não precisam ser alteradas. A versão visual passa a **Web Alpha 0.24**.
+
+
+## Aplicação — Fase 7
+
+O projeto passa a adotar formalmente uma arquitetura visual inspirada na organização técnica de Ragnarok Online, sem reutilizar os assets proprietários do jogo.
+
+Foram definidos dois padrões oficiais:
+
+- [SPRITE_STANDARD.md](SPRITE_STANDARD.md): direções, ações, frames, pivô nos pés, proporções, camadas e organização dos personagens/NPCs.
+- [MAP_STANDARD.md](MAP_STANDARD.md): separação entre terreno, navegação/colisão, objetos, efeitos, áudio e transições.
+- [REFERENCE_REPOS.md](REFERENCE_REPOS.md): repositórios externos avaliados e política de uso.
+
+A nova arquitetura mantém a aparência Pixel RPG bíblico-desértico aprovada e prepara o projeto para personagens personalizáveis, NPCs consistentes e mapas modulares.
