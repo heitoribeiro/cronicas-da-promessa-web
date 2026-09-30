@@ -73,3 +73,15 @@ Uso:
 ## Política do projeto
 
 Crônicas da Promessa pode reproduzir **ideias de arquitetura, padrões de organização, pivôs, sistemas de layers, estrutura de ações e separação de mapa**, mas os gráficos, personagens, mapas, nomes visuais específicos e demais assets devem ser originais.
+
+
+### adsonpleal/ragassets — observações adicionais
+
+A análise do código confirmou dois conceitos importantes para nosso runtime:
+
+- uma layer de ACT é posicionada pelo **centro da imagem**, portanto o canto superior esquerdo depende de `posição - metade do tamanho do frame`;
+- sprites filhos, como cabeça e acessórios, podem usar **attach points** relativos ao corpo;
+- o canvas final possui uma origem explícita independente do tamanho efetivo do frame;
+- frames podem ter dimensões diferentes sem alterar a posição lógica do personagem.
+
+Esses princípios fundamentam o novo `sprite_manifest.json` e o controlador de sprites do projeto.
