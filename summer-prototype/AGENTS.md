@@ -84,3 +84,25 @@ When extending the game:
 - validate content references at boot/debug time;
 - maintain save migration paths;
 - validate the full M1 regression after architectural changes.
+
+
+## M3 living-world rule
+
+M3 shifts the project from a systems prototype into a persistent playable world.
+
+New work must preserve the M1/M2 regression baseline while delivering milestone-sized player-facing progress.
+
+For M3:
+- treat the seven-day Judah week as one integrated playable arc;
+- prefer reusable calendar, vocation, needs, crafting, economy, relationship and event systems over content-specific branches;
+- NPC schedules may vary by day and world state but must remain data-driven;
+- do not re-centralize logic into main.gd;
+- all essential keyboard-only actions need mouse/touch equivalents where practical;
+- build anti-softlock behavior into quests, resources, schedules and navigation;
+- keep final visual art replaceable through asset references;
+- end the milestone with a genuine end-to-end playthrough, not only synthetic runtime probes.
+
+Source-control safety:
+- never use reset --hard or git clean on this project without explicit user authorization;
+- inspect local .tscn, .uid and project.godot changes before deciding whether they are editor noise or valid work;
+- preserve M1/M2 commits even if the local branch and origin diverge.
