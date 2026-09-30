@@ -1,4 +1,5 @@
 import { loadSpriteManifest, createNpcSpriteControllers } from './sprite-system.js?v=0.25';
+import { findGridPath } from './pathfinding.js?v=0.25';
 
 const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.25');
 
@@ -1342,9 +1343,11 @@ function game() {
   }
 
   function sceneBounds() {
+    // Grade fina de 8 px: equivalente conceitual ao GAT do Ragnarok, que usa
+    // resolução 2× em relação ao terreno principal de 16 px.
     return currentScene === 'outdoor'
-      ? {minX:135,maxX:1665,minY:95,maxY:1085,step:36}
-      : {minX:85,maxX:915,minY:135,maxY:630,step:32};
+      ? {minX:135,maxX:1665,minY:95,maxY:1085,step:8}
+      : {minX:85,maxX:915,minY:135,maxY:630,step:8};
   }
 
   function cancelClickMove() {
@@ -1358,7 +1361,7 @@ function game() {
     const tx = Math.max(b.minX,Math.min(b.maxX,x));
     const ty = Math.max(b.minY,Math.min(b.maxY,y));
     if (canStandScene(tx,ty)) return {x:tx,y:ty};
-    for (let radius=b.step; radius<=b.step*5; radius+=b.step) {
+    for (let radius=b.step; radius<=Math.max(96,b.step*12); radius+=b.step) {
       for (let angle=0; angle<Math.PI*2; angle+=Math.PI/8) {
         const px=Math.max(b.minX,Math.min(b.maxX,tx+Math.cos(angle)*radius));
         const py=Math.max(b.minY,Math.min(b.maxY,ty+Math.sin(angle)*radius));
@@ -1373,54 +1376,28 @@ function game() {
     const start=currentPosition();
     const target=nearestWalkable(targetX,targetY);
     if (!target) return [];
+
     const cols=Math.floor((b.maxX-b.minX)/b.step)+1;
     const rows=Math.floor((b.maxY-b.minY)/b.step)+1;
     const toGrid=(p,min,max)=>Math.max(0,Math.min(max,Math.round((p-min)/b.step)));
     const sx=toGrid(start.x,b.minX,cols-1), sy=toGrid(start.y,b.minY,rows-1);
     const gx=toGrid(target.x,b.minX,cols-1), gy=toGrid(target.y,b.minY,rows-1);
-    const key=(x,y)=>x+','+y;
     const point=(x,y)=>({x:b.minX+x*b.step,y:b.minY+y*b.step});
-    const walkable=(x,y)=>{
-      if(x<0||x>=cols||y<0||y>=rows) return false;
-      const p=point(x,y);
-      return canStandScene(p.x,p.y);
-    };
-    const open=[{x:sx,y:sy,g:0,f:Math.hypot(gx-sx,gy-sy)}];
-    const records=new Map([[key(sx,sy),{g:0,parent:null}]]);
-    const closed=new Set();
-    const dirs=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-    let reached=null;
-    while(open.length){
-      let bestIndex=0;
-      for(let i=1;i<open.length;i++) if(open[i].f<open[bestIndex].f) bestIndex=i;
-      const node=open.splice(bestIndex,1)[0];
-      const nodeKey=key(node.x,node.y);
-      if(closed.has(nodeKey)) continue;
-      closed.add(nodeKey);
-      if(node.x===gx&&node.y===gy){reached=node;break;}
-      for(const [dx,dy] of dirs){
-        const nx=node.x+dx, ny=node.y+dy;
-        if(!walkable(nx,ny)) continue;
-        if(dx&&dy && (!walkable(node.x+dx,node.y)||!walkable(node.x,node.y+dy))) continue;
-        const nk=key(nx,ny);
-        if(closed.has(nk)) continue;
-        const ng=node.g+(dx&&dy?1.414:1);
-        const prev=records.get(nk);
-        if(prev&&prev.g<=ng) continue;
-        records.set(nk,{g:ng,parent:nodeKey});
-        open.push({x:nx,y:ny,g:ng,f:ng+Math.hypot(gx-nx,gy-ny)});
+
+    const grid={
+      width:cols,
+      height:rows,
+      isWalkable(x,y){
+        if(x<0||x>=cols||y<0||y>=rows) return false;
+        const p=point(x,y);
+        return canStandScene(p.x,p.y);
       }
-    }
-    if(!reached) return [target];
-    const nodes=[];
-    let cursor=key(reached.x,reached.y);
-    while(cursor){
-      const [x,y]=cursor.split(',').map(Number);
-      nodes.push(point(x,y));
-      cursor=records.get(cursor)?.parent || null;
-    }
-    nodes.reverse();
-    nodes.shift();
+    };
+
+    const cells=findGridPath(grid,{gx:sx,gy:sy},{gx,gy},32000);
+    if(!cells.length) return canStandScene(target.x,target.y) ? [target] : [];
+
+    const nodes=cells.map(cell=>point(cell.gx,cell.gy));
     if(canStandScene(target.x,target.y)) nodes.push(target);
     return nodes;
   }
