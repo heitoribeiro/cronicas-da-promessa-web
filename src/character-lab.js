@@ -1,4 +1,4 @@
-import { resolveCharacterLayerZ } from './character-layers.js?v=0.34';
+import { resolveCharacterLayerZ } from './character-layers.js?v=0.35';
 
 const DIRECTIONS=[['s','Sul / frente'],['sw','Sudoeste'],['w','Oeste'],['nw','Noroeste'],['n','Norte / costas'],['ne','Nordeste'],['e','Leste'],['se','Sudeste']];
 const grid=document.querySelector('#directionGrid');
@@ -64,7 +64,7 @@ function render(){
     for(const layer of meta.layers){
       const node=card.querySelector(`[data-layer="${layer.id}"]`);
       const img=node.querySelector('img');
-      const src=layer.actions[action]+'?v=0.34';
+      const src=layer.actions[action]+'?v=0.35';
       img.src=src;
       img.style.width=sheetW+'px';
       img.style.height=sheetH+'px';
@@ -112,7 +112,7 @@ gridButton.addEventListener('click',()=>{
 
 async function init(){
   try{
-    const res=await fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.34',{cache:'no-store'});
+    const res=await fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.35',{cache:'no-store'});
     manifest=await res.json();
     buildCards();
     selectCharacter();
