@@ -200,3 +200,24 @@ A escala no mundo deve permanecer uniforme.
 - `vthibault/roBrowser`: cliente web histórico; GPLv3; referência de arquitetura.
 
 **Importante:** os assets gráficos oficiais de Ragnarok não são incorporados ao projeto. As artes de Crônicas da Promessa devem permanecer originais.
+
+
+## 11. Ordem de camadas dependente da direção
+
+A ordem de desenho não é fixa. O runtime deve resolver a prioridade conforme a direção do personagem.
+
+Padrão adotado:
+
+- `shadow` sempre abaixo;
+- acessórios marcados como `behind` abaixo do corpo;
+- `body`, `head`, `weapon` e `shield` podem trocar a ordem relativa entre frente/costas;
+- `garment`/capa fica atrás nas direções frontais e pode passar à frente quando o personagem vira de costas;
+- efeitos especiais ficam acima das camadas normais.
+
+A implementação está em `src/character-layers.js` e o catálogo de papéis em `assets/art/pixel/metadata/character_view.json`.
+
+## 12. Canvas lógico x canvas de produção
+
+O envelope corporal adulto continua sendo **64×88 px**, mas o arquivo de produção pode usar **96×112 px** com fundo transparente e origem nos pés em **(48,108)**. Isso permite lança, cajado, ferramentas, véu e capa sem reduzir o corpo.
+
+O primeiro pacote que adota formalmente esse padrão é `assets/art/pixel/npcs/eliabe/eliabe.sprite.json`.
