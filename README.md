@@ -224,3 +224,31 @@ Testes visuais:
 - `model-lab.html?v=0.34` — inspeção de modelos;
 - `character-lab.html?v=0.34` — personagem em layers;
 - `sprite-lab.html?v=0.34` — NPCs.
+
+
+### Desempenho 0.35
+
+O projeto agora possui um pipeline de otimização específico para navegador.
+
+No laboratório 2.5D:
+
+- culling;
+- cache de patterns;
+- meshes pré-transformados;
+- iluminação estática pré-calculada;
+- DPR adaptativo;
+- presets Auto / Alta / Equilibrada / Desempenho;
+- telemetria de FPS e ms/frame.
+
+No gameplay principal:
+
+- NPCs e animais em atualização reduzida;
+- HUD/minimapa/interações com frequência desacoplada do frame;
+- qualidade adaptativa;
+- remoção automática de efeitos caros em FPS baixo.
+
+Detalhes: `PERFORMANCE_ARCHITECTURE.md`.
+
+Teste principal:
+
+`ro-visual-lab.html?v=0.35`
