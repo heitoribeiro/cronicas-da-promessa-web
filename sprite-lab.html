@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071019">
+  <title>Crônicas da Promessa — Laboratório de Sprites</title>
+  <link rel="stylesheet" href="./src/sprite-lab.css?v=0.27">
+</head>
+<body>
+  <main class="lab-shell">
+    <header class="lab-header">
+      <div>
+        <small>CRÔNICAS DA PROMESSA</small>
+        <h1>Laboratório de Sprites</h1>
+        <p>Validação visual do sistema de personagens inspirado em SPR/ACT.</p>
+      </div>
+      <a href="./">Voltar ao jogo</a>
+    </header>
+
+    <section class="lab-toolbar">
+      <label>Ação
+        <select id="actionSelect">
+          <option value="idle">Parado / Idle</option>
+          <option value="walk" selected>Caminhada / Walk</option>
+          <option value="talk">Fala / Talk</option>
+          <option value="work">Trabalho / Work</option>
+        </select>
+      </label>
+      <button id="pauseButton" type="button">Pausar</button>
+      <button id="gridButton" type="button" aria-pressed="true">Grade: ligada</button>
+      <span id="status">Carregando manifesto…</span>
+    </section>
+
+    <section class="character-summary">
+      <div class="summary-title">
+        <b id="characterName">Eliabe</b>
+        <span id="characterRole">Artesão de Judá</span>
+      </div>
+      <dl>
+        <div><dt>Canvas</dt><dd id="canvasInfo">96×112</dd></div>
+        <div><dt>Pivô</dt><dd id="pivotInfo">48,108</dd></div>
+        <div><dt>Direções</dt><dd>8</dd></div>
+        <div><dt>Escala corporal</dt><dd>1.0</dd></div>
+      </dl>
+    </section>
+
+    <section class="direction-grid" id="directionGrid" aria-label="Oito direções do personagem"></section>
+
+    <section class="technical-note">
+      <h2>O que validar</h2>
+      <p>Observe se o corpo mantém a mesma altura nas oito direções, se os pés permanecem fixos na linha-base, se o volume da cabeça/roupa é consistente e se a caminhada não produz saltos de escala. A área quadriculada representa o canvas real do frame; ela pode ser maior que o corpo para comportar ferramentas e acessórios.</p>
+    </section>
+  </main>
+  <script type="module" src="./src/sprite-lab.js?v=0.27"></script>
+</body>
+</html>
