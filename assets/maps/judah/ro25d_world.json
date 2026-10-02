@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "judah_ro25d_prototype",
   "name": "Acampamento de Judá — recorte 2.5D",
-  "version": "0.32",
+  "version": "0.33",
   "coordinateSystem": "x-east, y-up, z-south",
   "terrain": {
     "cols": 28,
@@ -125,7 +125,15 @@
       "h": 3.15,
       "wall": "#efe1b7",
       "roof": "#a52e33",
-      "accent": "#d2a83f"
+      "accent": "#d2a83f",
+      "meshId": "tent",
+      "materials": {
+        "wall": "cloth_cream",
+        "roof": "cloth_red",
+        "trim": "gold"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "family_w",
@@ -136,7 +144,15 @@
       "d": 2,
       "h": 2.1,
       "wall": "#eadbb1",
-      "roof": "#35664d"
+      "roof": "#35664d",
+      "meshId": "tent",
+      "materials": {
+        "wall": "cloth_cream",
+        "roof": "cloth_green",
+        "trim": "wood_dark"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "family_e",
@@ -147,7 +163,15 @@
       "d": 2.1,
       "h": 2.15,
       "wall": "#eadbb1",
-      "roof": "#315a8c"
+      "roof": "#315a8c",
+      "meshId": "tent",
+      "materials": {
+        "wall": "cloth_cream",
+        "roof": "cloth_blue",
+        "trim": "wood_dark"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "levite",
@@ -158,7 +182,15 @@
       "d": 1.9,
       "h": 2,
       "wall": "#ece0b8",
-      "roof": "#8d7637"
+      "roof": "#8d7637",
+      "meshId": "tent",
+      "materials": {
+        "wall": "cloth_cream",
+        "roof": "cloth_ochre",
+        "trim": "gold"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "workshop",
@@ -169,7 +201,15 @@
       "d": 2.35,
       "h": 1.85,
       "wall": "#e3cf9b",
-      "roof": "#6d4328"
+      "roof": "#6d4328",
+      "meshId": "workshop",
+      "materials": {
+        "wall": "cloth_cream",
+        "roof": "wood_dark",
+        "trim": "wood"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "gate",
@@ -180,7 +220,15 @@
       "d": 0.85,
       "h": 2.65,
       "wall": "#92592f",
-      "roof": "#684025"
+      "roof": "#684025",
+      "meshId": "gate",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark",
+        "door": "wood_dark"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "tower_w",
@@ -191,7 +239,15 @@
       "d": 1.5,
       "h": 3.7,
       "wall": "#8f633a",
-      "roof": "#6a3d25"
+      "roof": "#6a3d25",
+      "meshId": "watchtower",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark",
+        "roof": "cloth_ochre"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "tower_e",
@@ -202,7 +258,15 @@
       "d": 1.5,
       "h": 3.7,
       "wall": "#8f633a",
-      "roof": "#6a3d25"
+      "roof": "#6a3d25",
+      "meshId": "watchtower",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark",
+        "roof": "cloth_ochre"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "well",
@@ -213,7 +277,17 @@
       "d": 1.7,
       "h": 1.35,
       "wall": "#8d7758",
-      "roof": "#6f4a2b"
+      "roof": "#6f4a2b",
+      "meshId": "well",
+      "materials": {
+        "stone": "stone",
+        "stone_top": "stone_top",
+        "wood": "wood",
+        "wood_dark": "wood_dark",
+        "rope": "rope"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "fire",
@@ -235,7 +309,14 @@
       "d": 0.85,
       "h": 0.75,
       "wall": "#a36a39",
-      "roof": "#7b4d2c"
+      "roof": "#7b4d2c",
+      "meshId": "crate",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "crate2",
@@ -246,7 +327,14 @@
       "d": 0.7,
       "h": 0.62,
       "wall": "#9a6035",
-      "roof": "#79492a"
+      "roof": "#79492a",
+      "meshId": "crate",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "crate3",
@@ -257,7 +345,14 @@
       "d": 0.8,
       "h": 0.72,
       "wall": "#9c6236",
-      "roof": "#7a4a2a"
+      "roof": "#7a4a2a",
+      "meshId": "crate",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "banner_w",
@@ -292,7 +387,15 @@
       "d": 1.25,
       "h": 2.5,
       "wall": "#6b4327",
-      "roof": "#607c3e"
+      "roof": "#607c3e",
+      "meshId": "acacia",
+      "materials": {
+        "wood_dark": "wood_dark",
+        "leaf": "leaf",
+        "leaf_top": "leaf_top"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "tree2",
@@ -303,7 +406,15 @@
       "d": 1.35,
       "h": 2.7,
       "wall": "#6b4327",
-      "roof": "#667f43"
+      "roof": "#667f43",
+      "meshId": "acacia",
+      "materials": {
+        "wood_dark": "wood_dark",
+        "leaf": "leaf",
+        "leaf_top": "leaf_top"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "tree3",
@@ -314,7 +425,15 @@
       "d": 1.15,
       "h": 2.35,
       "wall": "#6b4327",
-      "roof": "#5d783c"
+      "roof": "#5d783c",
+      "meshId": "acacia",
+      "materials": {
+        "wood_dark": "wood_dark",
+        "leaf": "leaf",
+        "leaf_top": "leaf_top"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "rock1",
@@ -325,7 +444,14 @@
       "d": 0.9,
       "h": 0.65,
       "wall": "#77706d",
-      "roof": "#9a9189"
+      "roof": "#9a9189",
+      "meshId": "rock",
+      "materials": {
+        "stone": "stone",
+        "stone_top": "stone_top"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "rock2",
@@ -336,7 +462,14 @@
       "d": 0.8,
       "h": 0.58,
       "wall": "#77706d",
-      "roof": "#9b928a"
+      "roof": "#9b928a",
+      "meshId": "rock",
+      "materials": {
+        "stone": "stone",
+        "stone_top": "stone_top"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "bench1",
@@ -347,7 +480,14 @@
       "d": 0.45,
       "h": 0.5,
       "wall": "#6d472c",
-      "roof": "#8c5c35"
+      "roof": "#8c5c35",
+      "meshId": "bench",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     },
     {
       "id": "bench2",
@@ -358,7 +498,14 @@
       "d": 0.45,
       "h": 0.5,
       "wall": "#6d472c",
-      "roof": "#8c5c35"
+      "roof": "#8c5c35",
+      "meshId": "bench",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark"
+      },
+      "rotationY": 0,
+      "renderMode": "mesh"
     }
   ],
   "palisade": [
