@@ -1,0 +1,12 @@
+:root{color-scheme:dark;--gold:#e8bd4d;--cream:#fff0c6;--muted:#b9aa86}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#03070a;font-family:Georgia,"Times New Roman",serif}
+.gpu-shell,#gpuMount{position:relative;width:100%;height:100%}
+#gpuMount canvas{display:block;width:100%!important;height:100%!important;image-rendering:pixelated}
+.gpu-hud{position:absolute;left:14px;top:14px;width:min(460px,calc(100vw - 28px));padding:14px 16px;border:1px solid #8f6a2e;background:linear-gradient(#0e1922ef,#071019e8);color:var(--cream);box-shadow:0 8px 28px #0008}
+.gpu-hud small{font:700 10px monospace;letter-spacing:1.5px;color:var(--gold)}.gpu-hud h1{margin:4px 0;color:#ffe18e;font-size:22px}.gpu-hud p{margin:0;color:var(--muted);font-size:13px}
+.gpu-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.gpu-actions button{border:1px solid #8e692f;background:#111b23;color:#f4e4b8;padding:7px 10px;font:700 12px Georgia;cursor:pointer}
+.gpu-readout{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:#9f9478;font:10px monospace}.gpu-readout b{color:#dff0bd}
+.gpu-note{position:absolute;right:14px;top:14px;display:grid;gap:5px;min-width:230px;padding:12px 14px;border:1px solid #87642d;background:#081119e8;color:#c8bb9a;font-size:12px}.gpu-note b{color:#efc65e}.gpu-note span:before{content:"◆";color:#d8a83e;margin-right:7px;font-size:8px}
+.gpu-links{position:absolute;right:14px;bottom:14px;display:flex;gap:7px}.gpu-links a{padding:8px 10px;border:1px solid #8d682d;background:#0a131be8;color:#f2dfad;text-decoration:none;font-size:12px}
+@media(max-width:760px){.gpu-note{display:none}.gpu-links{left:14px;right:auto}.gpu-hud{width:calc(100vw - 28px)}}
