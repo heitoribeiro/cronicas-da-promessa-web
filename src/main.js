@@ -83,7 +83,7 @@ let state = {
   vocationProgress: {},
   warehouseTrades: 0,
   lastSavedAt: null,
-  settings: { showFps:false }
+  settings: { showFps:false, quality:'auto' }
 };
 
 function $(selector) { return document.querySelector(selector); }
@@ -104,6 +104,7 @@ function normalizeState() {
   if (!('lastSavedAt' in state)) state.lastSavedAt = null;
   state.settings ||= {};
   if (typeof state.settings.showFps !== 'boolean') state.settings.showFps = false;
+  if (!['auto','high','balanced','performance'].includes(state.settings.quality)) state.settings.quality = 'auto';
   if (!Number.isFinite(state.x)) state.x = 900;
   if (!Number.isFinite(state.y)) state.y = 980;
   if (!Number.isInteger(state.day) || state.day < 1) state.day = 1;
@@ -226,7 +227,7 @@ function createCharacter() {
       energy: 100, hunger: 82, meals: {}, dailyTask: null, dailyCompleted: {},
       workCompleted: {}, workProgress: null, lastDaySummary: null,
       tools: {}, equippedTool: null, vocationProgress: {}, warehouseTrades: 0, lastSavedAt: null,
-      settings: { showFps:false }
+      settings: { showFps:false, quality:'auto' }
     };
     save();
     game();
@@ -516,6 +517,15 @@ function game() {
               <input type="checkbox" id="fpsToggle">
               <i aria-hidden="true"></i>
             </label>
+            <label class="setting-row setting-select-row" for="qualitySelect">
+              <span><b>QUALIDADE / DESEMPENHO</b><small>Auto reduz efeitos quando o navegador não sustenta FPS estável.</small></span>
+              <select id="qualitySelect">
+                <option value="auto">Automático</option>
+                <option value="high">Alta</option>
+                <option value="balanced">Equilibrada</option>
+                <option value="performance">Desempenho</option>
+              </select>
+            </label>
           </div>
           <div class="game-menu-actions">
             <button id="saveNowButton"><b>SALVAR AGORA</b><small>Grava imediatamente neste navegador.</small></button>
@@ -579,6 +589,7 @@ function game() {
   const saveStatusText = $('#saveStatusText');
   const saveFileInput = $('#saveFileInput');
   const fpsToggle = $('#fpsToggle');
+  const qualitySelect = $('#qualitySelect');
   const fpsCounter = $('#fpsCounter');
   const fpsValue = $('#fpsValue');
   const frameTime = $('#frameTime');
@@ -597,6 +608,7 @@ function game() {
 
   if (isTouch()) touchControls.classList.remove('hidden');
   fpsToggle.checked = Boolean(state.settings.showFps);
+  qualitySelect.value = state.settings.quality || 'auto';
   fpsCounter.classList.toggle('hidden', !state.settings.showFps);
 
   let activeInteraction = null;
@@ -2176,6 +2188,14 @@ function game() {
     fpsCounter.classList.toggle('hidden', !state.settings.showFps);
     save();
   });
+  qualitySelect.addEventListener('change', () => {
+    state.settings.quality = qualitySelect.value;
+    qualityEffective = state.settings.quality === 'auto' ? 'balanced' : state.settings.quality;
+    lowFpsSamples = 0;
+    highFpsSamples = 0;
+    applyGameplayQuality();
+    save();
+  });
   $('#returnMainMenuButton').addEventListener('click', () => { save(); menu(); });
 
   world.addEventListener('pointerdown',handleScenePointer);
@@ -2241,6 +2261,19 @@ function game() {
   let lastPromptKey = '';
   let fpsSampleStart = last;
   let fpsFrames = 0;
+  let qualityEffective = state.settings.quality === 'auto' ? 'balanced' : state.settings.quality;
+  let lowFpsSamples = 0;
+  let highFpsSamples = 0;
+
+  function applyGameplayQuality() {
+    const gameRoot = document.querySelector('.game');
+    if (!gameRoot) return;
+    const effective = state.settings.quality === 'auto' ? qualityEffective : state.settings.quality;
+    gameRoot.classList.toggle('quality-balanced', effective === 'balanced');
+    gameRoot.classList.toggle('quality-performance', effective === 'performance');
+    gameRoot.dataset.quality = effective;
+  }
+  applyGameplayQuality();
   const persistOnLeave=()=>save();
   addEventListener('pagehide',persistOnLeave);
   document.addEventListener('visibilitychange',persistOnLeave);
@@ -2256,20 +2289,45 @@ function game() {
     }
     const rawFrameMs = Math.max(0.01,now-last);
     const dt = Math.min(rawFrameMs/16.67,2); last = now;
-    if (state.settings.showFps) {
-      fpsFrames += 1;
-      const sampleElapsed = now - fpsSampleStart;
-      if (sampleElapsed >= 500) {
-        const fps = Math.round((fpsFrames * 1000) / sampleElapsed);
-        const avgMs = sampleElapsed / fpsFrames;
+    fpsFrames += 1;
+    const sampleElapsed = now - fpsSampleStart;
+    if (sampleElapsed >= 500) {
+      const fps = Math.round((fpsFrames * 1000) / sampleElapsed);
+      const avgMs = sampleElapsed / Math.max(1,fpsFrames);
+
+      if (state.settings.showFps) {
         fpsValue.textContent = String(fps);
         frameTime.textContent = avgMs.toFixed(1) + ' ms';
         fpsCounter.classList.toggle('fps-low',fps < 30);
         fpsCounter.classList.toggle('fps-mid',fps >= 30 && fps < 50);
-        fpsSampleStart = now;
-        fpsFrames = 0;
       }
-    } else {
+
+      if (state.settings.quality === 'auto') {
+        if (fps < 38) {
+          lowFpsSamples += 1;
+          highFpsSamples = 0;
+        } else if (fps > 55) {
+          highFpsSamples += 1;
+          lowFpsSamples = 0;
+        } else {
+          lowFpsSamples = 0;
+          highFpsSamples = 0;
+        }
+
+        let nextQuality = qualityEffective;
+        if (lowFpsSamples >= 2) nextQuality = 'performance';
+        else if (highFpsSamples >= 8) nextQuality = 'high';
+        else if (qualityEffective === 'high' && fps < 50) nextQuality = 'balanced';
+        else if (qualityEffective === 'performance' && fps > 50 && highFpsSamples >= 4) nextQuality = 'balanced';
+
+        if (nextQuality !== qualityEffective) {
+          qualityEffective = nextQuality;
+          lowFpsSamples = 0;
+          highFpsSamples = 0;
+          applyGameplayQuality();
+        }
+      }
+
       fpsSampleStart = now;
       fpsFrames = 0;
     }
