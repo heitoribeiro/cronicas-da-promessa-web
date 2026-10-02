@@ -448,3 +448,22 @@ Principais mudanças:
 A arquitetura visual continua desacoplada do backend gráfico para permitir uma futura migração WebGL sem reescrever os manifests de mapa/modelos.
 
 Versão: **0.35**.
+
+
+## Aplicação — Fase 19 — fluidez e backend GPU
+
+A prioridade desta fase é preservar a arquitetura Ragnarok-like sem tornar o jogo pesado para navegador.
+
+Foram implementados:
+- movimentação DOM orientada ao compositor;
+- atlas de jogador/NPC dirty-driven;
+- pathfinding com TypedArrays;
+- cache de walkability;
+- cadências adaptativas no gameplay;
+- resolução dinâmica e frame pacing no Canvas 2.5D;
+- detecção inicial de capacidade do dispositivo;
+- laboratório WebGL/GPU consumindo os mesmos manifests.
+
+O novo `ro-gpu-lab.html` não substitui ainda o jogo. Ele permite medir se a arquitetura GPU entrega a fluidez necessária antes de mover quests, colisão, save e interações para o novo renderer.
+
+Versão: **0.36**.
