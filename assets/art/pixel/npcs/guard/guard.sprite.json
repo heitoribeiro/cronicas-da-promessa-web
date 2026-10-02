@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "id": "guard",
+  "displayName": "Guarda de Judá",
+  "status": "runtime-atlas-v1",
+  "architecture": "8-direction atlas with stable feet origin",
+  "bodyReference": {
+    "logicalEnvelope": {
+      "width": 64,
+      "height": 88
+    },
+    "adultWorldScale": 1
+  },
+  "exportCanvas": {
+    "width": 96,
+    "height": 112,
+    "origin": {
+      "x": 48,
+      "y": 108
+    },
+    "transparent": true
+  },
+  "anchors": {
+    "feet": {
+      "x": 48,
+      "y": 108
+    },
+    "head": {
+      "x": 48,
+      "y": 42
+    }
+  },
+  "collision": {
+    "radius": 24,
+    "anchor": "feet",
+    "independentFromCanvas": true
+  },
+  "directions": [
+    "s",
+    "sw",
+    "w",
+    "nw",
+    "n",
+    "ne",
+    "e",
+    "se"
+  ],
+  "actions": {
+    "idle": {
+      "frames": 3,
+      "frameMs": 240,
+      "loop": true
+    },
+    "walk": {
+      "frames": 8,
+      "frameMs": 110,
+      "loop": true
+    },
+    "talk": {
+      "frames": 3,
+      "frameMs": 190,
+      "loop": true
+    },
+    "ready": {
+      "frames": 6,
+      "frameMs": 135,
+      "loop": true
+    }
+  },
+  "runtime": {
+    "mode": "atlas",
+    "directionOrder": [
+      "s",
+      "sw",
+      "w",
+      "nw",
+      "n",
+      "ne",
+      "e",
+      "se"
+    ],
+    "atlasLayout": "rows=directions, columns=frames",
+    "files": {
+      "idle": "./idle_atlas.svg",
+      "walk": "./walk_atlas.svg",
+      "talk": "./talk_atlas.svg",
+      "ready": "./ready_atlas.svg"
+    }
+  }
+}
