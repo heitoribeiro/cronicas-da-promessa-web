@@ -181,3 +181,21 @@ A camada visual passa a usar uma arquitetura de personagem modular inspirada na 
 - referências GPL continuam apenas como estudo, sem incorporar código ao runtime principal.
 
 Esta fase é deliberadamente aditiva para não interferir nas mecânicas estabilizadas no outro fluxo de desenvolvimento.
+
+
+## Aplicação — Fase 11
+
+Eliabe torna-se o primeiro NPC realmente migrado do modo estático para o novo runtime inspirado em SPR/ACT.
+
+- quatro atlas SVG originais: `idle`, `walk`, `talk` e `work`;
+- 8 direções por ação: S, SW, W, NW, N, NE, E, SE;
+- canvas por frame: **96×112 px**;
+- pivô dos pés: **(48,108)**;
+- `walk`: 8 frames por direção;
+- `idle`: 3 frames;
+- `talk`: 3 frames;
+- `work`: 6 frames;
+- o runtime recorta o atlas por metadados, sem redimensionar o corpo;
+- o sprite pode exceder o envelope corporal sem alterar colisão ou Y-sort.
+
+Os atlas são arte original do projeto e não reutilizam sprites do Ragnarok Online. A arquitetura, não a arte, é a referência.
