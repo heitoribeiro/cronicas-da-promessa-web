@@ -444,6 +444,7 @@ export class NpcSpriteController {
     this.element.style.setProperty('--sprite-frame-h', canvas.height + 'px');
     this.element.style.setProperty('--sprite-pivot-x', pivot.x + 'px');
     this.element.style.setProperty('--sprite-pivot-y', pivot.y + 'px');
+    this.element.style.setProperty('--sprite-pivot-neg-y', (-pivot.y) + 'px');
     this.element.style.setProperty('--sprite-legacy-scale', legacy.scale ?? 1);
     this.element.style.setProperty('--sprite-shift-x', (legacy.shiftX ?? 0) + 'px');
     this.element.style.setProperty('--sprite-shift-y', (legacy.shiftY ?? 0) + 'px');
