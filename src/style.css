@@ -1472,3 +1472,16 @@ img{user-select:none;-webkit-user-drag:none}
   filter:none!important;
 }
 .interior-npc[data-sprite-mode="atlas"] b{top:104px!important}
+
+
+/* === PIXEL RPG VISUAL PHASE 13 — CHILD 8-WAY ATLAS === */
+
+.npc.npc-child[data-sprite-mode="atlas"]{
+  width:var(--sprite-frame-w)!important;
+  height:var(--sprite-frame-h)!important;
+}
+.npc.npc-child[data-sprite-mode="atlas"] .sprite-viewport{
+  width:var(--sprite-frame-w)!important;
+  height:var(--sprite-frame-h)!important;
+}
+.npc.npc-child[data-sprite-mode="atlas"] b{top:88px!important}
