@@ -1439,3 +1439,36 @@ img{user-select:none;-webkit-user-drag:none}
     height:var(--sprite-frame-h)!important;
   }
 }
+
+
+/* === PIXEL RPG VISUAL PHASE 11B — ELIABE WORKSHOP ATLAS === */
+
+.interior-npc[data-sprite-mode="atlas"]{
+  width:var(--sprite-frame-w)!important;
+  height:var(--sprite-frame-h)!important;
+  transform:translate(-16px,-24px)!important;
+  overflow:visible!important;
+  filter:none!important;
+}
+.interior-npc[data-sprite-mode="atlas"] .sprite-viewport{
+  position:absolute;
+  left:0;
+  top:0;
+  width:var(--sprite-frame-w)!important;
+  height:var(--sprite-frame-h)!important;
+  overflow:hidden;
+}
+.interior-npc[data-sprite-mode="atlas"] img.sprite-sheet-image{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  width:var(--sprite-sheet-w)!important;
+  height:var(--sprite-sheet-h)!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:fill!important;
+  transform:translate(var(--atlas-x),var(--atlas-y))!important;
+  transform-origin:0 0!important;
+  filter:none!important;
+}
+.interior-npc[data-sprite-mode="atlas"] b{top:104px!important}
