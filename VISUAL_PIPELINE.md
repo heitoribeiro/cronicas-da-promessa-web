@@ -176,3 +176,25 @@ Isso impede que a evolução visual quebre mecânicas estabilizadas.
 | Criança do Rebanho | atlas | 8 | idle, walk, talk |
 
 Os cinco NPCs adultos compartilham canvas 96×112 e pivô (48,108). A Criança do Rebanho usa canvas 80×96 e pivô (40,92), preservando proporção infantil.
+
+
+## 11. Personagem jogável em layers
+
+Os personagens masculino e feminino utilizam agora um pacote separado por camada:
+
+```
+characters/<sexo>/
+  player.sprite.json
+  body_idle_atlas.svg
+  body_walk_atlas.svg
+  outfit_idle_atlas.svg
+  outfit_walk_atlas.svg
+  hair_idle_atlas.svg
+  hair_walk_atlas.svg
+  garment_idle_atlas.svg
+  garment_walk_atlas.svg
+```
+
+O compositor `src/player-sprite-system.js` sincroniza ação, direção e frame em todas as layers. A profundidade é calculada por `src/character-layers.js`.
+
+Esse formato permite acrescentar futuramente `weapon`, `shield`, `headgear` e `effect` sem recriar body/outfit.
