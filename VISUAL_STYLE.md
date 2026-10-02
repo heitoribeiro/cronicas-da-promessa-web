@@ -285,3 +285,21 @@ O personagem masculino mantém túnica desértica, cabelo castanho e garment ver
 Foi criado `character-lab.html` para validar cada layer separadamente e comparar as oito direções antes de adicionar armas, escudos, capas e headgears.
 
 Versão visual: **Web Alpha 0.30**.
+
+
+## Aplicação — Fase 15
+
+A análise do vídeo real da Web Alpha mostrou que a distância visual para Ragnarok não é resolvida somente com sprites em oito direções. O renderer atual ainda é predominantemente 2D/top-down.
+
+Foram tomadas duas medidas imediatas:
+
+1. corrigido o conflito entre regras CSS legadas de `.npc span` e os novos `.sprite-viewport`, que produzia cápsulas/ovais grandes atrás de alguns NPCs;
+2. criado `ro-visual-lab.html`, uma prova de conceito de renderer 2.5D com terreno inclinado, alturas, modelos volumétricos e personagens billboard.
+
+A arquitetura visual-alvo passa a ser formalmente:
+
+**Terrain 3D + World Models + Billboard Sprites + Effects + Screen-space UI**
+
+e está documentada em `RO_RENDER_ARCHITECTURE.md`.
+
+Versão visual: **Web Alpha 0.31**.
