@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Crônicas da Promessa",
-  "version": "0.26",
+  "version": "0.30",
   "sourceConcept": "Ragnarok-style layered character view with original art",
   "directionOrder": [
     "s",
@@ -75,6 +75,13 @@
     {
       "id": "body",
       "type": "body",
+      "parent": null,
+      "slot": 0,
+      "required": true
+    },
+    {
+      "id": "outfit",
+      "type": "outfit",
       "parent": null,
       "slot": 0,
       "required": true
@@ -155,6 +162,7 @@
     "bodyScale": "Adult bodies keep the same world scale; large accessories expand the canvas instead of scaling the body.",
     "attachPoints": "Child layers inherit the body attach point and subtract their own attach point when present.",
     "zOrder": "Draw order may change by facing direction; never encode all equipment into one immutable z-order.",
-    "licensing": "Architecture only. No Ragnarok/Gravity artwork is included."
+    "licensing": "Architecture only. No Ragnarok/Gravity artwork is included.",
+    "playerRuntime": "Playable male/female characters use layered 8-direction atlases: garment, body, outfit and hair/accessory. Equipment slots can be added without replacing the base body."
   }
 }
