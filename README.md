@@ -252,3 +252,30 @@ Detalhes: `PERFORMANCE_ARCHITECTURE.md`.
 Teste principal:
 
 `ro-visual-lab.html?v=0.35`
+
+
+### Desempenho 0.36
+
+Esta fase prioriza fluidez antes de ampliar a densidade visual.
+
+Gameplay principal:
+- movimentação de jogador/NPCs/animais via compositor (`translate`) quando suportado;
+- sprites atualizam o DOM apenas quando ação, direção ou frame mudam;
+- A* usa TypedArrays e cache de walkability;
+- cadência de NPCs, profundidade, interação e HUD varia com a qualidade;
+- modo Auto parte de um preset compatível com CPU/RAM/Data Saver do dispositivo;
+- aba oculta deixa de processar gameplay visual continuamente.
+
+Canvas 2.5D:
+- resolução interna independente do tamanho CSS, seguindo a mesma ideia usada pelo ROBrowser;
+- Alta: 60 Hz;
+- Equilibrada: 50 Hz com resolução interna reduzida;
+- Desempenho: 30 Hz estáveis com backbuffer reduzido e efeitos caros desligados.
+
+GPU/WebGL experimental:
+- `ro-gpu-lab.html?v=0.36`;
+- Three.js/WebGL usando os mesmos manifests de terreno, modelos e sprites;
+- terreno e modelos ficam em buffers da GPU;
+- modelos estáticos são agrupados por material para reduzir draw calls;
+- sprites continuam billboards com atlas de 8 direções;
+- exibe FPS, draw calls e triângulos para comparação direta com o Canvas.
