@@ -1419,13 +1419,21 @@ function game() {
     const gx=toGrid(target.x,b.minX,cols-1), gy=toGrid(target.y,b.minY,rows-1);
     const point=(x,y)=>({x:b.minX+x*b.step,y:b.minY+y*b.step});
 
+    // Cache lazy de walkability: cada célula consulta colisão no máximo uma vez
+    // durante o A*. 0=desconhecida, 1=bloqueada, 2=livre.
+    const walkability=new Uint8Array(cols*rows);
     const grid={
       width:cols,
       height:rows,
       isWalkable(x,y){
         if(x<0||x>=cols||y<0||y>=rows) return false;
+        const idx=y*cols+x;
+        const cached=walkability[idx];
+        if(cached) return cached===2;
         const p=point(x,y);
-        return canStandScene(p.x,p.y);
+        const ok=canStandScene(p.x,p.y);
+        walkability[idx]=ok?2:1;
+        return ok;
       }
     };
 
