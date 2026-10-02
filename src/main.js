@@ -605,6 +605,27 @@ function game() {
   const hotbarRecords = $('#hotbarRecords');
   const hotbarQuest = $('#hotbarQuest');
   const keys = new Set();
+  const actorPositionCache = new WeakMap();
+  const supportsIndividualTranslate = Boolean(window.CSS?.supports?.('translate','1px 1px'));
+
+  function setActorPosition(el,x,y) {
+    if (!el) return;
+    const prev=actorPositionCache.get(el);
+    if (prev && prev.x===x && prev.y===y) return;
+    actorPositionCache.set(el,{x,y});
+
+    if (supportsIndividualTranslate) {
+      if (el.dataset.compositedPosition !== '1') {
+        el.dataset.compositedPosition='1';
+        el.style.left='0px';
+        el.style.top='0px';
+      }
+      el.style.translate=x+'px '+y+'px';
+    } else {
+      el.style.left=x+'px';
+      el.style.top=y+'px';
+    }
+  }
 
   if (isTouch()) touchControls.classList.remove('hidden');
   fpsToggle.checked = Boolean(state.settings.showFps);
@@ -846,8 +867,8 @@ function game() {
     cancelClickMove();
     indoorPos.x = 500;
     indoorPos.y = 585;
-    player.style.left = indoorPos.x + 'px';
-    player.style.top = indoorPos.y + 'px';
+    actorPositionCache.delete(player);
+    setActorPosition(player,indoorPos.x,indoorPos.y);
   }
 
   function exitInterior() {
@@ -1151,6 +1172,7 @@ function game() {
   };
   const npcAgentList = Object.values(npcAgents);
   const npcAgentEntries = Object.entries(npcAgents);
+  npcAgentList.forEach(agent => setActorPosition(agent.el,agent.x,agent.y));
 
   // Arquitetura inspirada em SPR/ACT: cada NPC passa a ter metadados de
   // canvas, pivô, direção, ação e frames. Os assets atuais continuam em modo
@@ -1261,8 +1283,7 @@ function game() {
     agent.x += dx/dist * step;
     agent.y += dy/dist * step;
     keepExteriorNpcReadable(key,agent);
-    agent.el.style.left = agent.x + 'px';
-    agent.el.style.top = agent.y + 'px';
+    setActorPosition(agent.el,agent.x,agent.y);
     npcSpriteControllers[key]?.setMotion(dx,dy,now,true);
   }
 
@@ -1271,6 +1292,7 @@ function game() {
     { el:$('.sheep-two'), x:210,y:155, route:[[210,155],[300,170],[265,88],[190,105]], target:1, speed:.24 },
     { el:$('.goat-one'), x:292,y:72, route:[[292,72],[325,130],[245,170],[235,80]], target:1, speed:.31 }
   ];
+  animalAgents.forEach(agent => setActorPosition(agent.el,agent.x,agent.y));
 
   function moveAnimal(agent, dt) {
     const target = agent.route[agent.target];
@@ -1284,8 +1306,7 @@ function game() {
     const step = Math.min(dist,agent.speed*dt);
     agent.x += dx/dist*step;
     agent.y += dy/dist*step;
-    agent.el.style.left = agent.x + 'px';
-    agent.el.style.top = agent.y + 'px';
+    setActorPosition(agent.el,agent.x,agent.y);
     agent.el.style.zIndex = String(100 + Math.round(690 + agent.y));
     agent.el.classList.add('animal-walking');
     agent.el.classList.toggle('face-left',dx < 0);
@@ -2095,14 +2116,7 @@ function game() {
     }
 
     if (currentScene === 'outdoor') {
-      if (state.x !== lastPlayerStyleX) {
-        lastPlayerStyleX = state.x;
-        player.style.left = state.x + 'px';
-      }
-      if (state.y !== lastPlayerStyleY) {
-        lastPlayerStyleY = state.y;
-        player.style.top = state.y + 'px';
-      }
+      setActorPosition(player,state.x,state.y);
       const baseZoom = isTouch() ? (innerWidth > innerHeight ? 0.78 : 0.62) : 0.9;
       const zoom = Math.min(1.15, Math.max(baseZoom, innerWidth / 1800, innerHeight / 1200));
       const viewW = innerWidth / zoom;
@@ -2119,14 +2133,7 @@ function game() {
         lastInteractionUpdate = now;
       }
     } else {
-      if (indoorPos.x !== lastPlayerStyleX) {
-        lastPlayerStyleX = indoorPos.x;
-        player.style.left = indoorPos.x + 'px';
-      }
-      if (indoorPos.y !== lastPlayerStyleY) {
-        lastPlayerStyleY = indoorPos.y;
-        player.style.top = indoorPos.y + 'px';
-      }
+      setActorPosition(player,indoorPos.x,indoorPos.y);
       const activeInterior = currentScene === 'standard' ? standardInterior : currentScene === 'workshop' ? workshopInterior : playerInterior;
       const scale = Math.min(innerWidth / 1000, innerHeight / 700);
       const nextInteriorTransform = `translate(${innerWidth/2}px,${innerHeight/2}px) scale(${scale}) translate(-500px,-350px)`;
