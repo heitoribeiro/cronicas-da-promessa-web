@@ -1,5 +1,5 @@
-import { loadModelLibrary, buildMeshFaces } from './ro-mesh-system.js?v=0.34';
-import { sunDirection } from './ro-world-system.js?v=0.34';
+import { loadModelLibrary, buildMeshFaces } from './ro-mesh-system.js?v=0.35';
+import { sunDirection } from './ro-world-system.js?v=0.35';
 
 const canvas=document.querySelector('#modelCanvas');
 const ctx=canvas.getContext('2d',{alpha:false});
@@ -68,7 +68,7 @@ function drawFace(face){
   ctx.save();ctx.clip();
   ctx.fillStyle=face.color;ctx.fillRect(0,0,canvas.width,canvas.height);
   if(textures&&face.material?.texture){
-    const img=getImage(face.material.texture+'?v=0.34');
+    const img=getImage(face.material.texture+'?v=0.35');
     if(img.complete&&img.naturalWidth){
       const pattern=ctx.createPattern(img,'repeat');
       if(pattern){ctx.globalAlpha=.9;ctx.fillStyle=pattern;ctx.fillRect(0,0,canvas.width,canvas.height)}
@@ -145,7 +145,7 @@ canvas.addEventListener('pointerup',()=>dragging=false);canvas.addEventListener(
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(65,Math.min(180,zoom+(e.deltaY<0?8:-8)));render()},{passive:false});
 
 async function init(){
-  library=await loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.34');
+  library=await loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.35');
   for(const id of Object.keys(library.meshes)){
     const option=document.createElement('option');option.value=id;option.textContent=id;select.appendChild(option);
   }
