@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "id": "eliabe",
+  "displayName": "Eliabe",
+  "role": "artesão",
+  "style": "pixel-rpg-biblical-desert",
+  "status": "asset-plan",
+  "architecture": "8-direction sequence with stable feet origin",
+  "bodyReference": {
+    "logicalEnvelope": {
+      "width": 64,
+      "height": 88
+    },
+    "adultWorldScale": 1
+  },
+  "exportCanvas": {
+    "width": 96,
+    "height": 112,
+    "origin": {
+      "x": 48,
+      "y": 108
+    },
+    "transparent": true
+  },
+  "anchors": {
+    "feet": {
+      "x": 48,
+      "y": 108
+    },
+    "head": {
+      "x": 48,
+      "y": 42
+    }
+  },
+  "collision": {
+    "radius": 24,
+    "anchor": "feet",
+    "independentFromCanvas": true
+  },
+  "directions": [
+    "s",
+    "sw",
+    "w",
+    "nw",
+    "n",
+    "ne",
+    "e",
+    "se"
+  ],
+  "actions": {
+    "idle": {
+      "frames": 3,
+      "frameMs": 240,
+      "loop": true
+    },
+    "walk": {
+      "frames": 8,
+      "frameMs": 115,
+      "loop": true
+    },
+    "talk": {
+      "frames": 3,
+      "frameMs": 190,
+      "loop": true
+    },
+    "work": {
+      "frames": 6,
+      "frameMs": 130,
+      "loop": true
+    }
+  },
+  "naming": {
+    "pattern": "{action}/{direction}/{frame}.png",
+    "framePad": 2
+  },
+  "sourceRules": {
+    "bodyVisibleHeightPx": "70-82",
+    "bodyVisibleWidthPx": "44-56",
+    "feetMustRemainAtOrigin": true,
+    "nearestNeighbor": true,
+    "noAntialiasing": true,
+    "noDropShadowBakedIntoArt": true,
+    "background": "transparent"
+  }
+}
