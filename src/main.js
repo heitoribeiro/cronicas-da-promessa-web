@@ -2038,26 +2038,29 @@ function game() {
     applyLighting();
     updateInteriorNpcs(now);
 
-    const destination = questDestination();
-    worldQuest.classList.toggle('hidden', !destination || currentScene !== 'outdoor');
-    if (destination) {
-      worldQuest.style.left = `${destination.x}px`;
-      worldQuest.style.top = `${destination.y - 58}px`;
-      $('#worldQuestLabel').textContent = destination.label;
-    }
-
-    if (miniMapPlayer) {
-      miniMapPlayer.style.left = `${Math.max(3,Math.min(97,(state.x/1800)*100))}%`;
-      miniMapPlayer.style.top = `${Math.max(5,Math.min(95,(state.y/1200)*100))}%`;
-    }
-    if (miniMapQuest) {
-      miniMapQuest.classList.toggle('hidden',!destination);
+    if (now - lastAmbientUiUpdate >= 100) {
+      const destination = questDestination();
+      worldQuest.classList.toggle('hidden', !destination || currentScene !== 'outdoor');
       if (destination) {
-        miniMapQuest.style.left = `${Math.max(3,Math.min(97,(destination.x/1800)*100))}%`;
-        miniMapQuest.style.top = `${Math.max(5,Math.min(95,(destination.y/1200)*100))}%`;
+        worldQuest.style.left = `${destination.x}px`;
+        worldQuest.style.top = `${destination.y - 58}px`;
+        $('#worldQuestLabel').textContent = destination.label;
       }
+
+      if (miniMapPlayer) {
+        miniMapPlayer.style.left = `${Math.max(3,Math.min(97,(state.x/1800)*100))}%`;
+        miniMapPlayer.style.top = `${Math.max(5,Math.min(95,(state.y/1200)*100))}%`;
+      }
+      if (miniMapQuest) {
+        miniMapQuest.classList.toggle('hidden',!destination);
+        if (destination) {
+          miniMapQuest.style.left = `${Math.max(3,Math.min(97,(destination.x/1800)*100))}%`;
+          miniMapQuest.style.top = `${Math.max(5,Math.min(95,(destination.y/1200)*100))}%`;
+        }
+      }
+      if (miniMapCoords) miniMapCoords.textContent = `X: ${Math.round(state.x/16)}  Y: ${Math.round(state.y/16)}`;
+      lastAmbientUiUpdate = now;
     }
-    if (miniMapCoords) miniMapCoords.textContent = `X: ${Math.round(state.x/16)}  Y: ${Math.round(state.y/16)}`;
 
     if (currentScene === 'outdoor') {
       player.style.left = state.x + 'px';
@@ -2069,22 +2072,37 @@ function game() {
       const cameraX = viewW >= 1800 ? 900 : Math.max(viewW / 2, Math.min(1800 - viewW / 2, state.x));
       const cameraY = viewH >= 1200 ? 600 : Math.max(viewH / 2, Math.min(1200 - viewH / 2, state.y));
       world.style.transform = `translate3d(${innerWidth / 2}px,${innerHeight / 2}px,0) scale(${zoom}) translate3d(${-cameraX}px,${-cameraY}px,0)`;
-      activeInteraction = getActiveInteraction();
+      if (now - lastInteractionUpdate >= 80) {
+        activeInteraction = getActiveInteraction();
+        lastInteractionUpdate = now;
+      }
     } else {
       player.style.left = indoorPos.x + 'px';
       player.style.top = indoorPos.y + 'px';
       const activeInterior = currentScene === 'standard' ? standardInterior : currentScene === 'workshop' ? workshopInterior : playerInterior;
       const scale = Math.min(innerWidth / 1000, innerHeight / 700);
       activeInterior.style.transform = `translate(${innerWidth/2}px,${innerHeight/2}px) scale(${scale}) translate(-500px,-350px)`;
-      activeInteraction = getInteriorInteraction();
+      if (now - lastInteractionUpdate >= 80) {
+        activeInteraction = getInteriorInteraction();
+        lastInteractionUpdate = now;
+      }
     }
-    prompt.classList.toggle('hidden', !activeInteraction);
-    actionButton.classList.toggle('hidden', !activeInteraction || !isTouch());
-    if (activeInteraction) prompt.textContent = isTouch() ? `AÇÃO — ${activeInteraction.action}` : `CLIQUE / E — ${activeInteraction.action}`;
+
+    const promptKey = activeInteraction ? (isTouch() ? 'touch:' : 'desktop:') + activeInteraction.action : 'hidden';
+    if (promptKey !== lastPromptKey) {
+      lastPromptKey = promptKey;
+      prompt.classList.toggle('hidden', !activeInteraction);
+      actionButton.classList.toggle('hidden', !activeInteraction || !isTouch());
+      if (activeInteraction) prompt.textContent = isTouch() ? `AÇÃO — ${activeInteraction.action}` : `CLIQUE / E — ${activeInteraction.action}`;
+    }
 
     const h = Math.floor(state.time / 60) % 24;
     const m = Math.floor(state.time % 60);
-    clock.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    const clockText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    if (clockText !== lastClockText) {
+      lastClockText = clockText;
+      clock.textContent = clockText;
+    }
   }
 
   function onKeyDown(event) {
@@ -2213,6 +2231,14 @@ function game() {
 
   let last = performance.now();
   let lastHudRefresh = 0;
+  let lastAmbientUiUpdate = 0;
+  let lastInteractionUpdate = 0;
+  let lastDepthUpdate = 0;
+  let lastNpcUpdate = 0;
+  let npcAccumDt = 0;
+  let lastWalkingState = false;
+  let lastClockText = '';
+  let lastPromptKey = '';
   let fpsSampleStart = last;
   let fpsFrames = 0;
   const persistOnLeave=()=>save();
@@ -2263,11 +2289,21 @@ function game() {
         } else cancelClickMove();
       }
     }
-    player.classList.toggle('walking', Boolean(dx || dy));
+    const walkingNow = Boolean(dx || dy);
+    if (walkingNow !== lastWalkingState) {
+      lastWalkingState = walkingNow;
+      player.classList.toggle('walking', walkingNow);
+    }
     updatePlayerSprite(dx,dy,now);
     if (!dialogOpen) {
-      Object.entries(npcAgents).forEach(([key,agent]) => moveNpc(key,agent,dt,now));
-      if (currentScene === 'outdoor') animalAgents.forEach(agent => moveAnimal(agent,dt));
+      npcAccumDt += dt;
+      if (now - lastNpcUpdate >= 33) {
+        const npcDt = npcAccumDt;
+        npcAccumDt = 0;
+        lastNpcUpdate = now;
+        Object.entries(npcAgents).forEach(([key,agent]) => moveNpc(key,agent,npcDt,now));
+        if (currentScene === 'outdoor') animalAgents.forEach(agent => moveAnimal(agent,npcDt));
+      }
       const gameMinutes = .018 * dt;
       state.time += gameMinutes;
       state.hunger = Math.max(0,state.hunger - gameMinutes/30);
@@ -2285,7 +2321,10 @@ function game() {
         save();
       }
     }
-    updateDepth();
+    if (now - lastDepthUpdate >= 50) {
+      updateDepth();
+      lastDepthUpdate = now;
+    }
     if (dx||dy) {
       const length = Math.hypot(dx,dy);
       const speedFactor = state.energy < 10 ? .58 : state.energy < 30 ? .82 : 1;
