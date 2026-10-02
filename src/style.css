@@ -1740,6 +1740,7 @@ img{user-select:none;-webkit-user-drag:none}
 .npc,
 .animal{
   backface-visibility:hidden;
+  will-change:translate,transform;
 }
 .sprite-viewport,
 .player-layer-viewport,
