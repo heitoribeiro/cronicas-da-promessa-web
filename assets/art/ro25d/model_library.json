@@ -5,59 +5,59 @@
   "materials": {
     "cloth_cream": {
       "color": "#eadbb3",
-      "texture": "./textures/cloth_cream.svg"
+      "texture": "./assets/art/ro25d/textures/cloth_cream.svg"
     },
     "cloth_red": {
       "color": "#a42f35",
-      "texture": "./textures/cloth_red.svg"
+      "texture": "./assets/art/ro25d/textures/cloth_red.svg"
     },
     "cloth_green": {
       "color": "#456c4c",
-      "texture": "./textures/cloth_green.svg"
+      "texture": "./assets/art/ro25d/textures/cloth_green.svg"
     },
     "cloth_blue": {
       "color": "#365e8d",
-      "texture": "./textures/cloth_blue.svg"
+      "texture": "./assets/art/ro25d/textures/cloth_blue.svg"
     },
     "cloth_ochre": {
       "color": "#9b7938",
-      "texture": "./textures/cloth_ochre.svg"
+      "texture": "./assets/art/ro25d/textures/cloth_ochre.svg"
     },
     "wood": {
       "color": "#8e5c34",
-      "texture": "./textures/wood.svg"
+      "texture": "./assets/art/ro25d/textures/wood.svg"
     },
     "wood_dark": {
       "color": "#624026",
-      "texture": "./textures/wood_dark.svg"
+      "texture": "./assets/art/ro25d/textures/wood_dark.svg"
     },
     "door": {
       "color": "#7a4828",
-      "texture": "./textures/wood_dark.svg"
+      "texture": "./assets/art/ro25d/textures/wood_dark.svg"
     },
     "stone": {
       "color": "#817a70",
-      "texture": "./textures/stone.svg"
+      "texture": "./assets/art/ro25d/textures/stone.svg"
     },
     "stone_top": {
       "color": "#9b9387",
-      "texture": "./textures/stone.svg"
+      "texture": "./assets/art/ro25d/textures/stone.svg"
     },
     "leaf": {
       "color": "#627b42",
-      "texture": "./textures/leaf.svg"
+      "texture": "./assets/art/ro25d/textures/leaf.svg"
     },
     "leaf_top": {
       "color": "#758f4d",
-      "texture": "./textures/leaf.svg"
+      "texture": "./assets/art/ro25d/textures/leaf.svg"
     },
     "rope": {
       "color": "#b58b4f",
-      "texture": "./textures/rope.svg"
+      "texture": "./assets/art/ro25d/textures/rope.svg"
     },
     "gold": {
       "color": "#d2a83f",
-      "texture": "./textures/gold.svg"
+      "texture": "./assets/art/ro25d/textures/gold.svg"
     }
   },
   "meshes": {
