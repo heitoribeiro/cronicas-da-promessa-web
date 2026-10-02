@@ -199,3 +199,32 @@ Effects/UI
 ```
 
 O Crônicas da Promessa agora possui equivalentes próprios para cada uma dessas camadas experimentais, sem incorporar assets proprietários de Ragnarok.
+
+
+### mrdoob/three.js
+
+Licença: MIT.
+
+Foi avaliado como principal candidato para o backend GPU do renderer 2.5D por oferecer:
+
+- WebGL/WebGPU;
+- câmera ortográfica/perspectiva;
+- meshes;
+- materiais/texturas;
+- sprites/billboards;
+- batching e recursos maduros de GPU.
+
+Uso atual: referência para a futura camada GPU. A Fase 0.35 ainda prioriza otimizar o Canvas atual antes de migrar a gameplay.
+
+### pixijs/pixijs
+
+Licença: MIT.
+
+Foi avaliado como alternativa para:
+
+- sprites 2D;
+- batching;
+- UI;
+- efeitos de tela.
+
+É uma opção muito forte para partes 2D, mas o renderer de terreno/modelos do Crônicas da Promessa se encaixa melhor em uma camada 3D/WebGL.
