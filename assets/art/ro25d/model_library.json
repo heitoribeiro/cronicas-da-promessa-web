@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "0.34",
+  "version": "0.35",
   "coordinateSystem": "local x/y/z; normalized footprint; origin at ground center",
   "materials": {
     "cloth_cream": {
