@@ -2237,7 +2237,7 @@ function game() {
   });
   qualitySelect.addEventListener('change', () => {
     state.settings.quality = qualitySelect.value;
-    qualityEffective = state.settings.quality === 'auto' ? 'balanced' : state.settings.quality;
+    qualityEffective = state.settings.quality === 'auto' ? detectGameplayAutoQuality() : state.settings.quality;
     lowFpsSamples = 0;
     highFpsSamples = 0;
     applyGameplayQuality();
@@ -2308,7 +2308,17 @@ function game() {
   let lastPromptKey = '';
   let fpsSampleStart = last;
   let fpsFrames = 0;
-  let qualityEffective = state.settings.quality === 'auto' ? 'balanced' : state.settings.quality;
+
+  function detectGameplayAutoQuality() {
+    const cores=Number(navigator.hardwareConcurrency||0);
+    const memory=Number(navigator.deviceMemory||0);
+    const saveData=Boolean(navigator.connection?.saveData);
+    if (saveData) return 'performance';
+    if (isTouch() && ((cores>0&&cores<=4)||(memory>0&&memory<=4))) return 'performance';
+    return 'balanced';
+  }
+
+  let qualityEffective = state.settings.quality === 'auto' ? detectGameplayAutoQuality() : state.settings.quality;
   let lowFpsSamples = 0;
   let highFpsSamples = 0;
   let lastPlayerStyleX = NaN;
