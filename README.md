@@ -147,3 +147,8 @@ A direção visual Pixel RPG bíblico-desértico agora possui documentação e r
 ### Laboratório visual
 
 Abra `sprite-lab.html` no GitHub Pages para validar NPCs sem entrar na gameplay. O laboratório permite selecionar Ancião, Eliabe, Miriã, Hanan, Guarda ou Criança do Rebanho, alternar as ações disponíveis, pausar a animação, ligar/desligar a grade e comparar as oito direções.
+
+
+### Laboratório do personagem
+
+Abra `character-lab.html` para comparar os personagens jogáveis masculino e feminino nas oito direções. É possível ocultar/mostrar individualmente `garment`, `body`, `outfit` e `hair`, permitindo verificar alinhamento e ordem de profundidade antes de adicionar equipamentos.
