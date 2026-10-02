@@ -213,3 +213,30 @@ Foi criado um laboratório visual separado da gameplay para validar os novos spr
 - indicação de frame, pivô e dimensões.
 
 Eliabe também passa a usar a animação `work` quando aparece dentro da Oficina, mantendo uma instância visual independente do NPC externo.
+
+
+## Aplicação — Fase 12
+
+A migração do sistema de NPCs adultos para atlas 8-way foi ampliada.
+
+NPCs agora em modo `atlas`:
+
+- Ancião — `idle`, `walk`, `talk`;
+- Eliabe — `idle`, `walk`, `talk`, `work`;
+- Miriã — `idle`, `walk`, `talk`;
+- Hanan — `idle`, `walk`, `talk`, `work`;
+- Guarda de Judá — `idle`, `walk`, `talk`, `ready`.
+
+Todos usam:
+
+- 8 direções;
+- canvas 96×112;
+- pivô dos pés em (48,108);
+- escala corporal adulta 1.0;
+- Y-sort e colisão independentes do tamanho total do atlas.
+
+O Ancião também passa a usar seu atlas quando aparece no interior da Tenda do Estandarte.
+
+O laboratório `sprite-lab.html` agora permite selecionar qualquer NPC já migrado e comparar suas oito direções e ações disponíveis.
+
+Versão visual: **Web Alpha 0.28**.
