@@ -163,3 +163,16 @@ Novo asset:
 7. só então remover a correção legacy.
 
 Isso impede que a evolução visual quebre mecânicas estabilizadas.
+
+## 10. Estado da migração
+
+| NPC | Runtime | Direções | Ações |
+|---|---|---:|---|
+| Ancião | atlas | 8 | idle, walk, talk |
+| Eliabe | atlas | 8 | idle, walk, talk, work |
+| Miriã | atlas | 8 | idle, walk, talk |
+| Hanan | atlas | 8 | idle, walk, talk, work |
+| Guarda de Judá | atlas | 8 | idle, walk, talk, ready |
+| Criança do Rebanho | static_legacy | 4 | migração pendente |
+
+Os cinco NPCs adultos compartilham canvas 96×112 e pivô (48,108). A Criança do Rebanho será migrada em escala infantil própria, sem reutilizar a escala adulta.
