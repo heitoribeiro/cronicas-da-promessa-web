@@ -11,6 +11,14 @@ if(!manifestArg){
 const manifestPath=resolve(process.cwd(),manifestArg);
 const root=dirname(manifestPath);
 
+function svgInfo(text){
+  const width=Number(text.match(/<svg[^>]*\bwidth="([0-9.]+)"/i)?.[1]);
+  const height=Number(text.match(/<svg[^>]*\bheight="([0-9.]+)"/i)?.[1]);
+  const viewBox=text.match(/\bviewBox="([^"]+)"/i)?.[1] || '';
+  if(!width || !height || !viewBox) throw new Error('SVG sem dimensões/viewBox válidos');
+  return {width,height,viewBox};
+}
+
 function pngInfo(buffer){
   if(buffer.length<33 || buffer.toString('ascii',1,4)!=='PNG'){
     throw new Error('arquivo não é PNG válido');
@@ -44,6 +52,26 @@ let files=0;
 if(!canvas?.width || !canvas?.height) errors.push('exportCanvas inválido');
 if(!directions.length) errors.push('directions vazio');
 
+if(data.runtime?.mode==='atlas'){
+  for(const [action,cfg] of Object.entries(actions)){
+    const rel=data.runtime.files?.[action];
+    if(!rel){errors.push(`${action}: arquivo de atlas não definido`);continue;}
+    const path=resolve(root,rel);
+    try{
+      await access(path);
+      const text=await readFile(path,'utf8');
+      const info=svgInfo(text);
+      files++;
+      const expectedW=(canvas?.width||0)*(Number(cfg.frames)||0);
+      const expectedH=(canvas?.height||0)*directions.length;
+      if(info.width!==expectedW || info.height!==expectedH){
+        errors.push(`${rel}: ${info.width}x${info.height}; esperado ${expectedW}x${expectedH}`);
+      }
+    }catch(error){
+      errors.push(`${rel}: ausente ou inválido (${error.message})`);
+    }
+  }
+}else{
 for(const [action,cfg] of Object.entries(actions)){
   const count=Number(cfg.frames)||0;
   if(count<1){errors.push(`${action}: quantidade de frames inválida`);continue;}
@@ -68,6 +96,8 @@ for(const [action,cfg] of Object.entries(actions)){
       }
     }
   }
+}
+
 }
 
 console.log(`Sprite pack: ${data.displayName || data.id || manifestArg}`);
