@@ -172,6 +172,36 @@ function faceDepth(points){
   return points.reduce((sum,p)=>sum+p.depth,0)/Math.max(1,points.length);
 }
 
+
+function drawGroundCell(cell){
+  beginFacePath(cell.p);
+  ctx.fillStyle=cell.color;
+  ctx.fill();
+
+  const textureSrc=cell.path?world.terrain.pathTexture:world.terrain.texture;
+  if(textureSrc){
+    const img=getImage(textureSrc+'?v=0.33');
+    if(img?.complete && img.naturalWidth){
+      ctx.save();
+      beginFacePath(cell.p);
+      ctx.clip();
+      const pattern=ctx.createPattern(img,'repeat');
+      if(pattern){
+        ctx.globalAlpha=.52;
+        ctx.globalCompositeOperation='multiply';
+        ctx.fillStyle=pattern;
+        ctx.fillRect(0,0,innerWidth,innerHeight);
+      }
+      ctx.restore();
+    }
+  }
+
+  beginFacePath(cell.p);
+  ctx.strokeStyle=showGrid?'#5c431c66':'#6d4d251c';
+  ctx.lineWidth=showGrid?1:.5;
+  ctx.stroke();
+}
+
 function drawGround(){
   const t=world.terrain;
   const cells=[];
@@ -184,13 +214,11 @@ function drawGround(){
       const jitter=((x*17+z*29)%9)-4;
       const base=path?t.pathColor:shadeColor(t.baseColor,1+jitter*.008);
       const normal=terrainNormal(heightAt,x+.5,z+.5,.22);
-      cells.push({p,depth,color:lit(base,normal,depth),x,z});
+      cells.push({p,depth,color:lit(base,normal,depth),x,z,path});
     }
   }
   cells.sort((a,b)=>a.depth-b.depth);
-  for(const cell of cells){
-    poly(cell.p,cell.color,showGrid?'#5c431c55':'#6d4d251f',showGrid?1:.5);
-  }
+  for(const cell of cells) drawGroundCell(cell);
 
   const edge='#7b552b';
   const skirt=1.15;
