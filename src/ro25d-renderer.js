@@ -1,18 +1,25 @@
-import { resolveCharacterLayerZ } from './character-layers.js?v=0.34';
+import { resolveCharacterLayerZ } from './character-layers.js?v=0.35';
 import {
   clamp, degToRad, createHeightSampler, isPathAt, sunDirection,
   terrainNormal, lightFactor, shadeColor, mixColor, fogFactor, pointLightContribution,
   visibleDirectionIndex, loadRoWorld
-} from './ro-world-system.js?v=0.34';
-import { loadModelLibrary, buildMeshFaces, modelShadowSize } from './ro-mesh-system.js?v=0.34';
+} from './ro-world-system.js?v=0.35';
+import {
+  loadModelLibrary, prepareMeshInstance, projectPreparedMesh, modelShadowSize
+} from './ro-mesh-system.js?v=0.35';
+import {
+  createPerformanceController, screenBounds, boundsVisible
+} from './ro-performance.js?v=0.35';
 
 const canvas=document.querySelector('#scene');
-const ctx=canvas.getContext('2d',{alpha:false});
+const ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
 ctx.imageSmoothingEnabled=false;
 
 const DIRS=['s','sw','w','nw','n','ne','e','se'];
 const keys=new Set();
 const imageCache=new Map();
+const patternCache=new Map();
+const preparedMeshes=new Map();
 
 let world=null;
 let sprites=null;
@@ -25,65 +32,147 @@ let showFog=true;
 let showGrid=false;
 let showLighting=true;
 let pointerCell=null;
+let terrainCells=[];
+let terrainEdges=[];
+let palisadeGroups=[];
+let atmosphereGradient=null;
+let vignetteGradient=null;
+let viewportW=Math.max(1,innerWidth);
+let viewportH=Math.max(1,innerHeight);
+let lastReadoutAt=0;
+let lastPerfReadoutAt=0;
+let renderedFrames=0;
 
+const projection={cy:1,sy:0,cp:1,sp:0,halfW:viewportW/2,halfH:viewportH/2};
 const camera={x:14,z:10,yaw:0,pitch:degToRad(57),zoom:46,minZoom:28,maxZoom:72};
 const player={x:14,z:12.8,y:0,dir:4,action:'idle',frame:0,frameAt:0};
 
+const perf=createPerformanceController({
+  onChange:()=>{
+    resize();
+    updateQualityUI();
+  }
+});
+
+function effectiveFog(){
+  return showFog&&perf.settings.fog&&world?.fog?.enabled;
+}
+
+function updateProjectionCache(){
+  projection.cy=Math.cos(camera.yaw);
+  projection.sy=Math.sin(camera.yaw);
+  projection.cp=Math.cos(camera.pitch);
+  projection.sp=Math.sin(camera.pitch);
+  projection.halfW=viewportW*.5;
+  projection.halfH=viewportH*.5;
+}
+
 function resize(){
-  const dpr=Math.min(devicePixelRatio||1,2);
-  const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
-  canvas.width=Math.floor(w*dpr);
-  canvas.height=Math.floor(h*dpr);
-  canvas.style.width=w+'px';
-  canvas.style.height=h+'px';
+  viewportW=Math.max(1,innerWidth);
+  viewportH=Math.max(1,innerHeight);
+  const dpr=Math.min(devicePixelRatio||1,perf.settings.dprMax);
+  canvas.width=Math.max(1,Math.floor(viewportW*dpr));
+  canvas.height=Math.max(1,Math.floor(viewportH*dpr));
+  canvas.style.width=viewportW+'px';
+  canvas.style.height=viewportH+'px';
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.imageSmoothingEnabled=false;
+
+  atmosphereGradient=ctx.createLinearGradient(0,0,0,viewportH);
+  atmosphereGradient.addColorStop(0,'#d8bb80');
+  atmosphereGradient.addColorStop(.48,'#c89a5a');
+  atmosphereGradient.addColorStop(1,'#8d6435');
+
+  vignetteGradient=ctx.createRadialGradient(
+    viewportW*.5,viewportH*.5,viewportH*.1,
+    viewportW*.5,viewportH*.5,Math.max(viewportW,viewportH)*.76
+  );
+  vignetteGradient.addColorStop(0,'#0000');
+  vignetteGradient.addColorStop(1,'#25170d42');
+  updateProjectionCache();
 }
-addEventListener('resize',resize);
+addEventListener('resize',resize,{passive:true});
 resize();
 
 function getImage(src){
   if(!src) return null;
   if(imageCache.has(src)) return imageCache.get(src);
   const img=new Image();
+  img.decoding='async';
   img.src=src;
   imageCache.set(src,img);
   return img;
 }
 
+function getPattern(src,img){
+  const key=src;
+  if(patternCache.has(key)) return patternCache.get(key);
+  if(!img?.complete||!img.naturalWidth) return null;
+  const pattern=ctx.createPattern(img,'repeat');
+  if(pattern) patternCache.set(key,pattern);
+  return pattern;
+}
+
+async function preloadVisualAssets(){
+  const urls=new Set();
+  for(const material of Object.values(modelLibrary?.materials||{})){
+    if(material.texture) urls.add(material.texture+'?v=0.35');
+  }
+  for(const npc of Object.values(sprites?.npcs||{})){
+    for(const action of Object.values(npc.atlas?.actions||{})){
+      if(action.source) urls.add(action.source.replace(/v=0\.\d+/,'v=0.35'));
+    }
+  }
+  for(const p of Object.values(sprites?.players||{})){
+    for(const layer of p.layers||[]){
+      for(const src of Object.values(layer.actions||{})) urls.add(src+'?v=0.35');
+    }
+  }
+  const decodes=[];
+  for(const url of urls){
+    const img=getImage(url);
+    if(typeof img.decode==='function') decodes.push(img.decode().catch(()=>{}));
+  }
+  await Promise.allSettled(decodes);
+}
+
 function project(x,y,z){
   const dx=x-camera.x,dz=z-camera.z;
-  const cy=Math.cos(camera.yaw),sy=Math.sin(camera.yaw);
-  const rx=dx*cy-dz*sy;
-  const rz=dx*sy+dz*cy;
-  const cp=Math.cos(camera.pitch),sp=Math.sin(camera.pitch);
+  const rx=dx*projection.cy-dz*projection.sy;
+  const rz=dx*projection.sy+dz*projection.cy;
   return {
-    x:innerWidth/2+rx*camera.zoom,
-    y:innerHeight/2+(rz*cp-y*sp)*camera.zoom,
-    depth:rz*sp+y*cp
+    x:projection.halfW+rx*camera.zoom,
+    y:projection.halfH+(rz*projection.cp-y*projection.sp)*camera.zoom,
+    depth:rz*projection.sp+y*projection.cp
   };
 }
 
 function unprojectGround(screenX,screenY){
   if(!world) return null;
-  const cy=Math.cos(camera.yaw),sy=Math.sin(camera.yaw);
-  const cp=Math.cos(camera.pitch),sp=Math.sin(camera.pitch);
-  const rx=(screenX-innerWidth/2)/camera.zoom;
+  const rx=(screenX-projection.halfW)/camera.zoom;
   let y=0,wx=0,wz=0;
   for(let i=0;i<3;i++){
-    const rz=((screenY-innerHeight/2)/camera.zoom+y*sp)/Math.max(.08,cp);
-    const dx=rx*cy+rz*sy;
-    const dz=-rx*sy+rz*cy;
-    wx=camera.x+dx; wz=camera.z+dz;
+    const rz=((screenY-projection.halfH)/camera.zoom+y*projection.sp)/Math.max(.08,projection.cp);
+    const dx=rx*projection.cy+rz*projection.sy;
+    const dz=-rx*projection.sy+rz*projection.cy;
+    wx=camera.x+dx;
+    wz=camera.z+dz;
     y=heightAt(wx,wz);
   }
   return {x:wx,z:wz,y};
 }
 
-function poly(points,fill,stroke=null,lineWidth=1){
+function beginPath(points){
   ctx.beginPath();
-  points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+  for(let i=0;i<points.length;i++){
+    const p=points[i];
+    if(i) ctx.lineTo(p.x,p.y); else ctx.moveTo(p.x,p.y);
+  }
   ctx.closePath();
+}
+
+function poly(points,fill,stroke=null,lineWidth=1){
+  beginPath(points);
   ctx.fillStyle=fill;
   ctx.fill();
   if(stroke){
@@ -93,8 +182,24 @@ function poly(points,fill,stroke=null,lineWidth=1){
   }
 }
 
+function clippedFill(points,fillStyle,alpha=1){
+  const bounds=screenBounds(points,1);
+  if(!boundsVisible(bounds,viewportW,viewportH,perf.settings.cullMargin)) return false;
+  const x0=Math.max(-2,bounds.x0),y0=Math.max(-2,bounds.y0);
+  const x1=Math.min(viewportW+2,bounds.x1),y1=Math.min(viewportH+2,bounds.y1);
+  if(x1<=x0||y1<=y0) return false;
+  ctx.save();
+  beginPath(points);
+  ctx.clip();
+  ctx.globalAlpha=alpha;
+  ctx.fillStyle=fillStyle;
+  ctx.fillRect(x0,y0,x1-x0,y1-y0);
+  ctx.restore();
+  return true;
+}
+
 function fogged(color,depth){
-  if(!showFog||!world?.fog?.enabled) return color;
+  if(!effectiveFog()) return color;
   return mixColor(color,world.fog.color,fogFactor(depth,world.fog)*.72);
 }
 
@@ -103,194 +208,255 @@ function lit(color,normal,depth,extra=1){
   return fogged(shadeColor(color,factor*extra),depth);
 }
 
-
-function beginFacePath(points){
-  ctx.beginPath();
-  points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
-  ctx.closePath();
-}
-
-function facePattern(face,img){
-  const pattern=ctx.createPattern(img,'repeat');
+function facePattern(face,img,src){
+  const pattern=getPattern(src,img);
   if(!pattern) return null;
-  if(typeof pattern.setTransform==='function' && typeof DOMMatrix!=='undefined' && face.points?.length>=2){
+  if(typeof pattern.setTransform==='function'&&typeof DOMMatrix!=='undefined'&&face.points?.length>=2){
     const a=face.points[0],b=face.points[1];
-    const cx=face.points.reduce((s,p)=>s+p.x,0)/face.points.length;
-    const cy=face.points.reduce((s,p)=>s+p.y,0)/face.points.length;
+    let cx=0,cy=0;
+    for(const p of face.points){cx+=p.x;cy+=p.y}
+    cx/=face.points.length;cy/=face.points.length;
     const angle=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
     const edge=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
-    const scale=Math.max(.55,Math.min(2.2,edge/96));
+    const scale=Math.max(.58,Math.min(2.0,edge/104));
     pattern.setTransform(new DOMMatrix().translate(cx,cy).rotate(angle).scale(scale,scale).translate(-cx,-cy));
   }
   return pattern;
 }
 
-function faceCentroid3D(vertices){
-  const n=Math.max(1,vertices?.length||0);
-  return (vertices||[]).reduce((acc,v)=>({
-    x:acc.x+v.x/n,y:acc.y+v.y/n,z:acc.z+v.z/n
-  }),{x:0,y:0,z:0});
+function prepareTerrain(){
+  terrainCells=[];
+  terrainEdges=[];
+  const t=world.terrain;
+
+  for(let z=0;z<t.rows;z++){
+    for(let x=0;x<t.cols;x++){
+      const h00=heightAt(x,z);
+      const h10=heightAt(x+1,z);
+      const h11=heightAt(x+1,z+1);
+      const h01=heightAt(x,z+1);
+      const path=isPathAt(t,x+.5,z+.5);
+      const jitter=((x*17+z*29)%9)-4;
+      const baseColor=path?t.pathColor:shadeColor(t.baseColor,1+jitter*.008);
+      const normal=terrainNormal(heightAt,x+.5,z+.5,.22);
+      const sunLight=lightFactor(normal,world.lighting,sun);
+      const localLight=pointLightContribution(
+        {x:x+.5,y:heightAt(x+.5,z+.5),z:z+.5},
+        world.lights
+      );
+      terrainCells.push({
+        x,z,path,baseColor,normal,sunLight,localLight,
+        verts:[
+          {x,y:h00,z},{x:x+1,y:h10,z},
+          {x:x+1,y:h11,z:z+1},{x,y:h01,z:z+1}
+        ]
+      });
+    }
+  }
+
+  const skirt=-1.15;
+  for(let x=0;x<t.cols;x++){
+    for(const z of [0,t.rows]){
+      terrainEdges.push([
+        {x,y:heightAt(x,z),z},
+        {x:x+1,y:heightAt(x+1,z),z},
+        {x:x+1,y:skirt,z},
+        {x,y:skirt,z}
+      ]);
+    }
+  }
+  for(let z=0;z<t.rows;z++){
+    for(const x of [0,t.cols]){
+      terrainEdges.push([
+        {x,y:heightAt(x,z),z},
+        {x,y:heightAt(x,z+1),z:z+1},
+        {x,y:skirt,z:z+1},
+        {x,y:skirt,z}
+      ]);
+    }
+  }
+}
+
+function prepareModels(){
+  preparedMeshes.clear();
+  for(const model of world.models||[]){
+    if(model.renderMode!=='mesh'||!model.meshId) continue;
+    const prepared=prepareMeshInstance(
+      modelLibrary,model,heightAt,lightFactor,world.lighting,sun,world.lights
+    );
+    if(prepared) preparedMeshes.set(model.id,prepared);
+  }
+}
+
+function preparePalisade(){
+  palisadeGroups=[];
+  for(const segment of world.palisade||[]){
+    const dx=segment.x2-segment.x1,dz=segment.z2-segment.z1;
+    const len=Math.hypot(dx,dz);
+    const count=Math.max(1,Math.floor(len/.46));
+    const posts=[];
+    for(let i=0;i<=count;i++){
+      const t=i/count;
+      const x=segment.x1+dx*t,z=segment.z1+dz*t;
+      posts.push({x,z,y:heightAt(x,z)});
+    }
+    palisadeGroups.push({
+      segment,
+      posts,
+      cx:(segment.x1+segment.x2)*.5,
+      cz:(segment.z1+segment.z2)*.5
+    });
+  }
+}
+
+function modelVisible(prepared){
+  if(!prepared) return true;
+  const p=project(prepared.center.x,prepared.center.y,prepared.center.z);
+  const r=Math.max(50,prepared.radius*camera.zoom*1.15);
+  return p.x+r>=-perf.settings.cullMargin&&p.x-r<=viewportW+perf.settings.cullMargin&&
+    p.y+r>=-perf.settings.cullMargin&&p.y-r<=viewportH+perf.settings.cullMargin;
 }
 
 function drawTexturedMeshFace(face){
-  beginFacePath(face.points);
-  ctx.save();
-  ctx.clip();
+  const bounds=screenBounds(face.points,1);
+  if(!boundsVisible(bounds,viewportW,viewportH,perf.settings.cullMargin)) return;
 
-  ctx.fillStyle=face.color;
-  ctx.fillRect(0,0,innerWidth,innerHeight);
+  clippedFill(face.points,face.color,1);
 
-  const texSrc=face.material?.texture;
-  if(texSrc){
-    const img=getImage(texSrc+'?v=0.34');
-    if(img?.complete && img.naturalWidth){
-      const pattern=facePattern(face,img);
-      if(pattern){
-        ctx.globalAlpha=.88;
-        ctx.fillStyle=pattern;
-        ctx.fillRect(0,0,innerWidth,innerHeight);
-        ctx.globalAlpha=1;
+  if(perf.settings.meshTextures){
+    const texSrc=face.material?.texture;
+    if(texSrc){
+      const url=texSrc+'?v=0.35';
+      const img=getImage(url);
+      if(img?.complete&&img.naturalWidth){
+        const pattern=facePattern(face,img,url);
+        if(pattern) clippedFill(face.points,pattern,perf.settings.meshTextureAlpha);
       }
     }
   }
 
   if(showLighting){
     if(face.light<1){
-      ctx.fillStyle='rgba(19,13,9,'+Math.min(.55,(1-face.light)*.72)+')';
-      ctx.fillRect(0,0,innerWidth,innerHeight);
+      clippedFill(face.points,'rgba(19,13,9,'+Math.min(.48,(1-face.light)*.66)+')',1);
     }else if(face.light>1){
-      ctx.fillStyle='rgba(255,231,177,'+Math.min(.22,(face.light-1)*.35)+')';
-      ctx.fillRect(0,0,innerWidth,innerHeight);
+      clippedFill(face.points,'rgba(255,231,177,'+Math.min(.18,(face.light-1)*.30)+')',1);
     }
 
-    const local=pointLightContribution(faceCentroid3D(face.verts3),world.lights);
-    if(local.intensity>0){
-      ctx.fillStyle=local.color;
-      ctx.globalAlpha=Math.min(.34,local.intensity*.28);
-      ctx.fillRect(0,0,innerWidth,innerHeight);
-      ctx.globalAlpha=1;
+    if(perf.settings.pointLights&&face.localLight?.intensity>0){
+      clippedFill(
+        face.points,
+        face.localLight.color,
+        Math.min(.30,face.localLight.intensity*.24)
+      );
     }
   }
-  if(showFog && face.fog>0){
-    ctx.fillStyle=world.fog.color;
-    ctx.globalAlpha=Math.min(.72,face.fog*.72);
-    ctx.fillRect(0,0,innerWidth,innerHeight);
-    ctx.globalAlpha=1;
-  }
-  ctx.restore();
 
-  beginFacePath(face.points);
-  ctx.strokeStyle='#2e21155c';
-  ctx.lineWidth=1;
-  ctx.stroke();
+  if(effectiveFog()&&face.fog>0){
+    clippedFill(face.points,world.fog.color,Math.min(.68,face.fog*.68));
+  }
+
+  if(perf.settings.id!=='performance'){
+    beginPath(face.points);
+    ctx.strokeStyle='#2e211550';
+    ctx.lineWidth=1;
+    ctx.stroke();
+  }
 }
 
 function drawMeshModel(model){
-  if(!modelLibrary||!model.meshId) return false;
-  const faces=buildMeshFaces(
-    modelLibrary,model,heightAt,project,lightFactor,world.lighting,sun,world.fog,showLighting,showFog
+  const prepared=preparedMeshes.get(model.id);
+  if(!prepared||!modelVisible(prepared)) return false;
+  const faces=projectPreparedMesh(
+    prepared,project,world.fog,showLighting,effectiveFog()
   );
   if(!faces.length) return false;
-  const shadow=modelShadowSize(model);
-  drawGroundShadow(model.x,model.z,shadow.w,shadow.d,.24);
+
+  if(perf.settings.shadows){
+    const shadow=modelShadowSize(model);
+    drawGroundShadow(model.x,model.z,shadow.w,shadow.d,.22);
+  }
+
   faces.sort((a,b)=>a.depth-b.depth);
   for(const face of faces) drawTexturedMeshFace(face);
   return true;
 }
 
-function faceDepth(points){
-  return points.reduce((sum,p)=>sum+p.depth,0)/Math.max(1,points.length);
-}
+function drawGroundCell(cell,points,depth){
+  const bounds=screenBounds(points,1);
+  if(!boundsVisible(bounds,viewportW,viewportH,perf.settings.cullMargin)) return;
 
+  let color=showLighting?shadeColor(cell.baseColor,cell.sunLight):cell.baseColor;
+  if(effectiveFog()) color=mixColor(color,world.fog.color,fogFactor(depth,world.fog)*.72);
 
-function drawGroundCell(cell){
-  beginFacePath(cell.p);
-  ctx.fillStyle=cell.color;
+  beginPath(points);
+  ctx.fillStyle=color;
   ctx.fill();
 
-  const textureSrc=cell.path?world.terrain.pathTexture:world.terrain.texture;
-  if(textureSrc){
-    const img=getImage(textureSrc+'?v=0.34');
-    if(img?.complete && img.naturalWidth){
-      ctx.save();
-      beginFacePath(cell.p);
-      ctx.clip();
-      const pattern=ctx.createPattern(img,'repeat');
-      if(pattern){
-        ctx.globalAlpha=.52;
-        ctx.globalCompositeOperation='multiply';
-        ctx.fillStyle=pattern;
-        ctx.fillRect(0,0,innerWidth,innerHeight);
+  if(perf.settings.terrainTextures){
+    const textureSrc=cell.path?world.terrain.pathTexture:world.terrain.texture;
+    if(textureSrc){
+      const url=textureSrc+'?v=0.35';
+      const img=getImage(url);
+      if(img?.complete&&img.naturalWidth){
+        const pattern=getPattern(url,img);
+        if(pattern){
+          ctx.save();
+          beginPath(points);
+          ctx.clip();
+          ctx.globalAlpha=perf.settings.terrainTextureAlpha;
+          ctx.globalCompositeOperation='multiply';
+          ctx.fillStyle=pattern;
+          const x0=Math.max(-2,bounds.x0),y0=Math.max(-2,bounds.y0);
+          const x1=Math.min(viewportW+2,bounds.x1),y1=Math.min(viewportH+2,bounds.y1);
+          if(x1>x0&&y1>y0) ctx.fillRect(x0,y0,x1-x0,y1-y0);
+          ctx.restore();
+        }
       }
-      ctx.restore();
     }
   }
 
-  if(showLighting){
-    const local=pointLightContribution({x:cell.x+.5,y:heightAt(cell.x+.5,cell.z+.5),z:cell.z+.5},world.lights);
-    if(local.intensity>0){
-      ctx.save();
-      beginFacePath(cell.p);
-      ctx.clip();
-      ctx.fillStyle=local.color;
-      ctx.globalAlpha=Math.min(.30,local.intensity*.24);
-      ctx.fillRect(0,0,innerWidth,innerHeight);
-      ctx.restore();
-    }
+  if(showLighting&&perf.settings.pointLights&&cell.localLight.intensity>0){
+    clippedFill(points,cell.localLight.color,Math.min(.26,cell.localLight.intensity*.21));
   }
 
-  beginFacePath(cell.p);
-  ctx.strokeStyle=showGrid?'#5c431c66':'#6d4d251c';
-  ctx.lineWidth=showGrid?1:.5;
-  ctx.stroke();
+  if(showGrid){
+    beginPath(points);
+    ctx.strokeStyle='#5c431c66';
+    ctx.lineWidth=1;
+    ctx.stroke();
+  }
 }
 
 function drawGround(){
-  const t=world.terrain;
-  const cells=[];
-  for(let z=0;z<t.rows;z++){
-    for(let x=0;x<t.cols;x++){
-      const h00=heightAt(x,z),h10=heightAt(x+1,z),h11=heightAt(x+1,z+1),h01=heightAt(x,z+1);
-      const p=[project(x,h00,z),project(x+1,h10,z),project(x+1,h11,z+1),project(x,h01,z+1)];
-      const depth=faceDepth(p);
-      const path=isPathAt(t,x+.5,z+.5);
-      const jitter=((x*17+z*29)%9)-4;
-      const base=path?t.pathColor:shadeColor(t.baseColor,1+jitter*.008);
-      const normal=terrainNormal(heightAt,x+.5,z+.5,.22);
-      cells.push({p,depth,color:lit(base,normal,depth),x,z,path});
-    }
+  const projected=[];
+  for(const cell of terrainCells){
+    const points=cell.verts.map(v=>project(v.x,v.y,v.z));
+    const bounds=screenBounds(points,2);
+    if(!boundsVisible(bounds,viewportW,viewportH,perf.settings.cullMargin)) continue;
+    let depth=0;
+    for(const p of points) depth+=p.depth;
+    depth/=points.length;
+    projected.push({cell,points,depth});
   }
-  cells.sort((a,b)=>a.depth-b.depth);
-  for(const cell of cells) drawGroundCell(cell);
 
-  const edge='#7b552b';
-  const skirt=1.15;
-  const edges=[];
-  for(let x=0;x<t.cols;x++){
-    for(const z of [0,t.rows]){
-      const a=project(x,heightAt(x,z),z);
-      const b=project(x+1,heightAt(x+1,z),z);
-      const c=project(x+1,-skirt,z);
-      const d=project(x,-skirt,z);
-      edges.push({p:[a,b,c,d],depth:faceDepth([a,b,c,d])});
-    }
+  if(perf.settings.id!=='performance') projected.sort((a,b)=>a.depth-b.depth);
+  for(const item of projected) drawGroundCell(item.cell,item.points,item.depth);
+
+  if(perf.settings.id==='performance') return;
+  for(const edge of terrainEdges){
+    const points=edge.map(v=>project(v.x,v.y,v.z));
+    const bounds=screenBounds(points,1);
+    if(!boundsVisible(bounds,viewportW,viewportH,20)) continue;
+    let depth=0;for(const p of points)depth+=p.depth;depth/=points.length;
+    poly(points,fogged('#7b552b',depth),'#4f351e33');
   }
-  for(let z=0;z<t.rows;z++){
-    for(const x of [0,t.cols]){
-      const a=project(x,heightAt(x,z),z);
-      const b=project(x,heightAt(x,z+1),z+1);
-      const c=project(x,-skirt,z+1);
-      const d=project(x,-skirt,z);
-      edges.push({p:[a,b,c,d],depth:faceDepth([a,b,c,d])});
-    }
-  }
-  edges.sort((a,b)=>a.depth-b.depth);
-  for(const e of edges) poly(e.p,fogged(edge,e.depth),'#4f351e44');
 }
 
 function drawGroundShadow(x,z,w=1,d=1,opacity=null){
+  if(!perf.settings.shadows) return;
   const y=heightAt(x,z)+.012;
   const p=project(x,y,z);
+  if(p.x<-120||p.x>viewportW+120||p.y<-120||p.y>viewportH+120) return;
   const reach=.42+Math.max(w,d)*.38;
   const q=project(x-sun.x*reach,y,z-sun.z*reach);
   const vx=q.x-p.x,vy=q.y-p.y;
@@ -309,202 +475,24 @@ function drawGroundShadow(x,z,w=1,d=1,opacity=null){
   ctx.restore();
 }
 
-function boxFaces(m,y=heightAt(m.x,m.z)){
-  const x0=m.x-m.w/2,x1=m.x+m.w/2,z0=m.z-m.d/2,z1=m.z+m.d/2,y1=y+m.h;
-  const v={
-    a:project(x0,y,z0), b:project(x1,y,z0), c:project(x1,y,z1), d:project(x0,y,z1),
-    A:project(x0,y1,z0),B:project(x1,y1,z0),C:project(x1,y1,z1),D:project(x0,y1,z1)
-  };
-  return [
-    {p:[v.a,v.b,v.B,v.A],base:m.wall,n:{x:0,y:0,z:-1},mul:.96},
-    {p:[v.b,v.c,v.C,v.B],base:m.wall,n:{x:1,y:0,z:0},mul:.90},
-    {p:[v.c,v.d,v.D,v.C],base:m.wall,n:{x:0,y:0,z:1},mul:.88},
-    {p:[v.d,v.a,v.A,v.D],base:m.wall,n:{x:-1,y:0,z:0},mul:.84},
-    {p:[v.A,v.B,v.C,v.D],base:m.roof||m.wall,n:{x:0,y:1,z:0},mul:1.04}
-  ];
-}
+function drawFire(model,now){
+  if(perf.settings.shadows) drawGroundShadow(model.x,model.z,1,1,.16);
+  const y=heightAt(model.x,model.z);
+  const base=project(model.x,y+.05,model.z);
+  if(base.x<-80||base.x>viewportW+80||base.y<-100||base.y>viewportH+100) return;
 
-function drawBox(m){
-  drawGroundShadow(m.x,m.z,m.w,m.d);
-  const faces=boxFaces(m).map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-  for(const f of faces) poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#3c281766');
-}
-
-function drawTent(m){
-  drawGroundShadow(m.x,m.z,m.w*1.05,m.d*1.08,.26);
-  const y=heightAt(m.x,m.z),wallH=m.h*.46,roofY=y+m.h;
-  const x0=m.x-m.w/2,x1=m.x+m.w/2,z0=m.z-m.d/2,z1=m.z+m.d/2;
-  const v={
-    a:project(x0,y,z0),b:project(x1,y,z0),c:project(x1,y,z1),d:project(x0,y,z1),
-    A:project(x0,y+wallH,z0),B:project(x1,y+wallH,z0),C:project(x1,y+wallH,z1),D:project(x0,y+wallH,z1),
-    r0:project(m.x,roofY,z0),r1:project(m.x,roofY,z1)
-  };
-  const faces=[
-    {p:[v.a,v.b,v.B,v.A],base:m.wall,n:{x:0,y:0,z:-1},mul:.98},
-    {p:[v.b,v.c,v.C,v.B],base:m.wall,n:{x:1,y:0,z:0},mul:.91},
-    {p:[v.c,v.d,v.D,v.C],base:m.wall,n:{x:0,y:0,z:1},mul:.88},
-    {p:[v.d,v.a,v.A,v.D],base:m.wall,n:{x:-1,y:0,z:0},mul:.85},
-    {p:[v.A,v.B,v.r0],base:m.roof,n:{x:0,y:.75,z:-.65},mul:1.03},
-    {p:[v.B,v.C,v.r1,v.r0],base:m.roof,n:{x:.7,y:.72,z:0},mul:.98},
-    {p:[v.D,v.A,v.r0,v.r1],base:m.roof,n:{x:-.7,y:.72,z:0},mul:.89},
-    {p:[v.C,v.D,v.r1],base:m.roof,n:{x:0,y:.75,z:.65},mul:.94}
-  ].map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-  faces.forEach(f=>poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#38251677'));
-
-  const front=project(m.x,y+wallH*.48,z0-.01);
-  const bottom=project(m.x,y,z0-.01);
-  ctx.strokeStyle=fogged(m.accent||'#7c2d2d',front.depth);
-  ctx.lineWidth=Math.max(2,camera.zoom*.07);
-  ctx.beginPath();ctx.moveTo(front.x,front.y);ctx.lineTo(bottom.x,bottom.y);ctx.stroke();
-}
-
-function drawTower(m){
-  drawGroundShadow(m.x,m.z,m.w,m.d,.3);
-  const baseY=heightAt(m.x,m.z);
-  const legW=.18;
-  for(const ox of [-m.w*.34,m.w*.34]){
-    for(const oz of [-m.d*.34,m.d*.34]){
-      const leg={...m,x:m.x+ox,z:m.z+oz,w:legW,d:legW,h:m.h*.68,wall:m.wall,roof:m.wall};
-      const faces=boxFaces(leg,baseY).map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-      faces.forEach(f=>poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#38251655'));
+  if(perf.settings.id!=='performance'){
+    for(let i=0;i<8;i++){
+      const a=i/8*Math.PI*2;
+      const p=project(model.x+Math.cos(a)*.38,y+.08,model.z+Math.sin(a)*.3);
+      ctx.fillStyle=fogged(i%2?'#756657':'#8a7763',p.depth);
+      ctx.beginPath();ctx.ellipse(p.x,p.y,5,3,0,0,Math.PI*2);ctx.fill();
     }
   }
-  const platform={...m,w:m.w*1.16,d:m.d*1.16,h:.30,wall:m.wall,roof:m.roof};
-  const pf=boxFaces(platform,baseY+m.h*.68).map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-  pf.forEach(f=>poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#38251666'));
 
-  const y=baseY+m.h*.98;
-  const rw=m.w*1.4,rd=m.d*1.4;
-  const A=project(m.x-rw/2,y,m.z-rd/2),B=project(m.x+rw/2,y,m.z-rd/2),C=project(m.x+rw/2,y,m.z+rd/2),D=project(m.x-rw/2,y,m.z+rd/2);
-  const r0=project(m.x,y+1.0,m.z-rd/2),r1=project(m.x,y+1.0,m.z+rd/2);
-  const rf=[
-    {p:[A,B,r0],n:{x:0,y:.8,z:-.6}},
-    {p:[B,C,r1,r0],n:{x:.6,y:.8,z:0}},
-    {p:[D,A,r0,r1],n:{x:-.6,y:.8,z:0}},
-    {p:[C,D,r1],n:{x:0,y:.8,z:.6}}
-  ].map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-  rf.forEach(f=>poly(f.p,lit(m.roof,f.n,f.depth),'#38251666'));
-}
-
-function drawGate(m){
-  drawGroundShadow(m.x,m.z,m.w,m.d,.25);
-  const y=heightAt(m.x,m.z);
-  const postW=.42;
-  for(const ox of [-m.w*.38,m.w*.38]){
-    const post={...m,x:m.x+ox,w:postW,d:m.d,h:m.h,wall:m.wall,roof:m.wall};
-    const faces=boxFaces(post,y).map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-    faces.forEach(f=>poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#38251666'));
-  }
-  const beam={...m,w:m.w,d:m.d*.9,h:.45,wall:m.roof,roof:shadeColor(m.roof,1.08)};
-  const bf=boxFaces(beam,y+m.h-.45).map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-  bf.forEach(f=>poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#38251666'));
-}
-
-function drawWell(m){
-  drawGroundShadow(m.x,m.z,m.w,m.d,.22);
-  const y=heightAt(m.x,m.z);
-  const segments=10;
-  const lower=[],upper=[];
-  for(let i=0;i<segments;i++){
-    const a=i/segments*Math.PI*2;
-    lower.push(project(m.x+Math.cos(a)*m.w*.5,y,m.z+Math.sin(a)*m.d*.5));
-    upper.push(project(m.x+Math.cos(a)*m.w*.5,y+m.h*.45,m.z+Math.sin(a)*m.d*.5));
-  }
-  const side=[];
-  for(let i=0;i<segments;i++){
-    const j=(i+1)%segments;
-    side.push({p:[lower[i],lower[j],upper[j],upper[i]],depth:faceDepth([lower[i],lower[j],upper[j],upper[i]]),i});
-  }
-  side.sort((a,b)=>a.depth-b.depth).forEach(s=>{
-    const a=(s.i+.5)/segments*Math.PI*2;
-    poly(s.p,lit(m.wall,{x:Math.cos(a),y:0,z:Math.sin(a)},s.depth),'#3b291866');
-  });
-  poly(upper,lit('#6e6251',{x:0,y:1,z:0},faceDepth(upper)),'#3c2c2077');
-  const center=project(m.x,y+m.h*.46,m.z);
-  ctx.beginPath();ctx.ellipse(center.x,center.y,Math.max(6,m.w*camera.zoom*.31),Math.max(3,m.d*camera.zoom*.12),0,0,Math.PI*2);
-  ctx.fillStyle=fogged('#31545e',center.depth);ctx.fill();
-}
-
-function drawTree(m){
-  drawGroundShadow(m.x,m.z,m.w,m.d,.28);
-  const baseY=heightAt(m.x,m.z);
-  const trunk={...m,w:.28,d:.28,h:m.h*.65,wall:m.wall,roof:m.wall};
-  const tf=boxFaces(trunk,baseY).map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-  tf.forEach(f=>poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#36241455'));
-  const y=baseY+m.h*.58;
-  const top=project(m.x,y+m.h*.42,m.z);
-  const left=project(m.x-m.w*.62,y,m.z);
-  const right=project(m.x+m.w*.62,y,m.z);
-  const front=project(m.x,y,m.z+m.d*.62);
-  const back=project(m.x,y,m.z-m.d*.62);
-  const faces=[
-    {p:[top,left,front],n:{x:-.5,y:.7,z:.5}},
-    {p:[top,front,right],n:{x:.5,y:.7,z:.5}},
-    {p:[top,right,back],n:{x:.5,y:.7,z:-.5}},
-    {p:[top,back,left],n:{x:-.5,y:.7,z:-.5}}
-  ].map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-  faces.forEach((f,i)=>poly(f.p,lit(m.roof,f.n,f.depth,.92+i*.025),'#30401f55'));
-}
-
-function drawRock(m){
-  drawGroundShadow(m.x,m.z,m.w,m.d,.18);
-  const y=heightAt(m.x,m.z);
-  const pts=[
-    project(m.x-m.w*.5,y,m.z-m.d*.25),
-    project(m.x+m.w*.5,y,m.z-m.d*.3),
-    project(m.x+m.w*.42,y,m.z+m.d*.38),
-    project(m.x-m.w*.45,y,m.z+m.d*.42)
-  ];
-  const top=project(m.x,y+m.h,m.z);
-  const faces=[];
-  for(let i=0;i<pts.length;i++){
-    const j=(i+1)%pts.length;
-    faces.push({p:[pts[i],pts[j],top],depth:faceDepth([pts[i],pts[j],top]),n:{x:Math.cos(i*Math.PI/2),y:.55,z:Math.sin(i*Math.PI/2)}});
-  }
-  faces.sort((a,b)=>a.depth-b.depth).forEach(f=>poly(f.p,lit(m.wall,f.n,f.depth),'#4b423d55'));
-}
-
-function drawBench(m){
-  drawGroundShadow(m.x,m.z,m.w,m.d,.15);
-  const y=heightAt(m.x,m.z);
-  const seat={...m,h:.18,wall:m.wall,roof:m.roof};
-  const sf=boxFaces(seat,y+m.h*.55).map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-  sf.forEach(f=>poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#3d281766'));
-  for(const ox of [-m.w*.35,m.w*.35]){
-    const leg={...m,x:m.x+ox,w:.16,d:.18,h:m.h*.58,wall:m.wall,roof:m.wall};
-    const lf=boxFaces(leg,y).map(f=>({...f,depth:faceDepth(f.p)})).sort((a,b)=>a.depth-b.depth);
-    lf.forEach(f=>poly(f.p,lit(f.base,f.n,f.depth,f.mul),'#3d281755'));
-  }
-}
-
-function drawBanner(m){
-  const y=heightAt(m.x,m.z);
-  const a=project(m.x,y,m.z),b=project(m.x,y+m.h,m.z);
-  ctx.strokeStyle=lit(m.wall,{x:0,y:1,z:0},b.depth);
-  ctx.lineWidth=Math.max(2,camera.zoom*.07);
-  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-  const right=project(m.x+.8,y+m.h-.12,m.z);
-  const low=project(m.x+.72,y+m.h-.85,m.z);
-  poly([b,right,low,project(m.x,y+m.h-.72,m.z)],fogged(m.roof,b.depth),'#5b1f2388');
-  const emblem=project(m.x+.38,y+m.h-.43,m.z);
-  ctx.fillStyle=fogged(m.accent||'#e0b84b',emblem.depth);
-  ctx.fillRect(emblem.x-3,emblem.y-3,6,6);
-}
-
-function drawFire(m,now){
-  drawGroundShadow(m.x,m.z,1,1,.18);
-  const y=heightAt(m.x,m.z);
-  const base=project(m.x,y+.05,m.z);
-  const stones=8;
-  for(let i=0;i<stones;i++){
-    const a=i/stones*Math.PI*2;
-    const p=project(m.x+Math.cos(a)*.38,y+.08,m.z+Math.sin(a)*.3);
-    ctx.fillStyle=fogged(i%2?'#756657':'#8a7763',p.depth);
-    ctx.beginPath();ctx.ellipse(p.x,p.y,5,3,0,0,Math.PI*2);ctx.fill();
-  }
   const flicker=Math.sin(now*.013)*3;
-  const top=project(m.x,y+.9+flicker/camera.zoom,m.z);
-  const mid=project(m.x,y+.45,m.z);
+  const top=project(model.x,y+.9+flicker/camera.zoom,model.z);
+  const mid=project(model.x,y+.45,model.z);
   ctx.beginPath();
   ctx.moveTo(base.x-11,base.y);ctx.quadraticCurveTo(mid.x-13,mid.y,top.x,top.y);
   ctx.quadraticCurveTo(mid.x+12,mid.y,base.x+11,base.y);ctx.closePath();
@@ -515,56 +503,51 @@ function drawFire(m,now){
   ctx.fillStyle='#ffd45b';ctx.fill();
 }
 
-function drawPalisade(segment){
-  const dx=segment.x2-segment.x1,dz=segment.z2-segment.z1;
-  const len=Math.hypot(dx,dz);
-  const count=Math.max(1,Math.floor(len/.48));
-  for(let i=0;i<=count;i++){
-    const t=i/count;
-    const x=segment.x1+dx*t,z=segment.z1+dz*t;
-    const y=heightAt(x,z);
-    const a=project(x,y,z),b=project(x,y+1.15,z),tip=project(x,y+1.38,z);
-    ctx.strokeStyle=lit('#785331',{x:0,y:1,z:0},b.depth,.86);
-    ctx.lineWidth=Math.max(2,camera.zoom*.08);
-    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-    ctx.fillStyle=fogged('#5e3d27',tip.depth);
-    ctx.beginPath();ctx.moveTo(b.x-3,b.y);ctx.lineTo(tip.x,tip.y);ctx.lineTo(b.x+3,b.y);ctx.closePath();ctx.fill();
-  }
+function drawModel(model,now){
+  if(model.renderMode==='mesh') return drawMeshModel(model);
+  if(model.type==='fire') return drawFire(model,now);
+  return false;
 }
 
-function drawModel(m,now){
-  if(m.renderMode==='mesh' && drawMeshModel(m)) return;
-  if(m.type==='tent') return drawTent(m);
-  if(m.type==='tower') return drawTower(m);
-  if(m.type==='gate') return drawGate(m);
-  if(m.type==='well') return drawWell(m);
-  if(m.type==='tree') return drawTree(m);
-  if(m.type==='rock') return drawRock(m);
-  if(m.type==='bench') return drawBench(m);
-  if(m.type==='banner') return drawBanner(m);
-  if(m.type==='fire') return drawFire(m,now);
-  return drawBox(m);
+function drawPalisade(group){
+  const stride=Math.max(1,perf.settings.palisadeStride|0);
+  const posts=group.posts;
+  for(let i=0;i<posts.length;i+=stride){
+    const post=posts[i];
+    const a=project(post.x,post.y,post.z);
+    if(a.x<-50||a.x>viewportW+50||a.y<-80||a.y>viewportH+80) continue;
+    const b=project(post.x,post.y+1.15,post.z);
+    const tip=project(post.x,post.y+1.38,post.z);
+    ctx.strokeStyle=lit('#785331',{x:0,y:1,z:0},b.depth,.86);
+    ctx.lineWidth=Math.max(1.4,camera.zoom*.065);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    ctx.fillStyle=fogged('#5e3d27',tip.depth);
+    ctx.beginPath();ctx.moveTo(b.x-2.5,b.y);ctx.lineTo(tip.x,tip.y);ctx.lineTo(b.x+2.5,b.y);ctx.closePath();ctx.fill();
+  }
 }
 
 function drawAtlasSprite(meta,x,z,worldDir,frame=0,scale=.72){
   if(!meta?.atlas) return;
   const cfg=meta.atlas.actions?.idle;
   if(!cfg) return;
+  const p=project(x,heightAt(x,z),z);
+  if(p.x<-100||p.x>viewportW+100||p.y<-140||p.y>viewportH+100) return;
+
   const dirIndex=visibleDirectionIndex(worldDir,camera.yaw);
   const direction=(meta.atlas.directionOrder||DIRS)[dirIndex];
   const row=(meta.atlas.directionOrder||DIRS).indexOf(direction);
-  const img=getImage(cfg.source.replace(/v=0\.\d+/,'v=0.34'));
+  const img=getImage(cfg.source.replace(/v=0\.\d+/,'v=0.35'));
   if(!img?.complete) return;
+
+  if(perf.settings.shadows) drawGroundShadow(x,z,.72,.45,.20);
   const fw=meta.atlas.frame.width,fh=meta.atlas.frame.height;
-  const p=project(x,heightAt(x,z),z);
-  drawGroundShadow(x,z,.72,.45,.22);
   const zoomScale=camera.zoom/Math.max(1,Number(world.camera.zoom||46));
   const worldScale=scale*zoomScale;
   const dw=fw*worldScale,dh=fh*worldScale;
-  const fogAlpha=1-(showFog?fogFactor(p.depth,world.fog)*.38:0);
+  const fogAlpha=1-(effectiveFog()?fogFactor(p.depth,world.fog)*.38:0);
   ctx.save();
   ctx.globalAlpha=Math.max(.58,fogAlpha);
-  ctx.drawImage(img,(frame%cfg.frames)*fw,row*fh,fw,fh,p.x-dw/2,p.y-dh+3,dw,dh);
+  ctx.drawImage(img,(frame%cfg.frames)*fw,row*fh,fw,fh,p.x-dw*.5,p.y-dh+3,dw,dh);
   ctx.restore();
 }
 
@@ -580,19 +563,21 @@ function drawLayeredPlayer(now){
   const dirIndex=visibleDirectionIndex(player.dir,camera.yaw);
   const direction=meta.directionOrder[dirIndex];
   const p=project(player.x,heightAt(player.x,player.z),player.z);
-  drawGroundShadow(player.x,player.z,.78,.46,.24);
+  if(perf.settings.shadows) drawGroundShadow(player.x,player.z,.78,.46,.22);
+
   const zoomScale=camera.zoom/Math.max(1,Number(world.camera.zoom||46));
-  const scale=.80*zoomScale,fw=meta.canvas.width,fh=meta.canvas.height,dw=fw*scale,dh=fh*scale;
+  const scale=.80*zoomScale,fw=meta.canvas.width,fh=meta.canvas.height;
+  const dw=fw*scale,dh=fh*scale;
   const layers=[...meta.layers].sort((a,b)=>resolveCharacterLayerZ(a,direction)-resolveCharacterLayerZ(b,direction));
   for(const layer of layers){
     const src=layer.actions?.[player.action]||layer.actions?.idle;
-    const img=getImage((src||'')+'?v=0.34');
+    const img=getImage((src||'')+'?v=0.35');
     if(!img?.complete) continue;
     const row=meta.directionOrder.indexOf(direction);
-    const fogAlpha=1-(showFog?fogFactor(p.depth,world.fog)*.38:0);
+    const fogAlpha=1-(effectiveFog()?fogFactor(p.depth,world.fog)*.38:0);
     ctx.save();
     ctx.globalAlpha=Math.max(.58,fogAlpha);
-    ctx.drawImage(img,player.frame*fw,row*fh,fw,fh,p.x-dw/2,p.y-dh+3,dw,dh);
+    ctx.drawImage(img,player.frame*fw,row*fh,fw,fh,p.x-dw*.5,p.y-dh+3,dw,dh);
     ctx.restore();
   }
 }
@@ -601,62 +586,77 @@ function drawSelector(){
   if(!pointerCell||!world) return;
   const x=pointerCell.x,z=pointerCell.z;
   if(x<0||z<0||x>=world.terrain.cols||z>=world.terrain.rows) return;
-  const p=[
+  const points=[
     project(x,heightAt(x,z)+.018,z),
     project(x+1,heightAt(x+1,z)+.018,z),
     project(x+1,heightAt(x+1,z+1)+.018,z+1),
     project(x,heightAt(x,z+1)+.018,z+1)
   ];
+  if(!boundsVisible(screenBounds(points,2),viewportW,viewportH,10)) return;
   ctx.save();
   ctx.setLineDash([5,3]);
-  poly(p,'rgba(242,202,72,.08)','#f3d35cdd',2);
+  poly(points,'rgba(242,202,72,.06)','#f3d35cbb',1.5);
   ctx.restore();
 }
 
 function buildQueue(now){
-  const q=[];
-  for(const m of world.models){
-    q.push({depth:project(m.x,heightAt(m.x,m.z)+m.h*.35,m.z).depth,draw:()=>drawModel(m,now)});
+  const queue=[];
+  for(const model of world.models||[]){
+    const prepared=preparedMeshes.get(model.id);
+    if(prepared&&!modelVisible(prepared)) continue;
+    const p=project(model.x,heightAt(model.x,model.z)+Number(model.h||1)*.35,model.z);
+    if(p.x<-180||p.x>viewportW+180||p.y<-180||p.y>viewportH+180) continue;
+    queue.push({kind:'model',ref:model,depth:p.depth});
   }
-  for(const s of world.palisade||[]){
-    const x=(s.x1+s.x2)/2,z=(s.z1+s.z2)/2;
-    q.push({depth:project(x,heightAt(x,z)+.6,z).depth,draw:()=>drawPalisade(s)});
+
+  for(const group of palisadeGroups){
+    const p=project(group.cx,heightAt(group.cx,group.cz)+.6,group.cz);
+    if(p.x<-260||p.x>viewportW+260||p.y<-180||p.y>viewportH+180) continue;
+    queue.push({kind:'palisade',ref:group,depth:p.depth});
   }
+
   for(const actor of world.actors||[]){
-    q.push({
-      depth:project(actor.x,heightAt(actor.x,actor.z)+.65,actor.z).depth,
-      draw:()=>{
-        const meta=sprites?.npcs?.[actor.id];
-        const scale=actor.id==='child'?.62:actor.id==='guard'?.78:.72;
-        if(meta?.mode==='atlas') drawAtlasSprite(meta,actor.x,actor.z,actor.dir,Math.floor(now/250),scale);
-      }
-    });
+    const p=project(actor.x,heightAt(actor.x,actor.z)+.65,actor.z);
+    if(p.x<-100||p.x>viewportW+100||p.y<-140||p.y>viewportH+100) continue;
+    queue.push({kind:'actor',ref:actor,depth:p.depth});
   }
-  q.push({depth:project(player.x,heightAt(player.x,player.z)+.7,player.z).depth,draw:()=>drawLayeredPlayer(now)});
-  q.sort((a,b)=>a.depth-b.depth);
-  return q;
+
+  const pp=project(player.x,heightAt(player.x,player.z)+.7,player.z);
+  queue.push({kind:'player',ref:player,depth:pp.depth});
+  queue.sort((a,b)=>a.depth-b.depth);
+  return queue;
 }
 
 function drawAtmosphere(){
-  const g=ctx.createLinearGradient(0,0,0,innerHeight);
-  g.addColorStop(0,'#d8bb80');
-  g.addColorStop(.48,'#c89a5a');
-  g.addColorStop(1,'#8d6435');
-  ctx.fillStyle=g;
-  ctx.fillRect(0,0,innerWidth,innerHeight);
+  ctx.fillStyle=atmosphereGradient||'#c89a5a';
+  ctx.fillRect(0,0,viewportW,viewportH);
+}
+
+function drawVignette(){
+  if(perf.settings.id==='performance') return;
+  ctx.fillStyle=vignetteGradient;
+  ctx.fillRect(0,0,viewportW,viewportH);
 }
 
 function render(now){
   drawAtmosphere();
   drawGround();
   drawSelector();
-  for(const item of buildQueue(now)) item.draw();
 
-  const vignette=ctx.createRadialGradient(innerWidth/2,innerHeight/2,innerHeight*.1,innerWidth/2,innerHeight/2,Math.max(innerWidth,innerHeight)*.76);
-  vignette.addColorStop(0,'#0000');
-  vignette.addColorStop(1,'#25170d42');
-  ctx.fillStyle=vignette;
-  ctx.fillRect(0,0,innerWidth,innerHeight);
+  const queue=buildQueue(now);
+  for(const item of queue){
+    if(item.kind==='model') drawModel(item.ref,now);
+    else if(item.kind==='palisade') drawPalisade(item.ref);
+    else if(item.kind==='actor'){
+      const actor=item.ref;
+      const meta=sprites?.npcs?.[actor.id];
+      const scale=actor.id==='child'?.62:actor.id==='guard'?.78:.72;
+      if(meta?.mode==='atlas') drawAtlasSprite(meta,actor.x,actor.z,actor.dir,Math.floor(now/250),scale);
+    }else if(item.kind==='player'){
+      drawLayeredPlayer(now);
+    }
+  }
+  drawVignette();
 }
 
 function update(dt,now){
@@ -668,7 +668,7 @@ function update(dt,now){
 
   if(dx||dz){
     const len=Math.hypot(dx,dz)||1;
-    dx/=len; dz/=len;
+    dx/=len;dz/=len;
     const speed=2.65*dt;
     player.x=clamp(player.x+dx*speed,.6,world.terrain.cols-.6);
     player.z=clamp(player.z+dz*speed,.6,world.terrain.rows-.6);
@@ -690,32 +690,65 @@ function update(dt,now){
   camera.x+=(player.x-camera.x)*follow;
   camera.z+=(player.z-camera.z)*follow;
 
-  const readout=document.querySelector('#cameraReadout');
-  if(readout){
-    const deg=((Math.round(camera.yaw*180/Math.PI)%360)+360)%360;
-    readout.textContent='Câmera '+deg+'° · pitch '+Math.round(camera.pitch*180/Math.PI)+'° · zoom '+camera.zoom.toFixed(0);
+  if(now-lastReadoutAt>=120){
+    lastReadoutAt=now;
+    const readout=document.querySelector('#cameraReadout');
+    if(readout){
+      const deg=((Math.round(camera.yaw*180/Math.PI)%360)+360)%360;
+      readout.textContent='Câmera '+deg+'° · pitch '+Math.round(camera.pitch*180/Math.PI)+'° · zoom '+camera.zoom.toFixed(0);
+    }
+    const cell=document.querySelector('#cellReadout');
+    if(cell) cell.textContent=pointerCell?'GAT-like: '+pointerCell.x+', '+pointerCell.z:'GAT-like: —';
   }
-  const cell=document.querySelector('#cellReadout');
-  if(cell) cell.textContent=pointerCell?'GAT-like: '+pointerCell.x+', '+pointerCell.z:'GAT-like: —';
+}
+
+function updateQualityUI(){
+  const button=document.querySelector('#qualityButton');
+  if(button) button.textContent='Qualidade: '+perf.label;
+}
+
+function updatePerfUI(now){
+  if(now-lastPerfReadoutAt<350) return;
+  lastPerfReadoutAt=now;
+  const node=document.querySelector('#perfReadout');
+  if(node){
+    node.textContent='Render '+Math.round(perf.avgFps)+' FPS · '+perf.avgCost.toFixed(1)+' ms · DPR '+Math.min(devicePixelRatio||1,perf.settings.dprMax).toFixed(2);
+  }
+  updateQualityUI();
 }
 
 function loop(now){
+  if(document.hidden){
+    last=now;
+    requestAnimationFrame(loop);
+    return;
+  }
+
   const dt=Math.min(.04,(now-last)/1000);
   last=now;
   update(dt,now);
+  updateProjectionCache();
+
+  const start=performance.now();
   render(now);
+  const end=performance.now();
+  renderedFrames++;
+  perf.recordRender(start,end);
+  updatePerfUI(now);
   requestAnimationFrame(loop);
 }
 
 function rotate(steps){
   camera.yaw+=steps*degToRad(world.camera.rotationStepDeg||45);
   camera.yaw=(camera.yaw%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  updateProjectionCache();
 }
 function zoom(delta){
   camera.zoom=clamp(camera.zoom+delta,camera.minZoom,camera.maxZoom);
 }
 function pitch(deltaDeg){
   camera.pitch=clamp(camera.pitch+degToRad(deltaDeg),degToRad(38),degToRad(72));
+  updateProjectionCache();
 }
 
 document.querySelector('#rotateLeft')?.addEventListener('click',()=>rotate(-1));
@@ -724,6 +757,7 @@ document.querySelector('#zoomIn')?.addEventListener('click',()=>zoom(5));
 document.querySelector('#zoomOut')?.addEventListener('click',()=>zoom(-5));
 document.querySelector('#pitchUp')?.addEventListener('click',()=>pitch(-4));
 document.querySelector('#pitchDown')?.addEventListener('click',()=>pitch(4));
+document.querySelector('#qualityButton')?.addEventListener('click',()=>perf.cycle());
 document.querySelector('#toggleSex')?.addEventListener('click',event=>{
   sex=sex==='female'?'male':'female';
   event.currentTarget.textContent='Personagem: '+(sex==='female'?'Feminino':'Masculino');
@@ -744,17 +778,17 @@ document.querySelector('#toggleLight')?.addEventListener('click',event=>{
 addEventListener('keydown',event=>{
   const k=event.key.toLowerCase();
   keys.add(k);
-  if(k==='q') rotate(-1);
-  if(k==='e') rotate(1);
-  if(k==='r') pitch(-3);
-  if(k==='f') pitch(3);
-  if(k==='g') showGrid=!showGrid;
+  if(k==='q')rotate(-1);
+  if(k==='e')rotate(1);
+  if(k==='r')pitch(-3);
+  if(k==='f')pitch(3);
+  if(k==='g')showGrid=!showGrid;
 });
 addEventListener('keyup',event=>keys.delete(event.key.toLowerCase()));
 
 canvas.addEventListener('wheel',event=>{
   event.preventDefault();
-  if(event.shiftKey) pitch(event.deltaY<0?-3:3);
+  if(event.shiftKey)pitch(event.deltaY<0?-3:3);
   else zoom(event.deltaY<0?4:-4);
 },{passive:false});
 
@@ -770,7 +804,7 @@ canvas.addEventListener('pointerdown',event=>{
 canvas.addEventListener('pointermove',event=>{
   const worldPos=unprojectGround(event.clientX,event.clientY);
   if(worldPos) pointerCell={x:Math.floor(worldPos.x),z:Math.floor(worldPos.z)};
-  if(!dragging) return;
+  if(!dragging)return;
   const dx=event.clientX-lastPointerX;
   const dy=event.clientY-lastPointerY;
   lastPointerX=event.clientX;
@@ -784,16 +818,17 @@ canvas.addEventListener('contextmenu',event=>event.preventDefault());
 
 async function init(){
   [world,sprites,modelLibrary]=await Promise.all([
-    loadRoWorld('./assets/maps/judah/ro25d_world.json?v=0.34'),
-    fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.34',{cache:'no-store'}).then(r=>{
-      if(!r.ok) throw new Error('Falha ao carregar sprite_manifest');
+    loadRoWorld('./assets/maps/judah/ro25d_world.json?v=0.35'),
+    fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.35',{cache:'no-store'}).then(r=>{
+      if(!r.ok)throw new Error('Falha ao carregar sprite_manifest');
       return r.json();
     }),
-    loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.34')
+    loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.35')
   ]);
 
   heightAt=createHeightSampler(world.terrain);
   sun=sunDirection(world.lighting);
+
   Object.assign(camera,{
     x:world.playerSpawn.x,
     z:world.playerSpawn.z-3,
@@ -810,13 +845,21 @@ async function init(){
     frameAt:performance.now()
   });
 
+  prepareTerrain();
+  prepareModels();
+  preparePalisade();
+  resize();
+  perf.notify();
+  updateQualityUI();
+  await preloadVisualAssets();
+  last=performance.now();
   requestAnimationFrame(loop);
 }
 
 init().catch(error=>{
   console.error(error);
   ctx.fillStyle='#071019';
-  ctx.fillRect(0,0,innerWidth,innerHeight);
+  ctx.fillRect(0,0,viewportW,viewportH);
   ctx.fillStyle='#ffe2a0';
   ctx.font='16px monospace';
   ctx.fillText('Falha ao carregar protótipo 2.5D: '+error.message,24,40);
