@@ -214,3 +214,46 @@ O efeito usa atenuação por distância e mistura cromática sobre terreno e fac
 As sombras deixaram de ter offset fixo de tela. O deslocamento é calculado a partir da direção solar e depois projetado pela câmera.
 
 Dessa forma, personagem, NPC e cenário compartilham uma leitura luminosa coerente.
+
+
+## 13. Arquitetura tribal por especialização
+
+A geometria genérica permanece disponível, mas estruturas narrativamente importantes podem possuir meshes especializados.
+
+Exemplo:
+
+`tent` → tenda genérica reutilizável.
+
+`judah_standard_tent` → versão arquitetônica específica da Tenda do Estandarte de Judá.
+
+A especialização não muda o formato de instância RSW-like. O mapa continua fornecendo:
+
+`position + dimensions + rotationY + materials + meshId`
+
+Isso permite que cada tribo ganhe identidade sem abandonar a arquitetura compartilhada.
+
+## 14. Detalhamento sem duplicar gameplay
+
+Elementos como:
+
+- cordas;
+- mastros;
+- dosséis;
+- placas;
+- emblemas;
+- bandeiras;
+- cerâmica;
+- tapetes;
+- suportes de armas;
+
+são puramente visuais. Eles não alteram automaticamente o GAT-like, colisão, quests ou interação.
+
+## 15. Billboard acoplado à câmera
+
+A Fase 17 corrige uma diferença importante do protótipo inicial: sprites agora escalam proporcionalmente ao zoom do mundo.
+
+O fluxo passa a ser:
+
+`world position -> project -> camera zoom -> billboard scale -> direction relative to camera`
+
+O fog também influencia a opacidade do billboard, melhorando a integração com o cenário.
