@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Crônicas da Promessa",
-  "version": "0.25",
+  "version": "0.26",
   "architecture": "RO-inspired sprite/action metadata with original artwork",
   "directionOrder8": [
     "s",
@@ -107,7 +107,9 @@
         "interact",
         "work",
         "hurt"
-      ]
+      ],
+      "viewArchitecture": "layered",
+      "layerManifest": "./assets/art/pixel/metadata/character_view.json"
     },
     "female": {
       "mode": "legacy_sheet",
@@ -133,7 +135,9 @@
         "interact",
         "work",
         "hurt"
-      ]
+      ],
+      "viewArchitecture": "layered",
+      "layerManifest": "./assets/art/pixel/metadata/character_view.json"
     }
   },
   "npcs": {
@@ -190,8 +194,17 @@
           "talk",
           "work"
         ],
-        "pathPattern": "./assets/art/pixel/npcs/eliabe/{action}/{direction}/{frame}.png"
-      }
+        "pathPattern": "./assets/art/pixel/npcs/eliabe/{action}/{direction}/{frame}.png",
+        "exportCanvas": {
+          "width": 96,
+          "height": 112,
+          "origin": {
+            "x": 48,
+            "y": 108
+          }
+        }
+      },
+      "spriteSpec": "./assets/art/pixel/npcs/eliabe/eliabe.sprite.json"
     },
     "miria": {
       "name": "Miriã",
@@ -307,5 +320,6 @@
         ]
       }
     }
-  }
+  },
+  "viewManifest": "./assets/art/pixel/metadata/character_view.json"
 }
