@@ -1,5 +1,5 @@
-import { directionFromVector } from './sprite-system.js?v=0.34';
-import { resolveCharacterLayerZ } from './character-layers.js?v=0.34';
+import { directionFromVector } from './sprite-system.js?v=0.35';
+import { resolveCharacterLayerZ } from './character-layers.js?v=0.35';
 
 const DIRS=['s','sw','w','nw','n','ne','e','se'];
 
@@ -105,7 +105,7 @@ export class LayeredPlayerController {
     for(const entry of this.layers.values()){
       const src=entry.layer.actions?.[this.action];
       if(!src) continue;
-      const url=src.includes('?') ? src : src+'?v=0.34';
+      const url=src.includes('?') ? src : src+'?v=0.35';
       if(entry.lastSrc!==url){
         entry.lastSrc=url;
         entry.img.src=url;
@@ -157,7 +157,7 @@ export function renderLayeredPlayerPortrait(root,sex,manifest){
     img.className='portrait-layer-sheet';
     img.alt='';
     img.draggable=false;
-    img.src=src+(src.includes('?')?'':'?v=0.34');
+    img.src=src+(src.includes('?')?'':'?v=0.35');
     img.style.width=sheetW+'px';
     img.style.height=sheetH+'px';
     img.style.transform=`translate(0px,${-row*frameH}px)`;
