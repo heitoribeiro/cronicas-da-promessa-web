@@ -139,4 +139,4 @@ export function boundsVisible(bounds,width,height,margin=0){
   return bounds.x1>=-margin&&bounds.y1>=-margin&&bounds.x0<=width+margin&&bounds.y0<=height+margin;
 }
 
-export {PRESETS as PERFORMANCE_PRESETS};
+export const PERFORMANCE_PRESETS=PRESETS;
