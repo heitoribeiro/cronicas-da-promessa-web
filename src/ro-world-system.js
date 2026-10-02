@@ -115,3 +115,27 @@ export async function loadRoWorld(url='./assets/maps/judah/ro25d_world.json?v=0.
   if(!response.ok) throw new Error(`Falha ao carregar mundo 2.5D (${response.status})`);
   return response.json();
 }
+
+
+export function pointLightContribution(position,lights=[]){
+  let total=0;
+  let r=0,g=0,b=0;
+  for(const light of lights||[]){
+    const dx=(position?.x||0)-Number(light.x||0);
+    const dy=(position?.y||0)-Number(light.y||0);
+    const dz=(position?.z||0)-Number(light.z||0);
+    const range=Math.max(.001,Number(light.range||1));
+    const dist=Math.hypot(dx,dy,dz);
+    if(dist>=range) continue;
+    const t=1-dist/range;
+    const power=t*t*Number(light.intensity??1);
+    const color=parseHex(light.color||'#ffffff');
+    total+=power;
+    r+=color.r*power; g+=color.g*power; b+=color.b*power;
+  }
+  if(total<=0) return {intensity:0,color:'#ffffff'};
+  return {
+    intensity:clamp(total,0,1.5),
+    color:rgbString({r:r/total,g:g/total,b:b/total})
+  };
+}
