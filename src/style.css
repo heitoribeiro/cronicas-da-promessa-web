@@ -1650,3 +1650,81 @@ img{user-select:none;-webkit-user-drag:none}
 }
 .work-site b{opacity:.46!important}
 .world:hover .work-site{opacity:.24!important}
+
+
+/* === PERFORMANCE PHASE 0.35 — ADAPTIVE GAMEPLAY === */
+
+.setting-select-row select{
+  min-width:150px;
+  padding:8px 10px;
+  border:1px solid #8d682d;
+  background:#101a22;
+  color:#f5e7bc;
+  font:700 12px Georgia,serif;
+}
+
+/* Equilibrado: conserva a identidade visual, mas remove efeitos caros de composição. */
+.game.quality-balanced .hud,
+.game.quality-balanced .objective,
+.game.quality-balanced .prompt,
+.game.quality-balanced .game-menu,
+.game.quality-balanced .game-menu-panel,
+.game.quality-balanced .touch button,
+.game.quality-balanced .action{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.game.quality-balanced .npc{
+  animation:none!important;
+}
+.game.quality-balanced .animal-sprite{
+  animation:none!important;
+}
+
+/* Desempenho: prioriza movimento e resposta dos controles. */
+.game.quality-performance .world *{
+  transition:none!important;
+}
+.game.quality-performance .npc,
+.game.quality-performance .npc img,
+.game.quality-performance .animal-sprite,
+.game.quality-performance .fire:before,
+.game.quality-performance .fire:after,
+.game.quality-performance .torch,
+.game.quality-performance .daylight{
+  animation:none!important;
+}
+.game.quality-performance .scenic-asset,
+.game.quality-performance .tower-asset,
+.game.quality-performance .standard-tent-asset,
+.game.quality-performance .workshop-asset,
+.game.quality-performance .warehouse-asset,
+.game.quality-performance .well-asset,
+.game.quality-performance .campfire-asset,
+.game.quality-performance .flora-asset,
+.game.quality-performance .prop-art,
+.game.quality-performance .npc,
+.game.quality-performance .animal-sprite,
+.game.quality-performance .player-art{
+  filter:none!important;
+}
+.game.quality-performance .hud,
+.game.quality-performance .objective,
+.game.quality-performance .prompt,
+.game.quality-performance .game-menu,
+.game.quality-performance .game-menu-panel,
+.game.quality-performance .touch button,
+.game.quality-performance .action{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+.game.quality-performance .world:after{
+  display:none!important;
+}
+.game.quality-performance .dune{
+  filter:none!important;
+}
+.game.quality-performance .work-site{
+  display:none!important;
+}
