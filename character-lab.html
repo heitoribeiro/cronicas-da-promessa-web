@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071019">
+  <title>Crônicas da Promessa — Laboratório do Personagem</title>
+  <link rel="stylesheet" href="./src/character-lab.css?v=0.30">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <small>CRÔNICAS DA PROMESSA</small>
+        <h1>Laboratório do Personagem</h1>
+        <p>Composição em camadas, oito direções e animação sincronizada.</p>
+      </div>
+      <nav><a href="./sprite-lab.html?v=0.30">NPCs</a><a href="./">Jogo</a></nav>
+    </header>
+
+    <section class="toolbar">
+      <label>Personagem
+        <select id="sexSelect">
+          <option value="male">Masculino</option>
+          <option value="female">Feminino</option>
+        </select>
+      </label>
+      <label>Ação
+        <select id="actionSelect">
+          <option value="idle">Parado / Idle</option>
+          <option value="walk" selected>Caminhada / Walk</option>
+        </select>
+      </label>
+      <button id="pauseButton" type="button">Pausar</button>
+      <button id="gridButton" type="button" aria-pressed="true">Grade: ligada</button>
+      <span id="status">Carregando…</span>
+    </section>
+
+    <section class="layer-panel">
+      <b>Camadas visíveis</b>
+      <div id="layerToggles"></div>
+      <p>A ordem das camadas muda conforme a direção. Isto permite capa, cabelo, arma, escudo e acessórios sem gerar um personagem inteiro para cada combinação.</p>
+    </section>
+
+    <section class="direction-grid" id="directionGrid"></section>
+
+    <section class="note">
+      <h2>Critérios de validação</h2>
+      <p>Os pés devem permanecer na mesma origem, a altura corporal não deve mudar entre direções e todas as camadas precisam acompanhar exatamente o mesmo frame. O canvas 96×112 existe para comportar cabelo, véu, capa, armas e futuros equipamentos sem reduzir o corpo.</p>
+    </section>
+  </main>
+  <script type="module" src="./src/character-lab.js?v=0.30"></script>
+</body>
+</html>
