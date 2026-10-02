@@ -83,7 +83,10 @@
         "z2": 13.7,
         "width": 1
       }
-    ]
+    ],
+    "texture": "./assets/art/ro25d/textures/sand.svg",
+    "pathTexture": "./assets/art/ro25d/textures/path.svg",
+    "textureScale": 1
   },
   "camera": {
     "pitchDeg": 57,
@@ -151,7 +154,7 @@
         "roof": "cloth_green",
         "trim": "wood_dark"
       },
-      "rotationY": 0,
+      "rotationY": 8,
       "renderMode": "mesh"
     },
     {
@@ -170,7 +173,7 @@
         "roof": "cloth_blue",
         "trim": "wood_dark"
       },
-      "rotationY": 0,
+      "rotationY": -10,
       "renderMode": "mesh"
     },
     {
@@ -189,7 +192,7 @@
         "roof": "cloth_ochre",
         "trim": "gold"
       },
-      "rotationY": 0,
+      "rotationY": 5,
       "renderMode": "mesh"
     },
     {
@@ -208,7 +211,7 @@
         "roof": "wood_dark",
         "trim": "wood"
       },
-      "rotationY": 0,
+      "rotationY": -6,
       "renderMode": "mesh"
     },
     {
@@ -315,7 +318,7 @@
         "wood": "wood",
         "wood_dark": "wood_dark"
       },
-      "rotationY": 0,
+      "rotationY": 12,
       "renderMode": "mesh"
     },
     {
@@ -333,7 +336,7 @@
         "wood": "wood",
         "wood_dark": "wood_dark"
       },
-      "rotationY": 0,
+      "rotationY": -8,
       "renderMode": "mesh"
     },
     {
@@ -351,7 +354,7 @@
         "wood": "wood",
         "wood_dark": "wood_dark"
       },
-      "rotationY": 0,
+      "rotationY": 18,
       "renderMode": "mesh"
     },
     {
@@ -394,7 +397,7 @@
         "leaf": "leaf",
         "leaf_top": "leaf_top"
       },
-      "rotationY": 0,
+      "rotationY": 22,
       "renderMode": "mesh"
     },
     {
@@ -413,7 +416,7 @@
         "leaf": "leaf",
         "leaf_top": "leaf_top"
       },
-      "rotationY": 0,
+      "rotationY": -17,
       "renderMode": "mesh"
     },
     {
@@ -432,7 +435,7 @@
         "leaf": "leaf",
         "leaf_top": "leaf_top"
       },
-      "rotationY": 0,
+      "rotationY": 9,
       "renderMode": "mesh"
     },
     {
@@ -450,7 +453,7 @@
         "stone": "stone",
         "stone_top": "stone_top"
       },
-      "rotationY": 0,
+      "rotationY": 14,
       "renderMode": "mesh"
     },
     {
@@ -468,7 +471,7 @@
         "stone": "stone",
         "stone_top": "stone_top"
       },
-      "rotationY": 0,
+      "rotationY": -11,
       "renderMode": "mesh"
     },
     {
@@ -486,7 +489,7 @@
         "wood": "wood",
         "wood_dark": "wood_dark"
       },
-      "rotationY": 0,
+      "rotationY": 4,
       "renderMode": "mesh"
     },
     {
@@ -504,7 +507,7 @@
         "wood": "wood",
         "wood_dark": "wood_dark"
       },
-      "rotationY": 0,
+      "rotationY": -5,
       "renderMode": "mesh"
     }
   ],
