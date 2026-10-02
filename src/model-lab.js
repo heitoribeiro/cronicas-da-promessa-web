@@ -38,12 +38,15 @@ function project(x,y,z){
 function begin(points){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath()}
 function materialOverrides(){
   const p=preset.value;
-  if(modelId!=='tent') return {};
-  if(p==='red') return {wall:'cloth_cream',roof:'cloth_red',trim:'gold'};
-  if(p==='green') return {wall:'cloth_cream',roof:'cloth_green',trim:'wood_dark'};
-  if(p==='blue') return {wall:'cloth_cream',roof:'cloth_blue',trim:'wood_dark'};
-  if(p==='ochre') return {wall:'cloth_cream',roof:'cloth_ochre',trim:'gold'};
-  return {wall:'cloth_cream',roof:'cloth_red',trim:'gold'};
+  if(modelId==='tent'){
+    if(p==='green') return {wall:'cloth_cream',roof:'cloth_green',trim:'wood_dark'};
+    if(p==='blue') return {wall:'cloth_cream',roof:'cloth_blue',trim:'wood_dark'};
+    if(p==='ochre') return {wall:'cloth_cream',roof:'cloth_ochre',trim:'gold'};
+    return {wall:'cloth_cream',roof:'cloth_red',trim:'gold'};
+  }
+  if(modelId==='workshop') return {wall:'cloth_cream',roof:'wood_dark',trim:'wood'};
+  if(modelId==='watchtower') return {wood:'wood',wood_dark:'wood_dark',roof:'cloth_ochre'};
+  return {};
 }
 function drawFace(face){
   begin(face.points);
