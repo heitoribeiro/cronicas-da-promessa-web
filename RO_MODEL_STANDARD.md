@@ -125,7 +125,7 @@ Essa regra reduz duplicação e garante consistência entre as 12 tribos.
 
 ## 8. Modelos atuais
 
-A biblioteca 0.33 inclui:
+A biblioteca 0.34 inclui:
 
 - `tent`;
 - `workshop`;
@@ -135,7 +135,14 @@ A biblioteca 0.33 inclui:
 - `crate`;
 - `bench`;
 - `rock`;
-- `acacia`.
+- `acacia`;
+- `judah_standard_tent`;
+- `judah_gate`;
+- `judah_watchtower`;
+- `judah_banner`;
+- `amphora_cluster`;
+- `rug`;
+- `weapon_rack`.
 
 ## 9. Validação
 
@@ -170,3 +177,31 @@ para:
 - testar variações de material da tenda.
 
 O modelo somente deve ser promovido para o mapa principal depois de aprovado neste laboratório.
+
+
+## 11. Especialização por tribo
+
+A biblioteca diferencia:
+
+- **mesh-base**: forma genérica reutilizável;
+- **mesh tribal**: forma com arquitetura ou ornamentos próprios de uma tribo.
+
+A Tenda do Estandarte utiliza `judah_standard_tent`, enquanto tendas familiares podem continuar usando `tent`.
+
+Esta regra deve ser aplicada somente quando a silhueta ou função narrativa justificar geometria própria.
+
+## 12. Ornamentação
+
+Ornamentos devem preferir slots de material e pequenas geometrias independentes a texturas gigantes.
+
+Exemplo de slots usados em Judá:
+
+- `stripe`;
+- `curtain`;
+- `banner`;
+- `emblem`;
+- `pole`;
+- `rope`;
+- `bronze`.
+
+Assim, o mesmo mesh continua editável e modular.
