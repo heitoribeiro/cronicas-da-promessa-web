@@ -68,7 +68,10 @@ export function lightFactor(normal,lighting,sun=sunDirection(lighting)){
 }
 
 export function parseHex(hex){
-  const clean=String(hex||'#000000').replace('#','');
+  const raw=String(hex||'#000000').trim();
+  const rgb=raw.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+  if(rgb) return {r:Number(rgb[1])||0,g:Number(rgb[2])||0,b:Number(rgb[3])||0};
+  const clean=raw.replace('#','');
   const full=clean.length===3?clean.split('').map(c=>c+c).join(''):clean.padEnd(6,'0').slice(0,6);
   const n=parseInt(full,16)||0;
   return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
