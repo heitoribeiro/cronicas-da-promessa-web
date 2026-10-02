@@ -1402,7 +1402,7 @@ img{user-select:none;-webkit-user-drag:none}
 }
 
 .npc[data-sprite-mode="atlas"]{
-  transform:translate(-50%,calc(-1 * var(--sprite-pivot-y)))!important;
+  transform:translate(-50%,var(--sprite-pivot-neg-y))!important;
   width:var(--sprite-frame-w)!important;
   height:var(--sprite-frame-h)!important;
   overflow:visible!important;
