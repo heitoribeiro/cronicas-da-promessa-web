@@ -123,3 +123,42 @@ Uso no projeto: **somente estudo de arquitetura**. Não incorporar código GPL a
 Licença: GPLv3.
 
 O repositório contém exemplos de mapas customizados com `.gat`, `.gnd`, `.rsw` e texturas, úteis para confirmar a ideia de empacotar mundo, terreno e navegação como recursos separados. Também é tratado apenas como referência arquitetural.
+
+
+### AesirWorld/client
+
+Licença: GPLv3.
+
+É uma das referências mais úteis encontradas para entender **por que a aparência de Ragnarok não nasce apenas dos sprites**.
+
+A arquitetura separa explicitamente:
+
+- `Renderer/Map/Ground.js` — terreno 3D e lightmaps;
+- `Renderer/Map/Models.js` — modelos 3D do mundo;
+- `Renderer/SpriteRenderer.js` — sprites 2D projetados como billboard;
+- `Renderer/Camera.js` — pitch, yaw, zoom e direção da câmera;
+- `Renderer/Entity/EntityRender.js` — composição de corpo, cabeça, acessórios, arma e escudo;
+- GAT para altura/walkability;
+- RSW para luz, água, som, efeitos e objetos.
+
+Um detalhe essencial confirmado no código: a direção usada para renderizar a entidade combina **direção do personagem + direção da câmera**. O sprite também é projetado no mundo 3D como billboard esférico.
+
+Uso no projeto: estudo de arquitetura. O código GPL não é copiado para o runtime do Crônicas da Promessa.
+
+
+### greenboxal/FimbulwinterClient
+
+O repositório contém uma implementação independente de cliente com classes específicas para:
+
+- `Map`;
+- `Ground`;
+- `Altitude`;
+- `World`;
+- `GravityModel`;
+- `Sprite`;
+- `SpriteAction`;
+- `Camera`.
+
+Também possui o projeto `ROFormats`, reforçando a mesma separação entre formatos de mapa, modelos e sprites.
+
+Não foi encontrado arquivo de licença explícito no repositório durante a análise; portanto ele é usado apenas como referência conceitual/estrutural, sem incorporação de código.
