@@ -1,18 +1,18 @@
 const PRESETS={
   high:{
-    id:'high',label:'Alta',targetFps:60,dprMax:1.5,
+    id:'high',label:'Alta',targetFps:60,renderFps:60,dprMax:1.5,resolutionScale:1,
     terrainTextures:true,meshTextures:true,pointLights:true,
     shadows:true,fog:true,cullMargin:180,palisadeStride:1,
     terrainTextureAlpha:.46,meshTextureAlpha:.88
   },
   balanced:{
-    id:'balanced',label:'Equilibrada',targetFps:60,dprMax:1.15,
+    id:'balanced',label:'Equilibrada',targetFps:50,renderFps:50,dprMax:1.15,resolutionScale:.85,
     terrainTextures:false,meshTextures:true,pointLights:true,
     shadows:true,fog:true,cullMargin:120,palisadeStride:2,
     terrainTextureAlpha:0,meshTextureAlpha:.82
   },
   performance:{
-    id:'performance',label:'Desempenho',targetFps:60,dprMax:1,
+    id:'performance',label:'Desempenho',targetFps:30,renderFps:30,dprMax:1,resolutionScale:.70,
     terrainTextures:false,meshTextures:false,pointLights:false,
     shadows:false,fog:false,cullMargin:80,palisadeStride:3,
     terrainTextureAlpha:0,meshTextureAlpha:0
