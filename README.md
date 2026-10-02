@@ -181,3 +181,25 @@ Validação:
 ```
 node tools/validate-ro-world.mjs assets/maps/judah/ro25d_world.json
 ```
+
+
+### Laboratório de modelos 2.5D
+
+Abra `model-lab.html?v=0.33` para validar a biblioteca RSM-like.
+
+O laboratório permite:
+
+- selecionar mesh;
+- girar o modelo;
+- girar a câmera;
+- alternar wireframe;
+- alternar texturas;
+- testar cores de tendas;
+- conferir vértices e faces.
+
+Arquivos principais:
+
+- `assets/art/ro25d/model_library.json`;
+- `src/ro-mesh-system.js`;
+- `RO_MODEL_STANDARD.md`;
+- `tools/validate-model-library.mjs`.
