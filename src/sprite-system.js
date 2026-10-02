@@ -1,7 +1,7 @@
 const DEFAULT_MANIFEST = {
   "schema": 1,
   "project": "Crônicas da Promessa",
-  "version": "0.25",
+  "version": "0.36",
   "architecture": "RO-inspired sprite/action metadata with original artwork",
   "directionOrder8": [
     "s",
