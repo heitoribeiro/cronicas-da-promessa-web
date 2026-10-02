@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#071019">
+  <title>Crônicas da Promessa — GPU Lab</title>
+  <link rel="stylesheet" href="./src/ro-gpu.css?v=0.36">
+</head>
+<body>
+  <main class="gpu-shell">
+    <div id="gpuMount"></div>
+
+    <section class="gpu-hud">
+      <small>CRÔNICAS DA PROMESSA · WEBGL LAB 0.36</small>
+      <h1>Judá — GPU / WebGL</h1>
+      <p>Mesmo manifesto 2.5D, renderizado pela GPU com Three.js.</p>
+      <div class="gpu-actions">
+        <button id="gpuRotateLeft">↶ 45°</button>
+        <button id="gpuRotateRight">45° ↷</button>
+        <button id="gpuZoomIn">＋</button>
+        <button id="gpuZoomOut">－</button>
+        <button id="gpuQuality">GPU: Equilibrado</button>
+        <button id="gpuSex">Personagem: Feminino</button>
+      </div>
+      <div class="gpu-readout">
+        <b id="gpuFps">-- FPS</b>
+        <span id="gpuDraws">-- draw calls</span>
+        <span id="gpuTriangles">-- triângulos</span>
+        <span>WASD mover · Q/E girar · roda zoom</span>
+      </div>
+    </section>
+
+    <aside class="gpu-note">
+      <b>Objetivo</b>
+      <span>Comparar fluidez com o Canvas 2D.</span>
+      <span>Terreno/modelos ficam na GPU.</span>
+      <span>Personagens continuam billboards SPR/ACT-like.</span>
+    </aside>
+
+    <nav class="gpu-links">
+      <a href="./ro-visual-lab.html?v=0.36">Canvas 2.5D</a>
+      <a href="./model-lab.html?v=0.36">Modelos</a>
+      <a href="./">Jogo atual</a>
+    </nav>
+  </main>
+
+  <script type="module" src="./src/ro-gpu-renderer.js?v=0.36"></script>
+</body>
+</html>
