@@ -585,5 +585,43 @@
     "x": 14,
     "z": 12.8,
     "dir": 4
-  }
+  },
+  "lights": [
+    {
+      "id": "fire_central",
+      "x": 14,
+      "y": 0.55,
+      "z": 8.2,
+      "color": "#ff9a4e",
+      "range": 4.8,
+      "intensity": 0.85
+    },
+    {
+      "id": "workshop_lamp",
+      "x": 20.9,
+      "y": 1.15,
+      "z": 12.7,
+      "color": "#ffd078",
+      "range": 3.4,
+      "intensity": 0.46
+    },
+    {
+      "id": "gate_torch_w",
+      "x": 12.7,
+      "y": 1.35,
+      "z": 17.6,
+      "color": "#ffad5d",
+      "range": 2.8,
+      "intensity": 0.38
+    },
+    {
+      "id": "gate_torch_e",
+      "x": 15.3,
+      "y": 1.35,
+      "z": 17.6,
+      "color": "#ffad5d",
+      "range": 2.8,
+      "intensity": 0.38
+    }
+  ]
 }
