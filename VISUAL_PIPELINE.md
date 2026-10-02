@@ -173,6 +173,6 @@ Isso impede que a evolução visual quebre mecânicas estabilizadas.
 | Miriã | atlas | 8 | idle, walk, talk |
 | Hanan | atlas | 8 | idle, walk, talk, work |
 | Guarda de Judá | atlas | 8 | idle, walk, talk, ready |
-| Criança do Rebanho | static_legacy | 4 | migração pendente |
+| Criança do Rebanho | atlas | 8 | idle, walk, talk |
 
-Os cinco NPCs adultos compartilham canvas 96×112 e pivô (48,108). A Criança do Rebanho será migrada em escala infantil própria, sem reutilizar a escala adulta.
+Os cinco NPCs adultos compartilham canvas 96×112 e pivô (48,108). A Criança do Rebanho usa canvas 80×96 e pivô (40,92), preservando proporção infantil.
