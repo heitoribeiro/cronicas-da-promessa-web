@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Crônicas da Promessa",
-  "version": "0.29",
+  "version": "0.30",
   "architecture": "RO-inspired sprite/action metadata with original artwork",
   "directionOrder8": [
     "s",
@@ -84,7 +84,7 @@
   },
   "players": {
     "male": {
-      "mode": "legacy_sheet",
+      "mode": "layered_atlas",
       "source": "./assets/art/pixel/characters/male_sheet.png",
       "frame": {
         "width": 64,
@@ -109,10 +109,77 @@
         "hurt"
       ],
       "viewArchitecture": "layered",
-      "layerManifest": "./assets/art/pixel/metadata/character_view.json"
+      "layerManifest": "./assets/art/pixel/metadata/character_view.json",
+      "canvas": {
+        "width": 96,
+        "height": 112
+      },
+      "pivot": {
+        "x": 48,
+        "y": 108
+      },
+      "directionOrder": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n",
+        "ne",
+        "e",
+        "se"
+      ],
+      "actions": {
+        "idle": {
+          "frames": 3,
+          "frameMs": 240
+        },
+        "walk": {
+          "frames": 8,
+          "frameMs": 115
+        }
+      },
+      "spriteSpec": "./assets/art/pixel/characters/male/player.sprite.json",
+      "layers": [
+        {
+          "id": "garment",
+          "type": "garment",
+          "slot": 0,
+          "actions": {
+            "idle": "./assets/art/pixel/characters/male/garment_idle_atlas.svg",
+            "walk": "./assets/art/pixel/characters/male/garment_walk_atlas.svg"
+          }
+        },
+        {
+          "id": "body",
+          "type": "body",
+          "slot": 0,
+          "actions": {
+            "idle": "./assets/art/pixel/characters/male/body_idle_atlas.svg",
+            "walk": "./assets/art/pixel/characters/male/body_walk_atlas.svg"
+          }
+        },
+        {
+          "id": "outfit",
+          "type": "outfit",
+          "slot": 0,
+          "actions": {
+            "idle": "./assets/art/pixel/characters/male/outfit_idle_atlas.svg",
+            "walk": "./assets/art/pixel/characters/male/outfit_walk_atlas.svg"
+          }
+        },
+        {
+          "id": "hair",
+          "type": "accessory",
+          "slot": 0,
+          "actions": {
+            "idle": "./assets/art/pixel/characters/male/hair_idle_atlas.svg",
+            "walk": "./assets/art/pixel/characters/male/hair_walk_atlas.svg"
+          }
+        }
+      ]
     },
     "female": {
-      "mode": "legacy_sheet",
+      "mode": "layered_atlas",
       "source": "./assets/art/pixel/characters/female_sheet.png",
       "frame": {
         "width": 64,
@@ -137,7 +204,74 @@
         "hurt"
       ],
       "viewArchitecture": "layered",
-      "layerManifest": "./assets/art/pixel/metadata/character_view.json"
+      "layerManifest": "./assets/art/pixel/metadata/character_view.json",
+      "canvas": {
+        "width": 96,
+        "height": 112
+      },
+      "pivot": {
+        "x": 48,
+        "y": 108
+      },
+      "directionOrder": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n",
+        "ne",
+        "e",
+        "se"
+      ],
+      "actions": {
+        "idle": {
+          "frames": 3,
+          "frameMs": 240
+        },
+        "walk": {
+          "frames": 8,
+          "frameMs": 115
+        }
+      },
+      "spriteSpec": "./assets/art/pixel/characters/female/player.sprite.json",
+      "layers": [
+        {
+          "id": "garment",
+          "type": "accessory",
+          "slot": 1,
+          "actions": {
+            "idle": "./assets/art/pixel/characters/female/garment_idle_atlas.svg",
+            "walk": "./assets/art/pixel/characters/female/garment_walk_atlas.svg"
+          }
+        },
+        {
+          "id": "body",
+          "type": "body",
+          "slot": 0,
+          "actions": {
+            "idle": "./assets/art/pixel/characters/female/body_idle_atlas.svg",
+            "walk": "./assets/art/pixel/characters/female/body_walk_atlas.svg"
+          }
+        },
+        {
+          "id": "outfit",
+          "type": "outfit",
+          "slot": 0,
+          "actions": {
+            "idle": "./assets/art/pixel/characters/female/outfit_idle_atlas.svg",
+            "walk": "./assets/art/pixel/characters/female/outfit_walk_atlas.svg"
+          }
+        },
+        {
+          "id": "hair",
+          "type": "accessory",
+          "slot": 0,
+          "actions": {
+            "idle": "./assets/art/pixel/characters/female/hair_idle_atlas.svg",
+            "walk": "./assets/art/pixel/characters/female/hair_walk_atlas.svg"
+          }
+        }
+      ]
     }
   },
   "npcs": {
