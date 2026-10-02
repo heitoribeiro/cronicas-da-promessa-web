@@ -1,6 +1,6 @@
-import { shadeColor, fogFactor, pointLightContribution } from './ro-world-system.js?v=0.35';
+import { shadeColor, fogFactor, pointLightContribution } from './ro-world-system.js?v=0.36';
 
-export async function loadModelLibrary(url='./assets/art/ro25d/model_library.json?v=0.35'){
+export async function loadModelLibrary(url='./assets/art/ro25d/model_library.json?v=0.36'){
   const response=await fetch(url,{cache:'no-store'});
   if(!response.ok) throw new Error(`Falha ao carregar model library (${response.status})`);
   return response.json();
