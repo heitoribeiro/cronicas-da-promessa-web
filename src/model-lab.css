@@ -1,0 +1,15 @@
+:root{color-scheme:dark;--gold:#e9be4d;--cream:#fff0c6;--muted:#b9aa86}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -20%,#60442444,transparent 40%),linear-gradient(#071019,#03070a);color:var(--cream);font-family:Georgia,"Times New Roman",serif}
+.shell{width:min(1180px,94vw);margin:0 auto;padding:28px 0 50px}
+header{display:flex;justify-content:space-between;gap:20px;padding:18px 20px;border:1px solid #8b682e;background:#0a131be8;box-shadow:0 8px 30px #0009}
+header small{font:700 10px monospace;color:var(--gold);letter-spacing:1.8px}h1{margin:4px 0;color:#ffe18c;font-size:27px}header p{margin:0;color:var(--muted)}
+nav{display:flex;gap:7px;flex-wrap:wrap}nav a{height:max-content;padding:8px 10px;border:1px solid #8b682e;background:#111b23;color:#f3dfaa;text-decoration:none;font-size:12px}
+.toolbar{margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px;border:1px solid #755827;background:#0b141ce8}
+.toolbar label{display:flex;gap:7px;align-items:center;color:var(--gold);font-weight:700}
+select,button{border:1px solid #8c682d;background:#121d25;color:var(--cream);padding:8px 10px;font:700 12px Georgia,serif}button{cursor:pointer}#status{margin-left:auto;color:var(--muted);font:11px monospace}
+.viewer{margin-top:14px;display:grid;grid-template-columns:minmax(0,1fr) 250px;min-height:590px;border:1px solid #755827;background:#081119}
+#modelCanvas{display:block;width:100%;height:100%;min-height:560px;background:#b98a4d;image-rendering:pixelated}
+.viewer aside{padding:18px;background:#0b141c;border-left:1px solid #755827}.viewer h2{margin:0 0 14px;color:#f1ca64}
+dl{display:grid;gap:9px;margin:0}dl div{display:flex;justify-content:space-between;gap:10px;padding-bottom:6px;border-bottom:1px solid #2a2e2f}dt{color:#988d70;font:10px monospace;text-transform:uppercase}dd{margin:0;color:#f1d99c}.viewer p{margin:18px 0 0;color:#b9ad8d;font-size:13px;line-height:1.5}
+@media(max-width:780px){header{flex-direction:column}.viewer{grid-template-columns:1fr}.viewer aside{border-left:0;border-top:1px solid #755827}#status{width:100%;margin-left:0}}
