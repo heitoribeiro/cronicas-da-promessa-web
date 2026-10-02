@@ -37,15 +37,19 @@ const actorVisuals=[];
 const playerLayers=[];
 const textureCache=new Map();
 const materialCache=new Map();
+const pointLightObjects=[];
+let worldFog=null;
 let avgFps=60,lastFrame=performance.now(),fpsSampleAt=lastFrame,fpsFrames=0;
 let quality='balanced';
 
 function setRendererQuality(){
-  const cap=quality==='high'?1.5:quality==='performance'?.75:1.0;
+  const cap=quality==='high' ? 1.5 : quality==='performance' ? .75 : 1.0;
   renderer.setPixelRatio(Math.max(.65,Math.min(window.devicePixelRatio||1,cap)));
   renderer.setSize(innerWidth,innerHeight,false);
   camera.aspect=innerWidth/Math.max(1,innerHeight);
   camera.updateProjectionMatrix();
+  scene.fog=quality==='performance' ? null : worldFog;
+  for(const light of pointLightObjects) light.visible=quality!=='performance';
 }
 addEventListener('resize',setRendererQuality,{passive:true});
 
@@ -80,9 +84,32 @@ function resolveMaterialId(model,slot){
   return model.materials?.[slot]||model.materialOverrides?.[slot]||slot;
 }
 
-function buildModelGeometry(model){
+function faceUvCoordinates(src,ids){
+  const verts=ids.map(i=>src.vertices[i]);
+  const a=verts[0],b=verts[1],d=verts[2];
+  const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2];
+  const vx=d[0]-a[0],vy=d[1]-a[1],vz=d[2]-a[2];
+  const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+  const ax=Math.abs(nx),ay=Math.abs(ny),az=Math.abs(nz);
+
+  let projectUv;
+  if(ay>=ax&&ay>=az) projectUv=v=>[v[0],v[2]];
+  else if(ax>=az) projectUv=v=>[v[2],v[1]];
+  else projectUv=v=>[v[0],v[1]];
+
+  const raw=verts.map(projectUv);
+  let minU=Infinity,maxU=-Infinity,minV=Infinity,maxV=-Infinity;
+  for(const uv of raw){
+    if(uv[0]<minU)minU=uv[0];if(uv[0]>maxU)maxU=uv[0];
+    if(uv[1]<minV)minV=uv[1];if(uv[1]>maxV)maxV=uv[1];
+  }
+  const du=Math.max(.0001,maxU-minU),dv=Math.max(.0001,maxV-minV);
+  return raw.map(uv=>[(uv[0]-minU)/du,(uv[1]-minV)/dv]);
+}
+
+function appendModelToBatches(model,batches){
   const src=library.meshes[model.meshId];
-  if(!src) return null;
+  if(!src) return;
 
   const angle=THREE.MathUtils.degToRad(Number(model.rotationY||0));
   const ca=Math.cos(angle),sa=Math.sin(angle);
@@ -91,41 +118,28 @@ function buildModelGeometry(model){
   const sz=Number(model.d||1)*(model.scale?.z??1);
   const baseY=heightAt(model.x,model.z);
 
-  const positions=[];
-  const materialIds=[];
-  const groups=[];
-  let cursor=0;
-
   for(const face of src.faces){
     const ids=face.v;
     if(!ids||ids.length<3) continue;
     const matId=resolveMaterialId(model,face.m);
-    let matIndex=materialIds.indexOf(matId);
-    if(matIndex<0){matIndex=materialIds.length;materialIds.push(matId)}
+    let bucket=batches.get(matId);
+    if(!bucket){
+      bucket={positions:[],uvs:[]};
+      batches.set(matId,bucket);
+    }
 
-    const start=cursor;
+    const faceUvs=faceUvCoordinates(src,ids);
     for(let i=1;i<ids.length-1;i++){
-      for(const idx of [ids[0],ids[i],ids[i+1]]){
+      for(const localIndex of [0,i,i+1]){
+        const idx=ids[localIndex];
         const v=src.vertices[idx];
         const lx=v[0]*sx,lz=v[2]*sz;
         const rx=lx*ca-lz*sa,rz=lx*sa+lz*ca;
-        positions.push(model.x+rx,baseY+v[1]*sy,model.z+rz);
-        cursor+=3;
+        bucket.positions.push(model.x+rx,baseY+v[1]*sy,model.z+rz);
+        bucket.uvs.push(faceUvs[localIndex][0],faceUvs[localIndex][1]);
       }
     }
-    groups.push({start:start/3,count:(cursor-start)/3,materialIndex:matIndex});
   }
-
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-  geo.computeVertexNormals();
-  for(const g of groups) geo.addGroup(g.start,g.count,g.materialIndex);
-  const mats=materialIds.map(materialFor);
-  const mesh=new THREE.Mesh(geo,mats);
-  mesh.frustumCulled=true;
-  mesh.matrixAutoUpdate=false;
-  mesh.updateMatrix();
-  return mesh;
 }
 
 function buildTerrain(){
@@ -174,6 +188,7 @@ function buildLights(){
   for(const l of world.lights||[]){
     const light=new THREE.PointLight(l.color||'#ffb060',Number(l.intensity||.4)*4,Number(l.range||4),2);
     light.position.set(l.x,l.y||1,l.z);
+    pointLightObjects.push(light);
     scene.add(light);
   }
 }
@@ -216,7 +231,7 @@ function createNpcSprite(actor){
 function clearPlayerLayers(){
   for(const item of playerLayers){
     scene.remove(item.sprite);
-    item.sprite.material.map?.dispose?.();
+    for(const tex of Object.values(item.textures||{})) tex.dispose?.();
     item.sprite.material.dispose?.();
   }
   playerLayers.length=0;
@@ -226,19 +241,23 @@ function buildPlayerLayers(){
   clearPlayerLayers();
   const meta=sprites.players[playerSex];
   if(!meta) return;
-  const cfg=meta.actions.idle;
   const h=1.9;
   const ratio=meta.canvas.width/meta.canvas.height;
   meta.layers.forEach((layer,index)=>{
-    const src=layer.actions.idle;
-    const tex=cloneAtlasTexture(src,cfg.frames,meta.directionOrder.length);
+    const textures={};
+    for(const action of Object.keys(meta.actions||{})){
+      const cfg=meta.actions[action];
+      const src=layer.actions[action]||layer.actions.idle;
+      if(src) textures[action]=cloneAtlasTexture(src,cfg.frames,meta.directionOrder.length);
+    }
+    const tex=textures.idle||Object.values(textures)[0];
     const mat=new THREE.SpriteMaterial({map:tex,transparent:true,alphaTest:.02,depthWrite:false,depthTest:true});
     const sprite=new THREE.Sprite(mat);
     sprite.scale.set(h*ratio,h,1);
     sprite.position.set(player.x,heightAt(player.x,player.z)+h*.5+index*.001,player.z);
     sprite.renderOrder=20+index;
     scene.add(sprite);
-    playerLayers.push({layer,tex,mat,sprite,lastSrc:src});
+    playerLayers.push({layer,textures,tex,mat,sprite,lastAction:'idle'});
   });
 }
 
@@ -248,16 +267,13 @@ function refreshPlayerAtlas(){
   const row=visibleDirectionIndex(player.dir,cameraState.yaw);
   const h=1.9;
   playerLayers.forEach((item,index)=>{
-    const src=item.layer.actions[player.action]||item.layer.actions.idle;
-    if(src!==item.lastSrc){
-      item.lastSrc=src;
-      const old=item.tex;
-      item.tex=cloneAtlasTexture(src,cfg.frames,meta.directionOrder.length);
-      item.mat.map=item.tex;
+    const nextTex=item.textures[player.action]||item.textures.idle;
+    if(nextTex&&nextTex!==item.tex){
+      item.tex=nextTex;
+      item.mat.map=nextTex;
       item.mat.needsUpdate=true;
-      old.dispose?.();
     }
-    setAtlasFrame(item.tex,player.frame,row,cfg.frames,meta.directionOrder.length);
+    if(item.tex) setAtlasFrame(item.tex,player.frame,row,cfg.frames,meta.directionOrder.length);
     item.sprite.position.set(player.x,heightAt(player.x,player.z)+h*.5+index*.001,player.z);
   });
 }
@@ -275,10 +291,25 @@ function updateNpcSprites(now){
 }
 
 function buildWorldModels(){
+  const batches=new Map();
   for(const model of world.models||[]){
     if(model.renderMode!=='mesh'||!model.meshId) continue;
-    const mesh=buildModelGeometry(model);
-    if(mesh) scene.add(mesh);
+    appendModelToBatches(model,batches);
+  }
+
+  for(const [matId,bucket] of batches){
+    if(!bucket.positions.length) continue;
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(bucket.positions,3));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(bucket.uvs,2));
+    geo.computeVertexNormals();
+    geo.computeBoundingSphere();
+
+    const mesh=new THREE.Mesh(geo,materialFor(matId));
+    mesh.frustumCulled=true;
+    mesh.matrixAutoUpdate=false;
+    mesh.updateMatrix();
+    scene.add(mesh);
   }
 }
 
@@ -386,6 +417,12 @@ async function init(){
     fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.36',{cache:'no-store'}).then(r=>r.json())
   ]);
   heightAt=createHeightSampler(world.terrain);
+  worldFog=new THREE.Fog(
+    world.fog?.color||0xd7b77b,
+    Math.max(12,Number(world.fog?.near||13)*1.15),
+    Math.max(36,Number(world.fog?.far||26)*1.8)
+  );
+  scene.fog=worldFog;
   Object.assign(player,world.playerSpawn,{frameAt:performance.now()});
 
   buildTerrain();
