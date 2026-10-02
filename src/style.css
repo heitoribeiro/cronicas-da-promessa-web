@@ -1728,3 +1728,36 @@ img{user-select:none;-webkit-user-drag:none}
 .game.quality-performance .work-site{
   display:none!important;
 }
+
+
+/* === PERFORMANCE PHASE 0.36 — DOM WRITE REDUCTION === */
+
+.world{
+  will-change:transform;
+  backface-visibility:hidden;
+}
+.player-art,
+.npc,
+.animal{
+  backface-visibility:hidden;
+}
+.sprite-viewport,
+.player-layer-viewport,
+.portrait-layer-viewport{
+  contain:layout style;
+}
+.game.quality-balanced .daylight,
+.game.quality-performance .daylight{
+  will-change:auto!important;
+}
+.game.quality-performance .mini-map-hud,
+.game.quality-performance .hotbar,
+.game.quality-performance .character-panel,
+.game.quality-performance .objective{
+  filter:none!important;
+  text-shadow:none!important;
+}
+.game.quality-performance .mini-map-hud,
+.game.quality-performance .hotbar{
+  box-shadow:none!important;
+}
