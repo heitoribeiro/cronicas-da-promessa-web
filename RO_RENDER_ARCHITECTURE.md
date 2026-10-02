@@ -154,3 +154,63 @@ O próximo passo é substituir progressivamente os sólidos paramétricos do lab
 `position + rotation + scale + material + collision`
 
 como dados independentes do gameplay.
+
+
+## 9. Modelo RSM-like reutilizável
+
+O renderer passa a separar também a geometria de sua instância no mundo.
+
+Biblioteca:
+
+`assets/art/ro25d/model_library.json`
+
+Runtime:
+
+`src/ro-mesh-system.js`
+
+Cada mesh possui:
+
+- vértices locais;
+- faces;
+- slots de material.
+
+Cada instância no mundo fornece:
+
+- posição;
+- largura/altura/profundidade;
+- rotação Y;
+- escala opcional;
+- override de materiais.
+
+Isso permite, por exemplo, utilizar a mesma geometria de tenda nas 12 tribos e alterar somente tecido, acabamento e proporção.
+
+## 10. Materiais pixelados
+
+O modelo não contém iluminação baked. As texturas são pequenas e nearest-neighbor, enquanto o renderer acrescenta:
+
+- luz solar;
+- ambient;
+- diffuse;
+- point lights;
+- fog;
+- sombra no terreno.
+
+Esse pipeline preserva pixel art e, ao mesmo tempo, faz o objeto responder à câmera e à iluminação do mundo.
+
+## 11. Point lights
+
+O manifesto RSW-like aceita uma coleção `lights`.
+
+O recorte de Judá 0.33 contém luzes locais para:
+
+- fogueira central;
+- oficina;
+- duas tochas do portão.
+
+O efeito usa atenuação por distância e mistura cromática sobre terreno e faces dos modelos.
+
+## 12. Sombras direcionais
+
+As sombras deixaram de ter offset fixo de tela. O deslocamento é calculado a partir da direção solar e depois projetado pela câmera.
+
+Dessa forma, personagem, NPC e cenário compartilham uma leitura luminosa coerente.
