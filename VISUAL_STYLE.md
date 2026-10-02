@@ -329,3 +329,36 @@ Implementado:
 O objetivo desta fase não é reproduzir assets de Ragnarok, mas reproduzir a **relação visual 3D-terreno / 3D-cenário / 2D-personagem** que caracteriza sua apresentação.
 
 Versão visual: **0.32**.
+
+
+## Aplicação — Fase 16
+
+O renderer experimental deixa de depender apenas de volumes geométricos hardcoded e passa a carregar uma biblioteca de **meshes low-poly texturizados**, em arquitetura semelhante ao papel dos modelos RSM.
+
+Implementado:
+
+- `assets/art/ro25d/model_library.json`;
+- `src/ro-mesh-system.js`;
+- 9 meshes reutilizáveis:
+  - tent;
+  - workshop;
+  - gate;
+  - watchtower;
+  - well;
+  - crate;
+  - bench;
+  - rock;
+  - acacia;
+- 14 materiais;
+- texturas pixel originais para tecido, madeira, pedra, folhagem, corda e acabamento dourado;
+- texturas pixel próprias para areia e caminhos;
+- instâncias do mapa com `position + rotation + scale/dimensions + material overrides`;
+- 19 objetos do recorte de Judá migrados para `renderMode: mesh`;
+- rotação individual de tendas, caixas, árvores, pedras e bancos;
+- point lights RSW-like na fogueira, oficina e portão;
+- sombras projetadas segundo a direção solar;
+- laboratório independente `model-lab.html` para inspecionar meshes, materiais, wireframe e rotação.
+
+Essa fase aproxima o visual da lógica **3D world + 2D billboard characters** em vez de simplesmente imitar sprites ou assets do Ragnarok.
+
+Versão visual: **0.33**.
