@@ -14,7 +14,7 @@ const PRESETS={
   performance:{
     id:'performance',label:'Desempenho',targetFps:60,dprMax:1,
     terrainTextures:false,meshTextures:false,pointLights:false,
-    shadows:true,fog:false,cullMargin:80,palisadeStride:3,
+    shadows:false,fog:false,cullMargin:80,palisadeStride:3,
     terrainTextureAlpha:0,meshTextureAlpha:0
   }
 };
