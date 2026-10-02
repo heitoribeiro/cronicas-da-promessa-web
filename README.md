@@ -133,3 +133,12 @@ A direção visual Pixel RPG bíblico-desértico agora possui documentação e r
 - `assets/maps/judah/map_manifest.json` — estado atual do mapa jogável de Judá.
 - `src/map-system.js` — limites, conversão de coordenadas e Y-sort pela linha dos pés.
 - `src/pathfinding.js` — A* em oito direções sobre a grade de navegação de 8 px.
+
+
+### Pipeline visual modular
+
+- `VISUAL_PIPELINE.md` — fluxo de produção e validação de personagens/NPCs.
+- `assets/art/pixel/metadata/character_view.json` — papéis e camadas do personagem.
+- `src/character-layers.js` — resolução de profundidade por direção.
+- `assets/art/pixel/npcs/eliabe/eliabe.sprite.json` — primeiro pacote-modelo de NPC.
+- `tools/validate-sprite-pack.mjs` — valida quantidade, nomes, PNG, transparência e canvas.
