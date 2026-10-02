@@ -1,0 +1,160 @@
+{
+  "schema": 1,
+  "project": "Crônicas da Promessa",
+  "version": "0.26",
+  "sourceConcept": "Ragnarok-style layered character view with original art",
+  "directionOrder": [
+    "s",
+    "sw",
+    "w",
+    "nw",
+    "n",
+    "ne",
+    "e",
+    "se"
+  ],
+  "directionIndex": {
+    "s": 0,
+    "sw": 1,
+    "w": 2,
+    "nw": 3,
+    "n": 4,
+    "ne": 5,
+    "e": 6,
+    "se": 7
+  },
+  "groups": {
+    "topLeft": [
+      "w",
+      "nw",
+      "n",
+      "ne"
+    ],
+    "garmentOnTop": [
+      "w",
+      "nw",
+      "n",
+      "ne",
+      "e"
+    ],
+    "frontFacing": [
+      "s",
+      "sw",
+      "se"
+    ]
+  },
+  "layers": [
+    {
+      "id": "shadow",
+      "type": "shadow",
+      "parent": null,
+      "slot": 0,
+      "required": true
+    },
+    {
+      "id": "garment_back",
+      "type": "garment",
+      "parent": null,
+      "slot": 0,
+      "required": false
+    },
+    {
+      "id": "weapon_back",
+      "type": "weapon",
+      "parent": null,
+      "slot": 0,
+      "required": false
+    },
+    {
+      "id": "shield_back",
+      "type": "shield",
+      "parent": null,
+      "slot": 0,
+      "required": false
+    },
+    {
+      "id": "body",
+      "type": "body",
+      "parent": null,
+      "slot": 0,
+      "required": true
+    },
+    {
+      "id": "head",
+      "type": "head",
+      "parent": "body",
+      "attachPoint": "head",
+      "slot": 0,
+      "required": false
+    },
+    {
+      "id": "hair",
+      "type": "accessory",
+      "parent": "body",
+      "attachPoint": "head",
+      "slot": 0,
+      "required": false
+    },
+    {
+      "id": "headgear_back",
+      "type": "accessory",
+      "parent": "body",
+      "attachPoint": "head",
+      "slot": 0,
+      "required": false,
+      "canRenderBehind": true
+    },
+    {
+      "id": "headgear_middle",
+      "type": "accessory",
+      "parent": "body",
+      "attachPoint": "head",
+      "slot": 1,
+      "required": false,
+      "canRenderBehind": true
+    },
+    {
+      "id": "headgear_front",
+      "type": "accessory",
+      "parent": "body",
+      "attachPoint": "head",
+      "slot": 2,
+      "required": false,
+      "canRenderBehind": true
+    },
+    {
+      "id": "garment_front",
+      "type": "garment",
+      "parent": null,
+      "slot": 0,
+      "required": false
+    },
+    {
+      "id": "weapon_front",
+      "type": "weapon",
+      "parent": null,
+      "slot": 1,
+      "required": false
+    },
+    {
+      "id": "shield_front",
+      "type": "shield",
+      "parent": null,
+      "slot": 0,
+      "required": false
+    },
+    {
+      "id": "effect",
+      "type": "effect",
+      "parent": null,
+      "slot": 0,
+      "required": false
+    }
+  ],
+  "notes": {
+    "bodyScale": "Adult bodies keep the same world scale; large accessories expand the canvas instead of scaling the body.",
+    "attachPoints": "Child layers inherit the body attach point and subtract their own attach point when present.",
+    "zOrder": "Draw order may change by facing direction; never encode all equipment into one immutable z-order.",
+    "licensing": "Architecture only. No Ragnarok/Gravity artwork is included."
+  }
+}
