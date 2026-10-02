@@ -1607,3 +1607,46 @@ img{user-select:none;-webkit-user-drag:none}
     transform:translateX(-50%) scale(.55);
   }
 }
+
+
+/* === PIXEL RPG VISUAL PHASE 15A — CLEAN ATLAS VIEWPORTS === */
+
+/* Os atlas usam <span> como viewport. Regras antigas de .npc span desenhavam
+   um corpo oval/gradiente atrás do sprite. O viewport deve ser 100% neutro. */
+.npc .sprite-viewport,
+.interior-npc .sprite-viewport{
+  background:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  outline:0!important;
+}
+.npc .sprite-viewport::before,
+.npc .sprite-viewport::after,
+.interior-npc .sprite-viewport::before,
+.interior-npc .sprite-viewport::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+
+/* Remove animações/sombras legadas de cápsula dos NPCs já migrados. */
+.npc[data-sprite-mode="atlas"]{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.npc[data-sprite-mode="atlas"]::before{content:none!important;display:none!important}
+
+/* Indicadores de trabalho deixam de dominar a cena. */
+.work-site{
+  opacity:.12!important;
+  border-style:dotted!important;
+  background:transparent!important;
+}
+.work-site b{opacity:.46!important}
+.world:hover .work-site{opacity:.24!important}
