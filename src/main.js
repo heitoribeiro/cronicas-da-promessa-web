@@ -1,9 +1,9 @@
-import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.25';
-import { findGridPath } from './pathfinding.js?v=0.25';
-import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.25';
+import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.27';
+import { findGridPath } from './pathfinding.js?v=0.27';
+import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.27';
 
-const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.25');
-const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.25');
+const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.27');
+const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.27');
 
 const app = document.querySelector('#app');
 const SAVE = 'cronicas-promessa-save-v3';
@@ -145,7 +145,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.25</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.27</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -179,7 +179,7 @@ function menu() {
           <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle pixel-version">Web Alpha 0.25 • Direção visual Pixel RPG bíblico-desértico</p>
+        <p class="subtitle pixel-version">Web Alpha 0.27 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -535,7 +535,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.25</div>
+      <div class="badge">Web Alpha 0.27</div>
     </main>`;
 
   const world = $('#world');
