@@ -361,7 +361,74 @@ export class NpcSpriteController {
     this.frame = 0;
     this.frameStartedAt = 0;
     this.lastSrc = '';
+    this.viewport = null;
     this.applyLayout();
+  }
+
+  ensureViewport() {
+    if (!this.image || !this.element) return null;
+    let viewport = this.image.closest('.sprite-viewport');
+    if (!viewport) {
+      viewport = document.createElement('span');
+      viewport.className = 'sprite-viewport';
+      this.image.parentNode.insertBefore(viewport, this.image);
+      viewport.appendChild(this.image);
+    }
+    this.image.classList.add('sprite-sheet-image');
+    this.viewport = viewport;
+    return viewport;
+  }
+
+  getActionConfig(action = this.action) {
+    const atlasCfg = this.meta?.atlas?.actions?.[action];
+    if (atlasCfg) return atlasCfg;
+    const defaults = this.manifest.defaults?.[this.meta?.archetype || 'adult']?.actions || {};
+    return this.meta?.actions?.[action] || defaults[action] || null;
+  }
+
+  renderCurrentFrame() {
+    if (!this.image || !this.meta) return;
+    const mode = this.meta.mode || 'static_legacy';
+
+    if (mode === 'atlas') {
+      const cfg = this.getActionConfig(this.action);
+      const atlas = this.meta.atlas || {};
+      if (!cfg?.source) return;
+      const frameW = Number(atlas.frame?.width || this.meta.canvas?.width || 96);
+      const frameH = Number(atlas.frame?.height || this.meta.canvas?.height || 112);
+      const frameCount = Math.max(1, Number(cfg.frames) || 1);
+      const directionOrder = atlas.directionOrder || this.manifest.directionOrder8 || DIRECTION_ORDER_8;
+      const row = Math.max(0, directionOrder.indexOf(this.direction));
+      const sheetW = frameW * frameCount;
+      const sheetH = frameH * directionOrder.length;
+
+      if (cfg.source !== this.lastSrc) {
+        this.lastSrc = cfg.source;
+        this.image.src = cfg.source;
+      }
+      this.element.style.setProperty('--sprite-sheet-w', sheetW + 'px');
+      this.element.style.setProperty('--sprite-sheet-h', sheetH + 'px');
+      this.element.style.setProperty('--atlas-x', (-this.frame * frameW) + 'px');
+      this.element.style.setProperty('--atlas-y', (-row * frameH) + 'px');
+      return;
+    }
+
+    if (mode === 'sequence' && this.meta.target?.pathPattern) {
+      const src = framePath(this.meta.target.pathPattern, this.action, this.direction, this.frame);
+      if (src !== this.lastSrc) {
+        this.lastSrc = src;
+        this.image.src = src;
+      }
+    }
+  }
+
+  setAction(action, now = performance.now()) {
+    if (!action || action === this.action) return;
+    this.action = action;
+    this.frame = 0;
+    this.frameStartedAt = now;
+    this.element.dataset.action = action;
+    this.renderCurrentFrame();
   }
 
   applyLayout() {
@@ -380,7 +447,14 @@ export class NpcSpriteController {
     this.element.style.setProperty('--sprite-legacy-scale', legacy.scale ?? 1);
     this.element.style.setProperty('--sprite-shift-x', (legacy.shiftX ?? 0) + 'px');
     this.element.style.setProperty('--sprite-shift-y', (legacy.shiftY ?? 0) + 'px');
-    if (this.image && this.meta.source && !this.image.getAttribute('src')) {
+    if (this.meta.mode === 'atlas') {
+      const viewport = this.ensureViewport();
+      if (viewport) {
+        viewport.style.width = canvas.width + 'px';
+        viewport.style.height = canvas.height + 'px';
+      }
+      this.renderCurrentFrame();
+    } else if (this.image && this.meta.source && !this.image.getAttribute('src')) {
       this.image.src = this.meta.source;
     }
   }
@@ -404,10 +478,10 @@ export class NpcSpriteController {
     this.element.classList.toggle('face-up', this.direction === 'n' || this.direction === 'ne' || this.direction === 'nw');
     this.element.classList.toggle('face-down', this.direction === 's' || this.direction === 'se' || this.direction === 'sw');
 
-    if (this.meta.mode !== 'sequence' || !this.meta.target?.pathPattern || !this.image) return;
+    const animatedMode = this.meta.mode === 'sequence' || this.meta.mode === 'atlas';
+    if (!animatedMode || !this.image) return;
 
-    const defaults = this.manifest.defaults?.[this.meta.archetype || 'adult']?.actions || {};
-    const cfg = this.meta.actions?.[this.action] || defaults[this.action];
+    const cfg = this.getActionConfig(this.action);
     if (!cfg) return;
     const frameMs = Math.max(40, Number(cfg.frameMs) || 120);
     const frameCount = Math.max(1, Number(cfg.frames) || 1);
@@ -417,11 +491,7 @@ export class NpcSpriteController {
       this.frame = (this.frame + steps) % frameCount;
       this.frameStartedAt += steps * frameMs;
     }
-    const src = framePath(this.meta.target.pathPattern, this.action, this.direction, this.frame);
-    if (src !== this.lastSrc) {
-      this.lastSrc = src;
-      this.image.src = src;
-    }
+    this.renderCurrentFrame();
   }
 }
 
