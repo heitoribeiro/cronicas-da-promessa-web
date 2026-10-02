@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "judah_ro25d_prototype",
   "name": "Acampamento de Judá — recorte 2.5D",
-  "version": "0.34",
+  "version": "0.35",
   "coordinateSystem": "x-east, y-up, z-south",
   "terrain": {
     "cols": 28,
