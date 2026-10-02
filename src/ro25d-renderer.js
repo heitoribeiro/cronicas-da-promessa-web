@@ -1,9 +1,10 @@
-import { resolveCharacterLayerZ } from './character-layers.js?v=0.32';
+import { resolveCharacterLayerZ } from './character-layers.js?v=0.33';
 import {
   clamp, degToRad, createHeightSampler, isPathAt, sunDirection,
   terrainNormal, lightFactor, shadeColor, mixColor, fogFactor,
   visibleDirectionIndex, loadRoWorld
-} from './ro-world-system.js?v=0.32';
+} from './ro-world-system.js?v=0.33';
+import { loadModelLibrary, buildMeshFaces, modelShadowSize } from './ro-mesh-system.js?v=0.33';
 
 const canvas=document.querySelector('#scene');
 const ctx=canvas.getContext('2d',{alpha:false});
@@ -15,6 +16,7 @@ const imageCache=new Map();
 
 let world=null;
 let sprites=null;
+let modelLibrary=null;
 let heightAt=()=>0;
 let sun={x:.5,y:.7,z:-.5};
 let sex='female';
@@ -99,6 +101,71 @@ function fogged(color,depth){
 function lit(color,normal,depth,extra=1){
   const factor=showLighting?lightFactor(normal,world.lighting,sun):1;
   return fogged(shadeColor(color,factor*extra),depth);
+}
+
+
+function beginFacePath(points){
+  ctx.beginPath();
+  points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+  ctx.closePath();
+}
+
+function drawTexturedMeshFace(face){
+  beginFacePath(face.points);
+  ctx.save();
+  ctx.clip();
+
+  ctx.fillStyle=face.color;
+  ctx.fillRect(0,0,innerWidth,innerHeight);
+
+  const texSrc=face.material?.texture;
+  if(texSrc){
+    const img=getImage(texSrc+'?v=0.33');
+    if(img?.complete && img.naturalWidth){
+      const pattern=ctx.createPattern(img,'repeat');
+      if(pattern){
+        ctx.globalAlpha=.88;
+        ctx.fillStyle=pattern;
+        ctx.fillRect(0,0,innerWidth,innerHeight);
+        ctx.globalAlpha=1;
+      }
+    }
+  }
+
+  if(showLighting){
+    if(face.light<1){
+      ctx.fillStyle='rgba(19,13,9,'+Math.min(.55,(1-face.light)*.72)+')';
+      ctx.fillRect(0,0,innerWidth,innerHeight);
+    }else if(face.light>1){
+      ctx.fillStyle='rgba(255,231,177,'+Math.min(.22,(face.light-1)*.35)+')';
+      ctx.fillRect(0,0,innerWidth,innerHeight);
+    }
+  }
+  if(showFog && face.fog>0){
+    ctx.fillStyle=world.fog.color;
+    ctx.globalAlpha=Math.min(.72,face.fog*.72);
+    ctx.fillRect(0,0,innerWidth,innerHeight);
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+
+  beginFacePath(face.points);
+  ctx.strokeStyle='#2e21155c';
+  ctx.lineWidth=1;
+  ctx.stroke();
+}
+
+function drawMeshModel(model){
+  if(!modelLibrary||!model.meshId) return false;
+  const faces=buildMeshFaces(
+    modelLibrary,model,heightAt,project,lightFactor,world.lighting,sun,world.fog,showLighting,showFog
+  );
+  if(!faces.length) return false;
+  const shadow=modelShadowSize(model);
+  drawGroundShadow(model.x,model.z,shadow.w,shadow.d,.24);
+  faces.sort((a,b)=>a.depth-b.depth);
+  for(const face of faces) drawTexturedMeshFace(face);
+  return true;
 }
 
 function faceDepth(points){
@@ -388,6 +455,7 @@ function drawPalisade(segment){
 }
 
 function drawModel(m,now){
+  if(m.renderMode==='mesh' && drawMeshModel(m)) return;
   if(m.type==='tent') return drawTent(m);
   if(m.type==='tower') return drawTower(m);
   if(m.type==='gate') return drawGate(m);
@@ -407,7 +475,7 @@ function drawAtlasSprite(meta,x,z,worldDir,frame=0,scale=.72){
   const dirIndex=visibleDirectionIndex(worldDir,camera.yaw);
   const direction=(meta.atlas.directionOrder||DIRS)[dirIndex];
   const row=(meta.atlas.directionOrder||DIRS).indexOf(direction);
-  const img=getImage(cfg.source.replace(/v=0\.\d+/,'v=0.32'));
+  const img=getImage(cfg.source.replace(/v=0\.\d+/,'v=0.33'));
   if(!img?.complete) return;
   const fw=meta.atlas.frame.width,fh=meta.atlas.frame.height;
   const p=project(x,heightAt(x,z),z);
@@ -433,7 +501,7 @@ function drawLayeredPlayer(now){
   const layers=[...meta.layers].sort((a,b)=>resolveCharacterLayerZ(a,direction)-resolveCharacterLayerZ(b,direction));
   for(const layer of layers){
     const src=layer.actions?.[player.action]||layer.actions?.idle;
-    const img=getImage((src||'')+'?v=0.32');
+    const img=getImage((src||'')+'?v=0.33');
     if(!img?.complete) continue;
     const row=meta.directionOrder.indexOf(direction);
     ctx.drawImage(img,player.frame*fw,row*fh,fw,fh,p.x-dw/2,p.y-dh+3,dw,dh);
@@ -626,12 +694,13 @@ canvas.addEventListener('pointercancel',()=>dragging=false);
 canvas.addEventListener('contextmenu',event=>event.preventDefault());
 
 async function init(){
-  [world,sprites]=await Promise.all([
-    loadRoWorld('./assets/maps/judah/ro25d_world.json?v=0.32'),
-    fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.32',{cache:'no-store'}).then(r=>{
+  [world,sprites,modelLibrary]=await Promise.all([
+    loadRoWorld('./assets/maps/judah/ro25d_world.json?v=0.33'),
+    fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.33',{cache:'no-store'}).then(r=>{
       if(!r.ok) throw new Error('Falha ao carregar sprite_manifest');
       return r.json();
-    })
+    }),
+    loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.33')
   ]);
 
   heightAt=createHeightSampler(world.terrain);
