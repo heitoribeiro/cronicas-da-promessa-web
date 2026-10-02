@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071019">
+  <title>Crônicas da Promessa — Laboratório de Modelos 2.5D</title>
+  <link rel="stylesheet" href="./src/model-lab.css?v=0.33">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <small>CRÔNICAS DA PROMESSA</small>
+        <h1>Laboratório RSM-like</h1>
+        <p>Meshes low-poly originais, texturas pixeladas e iluminação direcional.</p>
+      </div>
+      <nav>
+        <a href="./ro-visual-lab.html?v=0.33">Mapa 2.5D</a>
+        <a href="./character-lab.html?v=0.33">Personagens</a>
+        <a href="./">Jogo</a>
+      </nav>
+    </header>
+
+    <section class="toolbar">
+      <label>Modelo
+        <select id="modelSelect"></select>
+      </label>
+      <label>Material
+        <select id="presetSelect">
+          <option value="default">Padrão</option>
+          <option value="red">Judá vermelho</option>
+          <option value="green">Verde</option>
+          <option value="blue">Azul</option>
+          <option value="ochre">Ocre</option>
+        </select>
+      </label>
+      <button id="rotLeft" type="button">↶ modelo</button>
+      <button id="rotRight" type="button">modelo ↷</button>
+      <button id="camLeft" type="button">↶ câmera</button>
+      <button id="camRight" type="button">câmera ↷</button>
+      <button id="wireButton" type="button">Wire: off</button>
+      <button id="textureButton" type="button">Textura: on</button>
+      <span id="status">Carregando…</span>
+    </section>
+
+    <section class="viewer">
+      <canvas id="modelCanvas" width="900" height="560"></canvas>
+      <aside>
+        <h2 id="modelName">Modelo</h2>
+        <dl>
+          <div><dt>Vértices</dt><dd id="vertCount">—</dd></div>
+          <div><dt>Faces</dt><dd id="faceCount">—</dd></div>
+          <div><dt>Yaw modelo</dt><dd id="modelYaw">0°</dd></div>
+          <div><dt>Yaw câmera</dt><dd id="cameraYaw">0°</dd></div>
+        </dl>
+        <p>Arraste horizontalmente no canvas para girar o modelo. Roda do mouse altera o zoom. O visual usa exatamente o mesmo pipeline de mesh do mapa experimental.</p>
+      </aside>
+    </section>
+  </main>
+  <script type="module" src="./src/model-lab.js?v=0.33"></script>
+</body>
+</html>
