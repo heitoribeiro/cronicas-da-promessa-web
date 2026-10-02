@@ -101,3 +101,25 @@ Utilidade para Crônicas da Promessa:
 - simulador de mapas que separa parsers de GAT/GND/RSW/RSM e renderização.
 
 O projeto reforçou a decisão de usar uma **grade de navegação de 8 px** no protótipo Web e um controlador de direção independente da imagem visual.
+
+
+### lenaxia/robrowserlegacy
+
+Licença: GPLv3.
+
+Utilidade como referência arquitetural:
+
+- separa o personagem em `body`, `head`, `weapon`, `shield`, três acessórios, `robe` e `shadow`;
+- anexos podem renderizar antes ou depois da entidade;
+- direção exibida pode combinar direção da entidade e direção da câmera;
+- ACT armazena posição, espelhamento, escala, cor, rotação, tipo de sprite e pontos de encaixe;
+- o renderizador posiciona cada imagem a partir de seu centro, não pelo canto superior esquerdo.
+
+Uso no projeto: **somente estudo de arquitetura**. Não incorporar código GPL ao runtime principal sem decisão explícita de licenciamento.
+
+
+### Flux159/ragnarokoffline.app
+
+Licença: GPLv3.
+
+O repositório contém exemplos de mapas customizados com `.gat`, `.gnd`, `.rsw` e texturas, úteis para confirmar a ideia de empacotar mundo, terreno e navegação como recursos separados. Também é tratado apenas como referência arquitetural.
