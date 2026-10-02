@@ -167,3 +167,17 @@ Abra `ro-visual-lab.html` para testar a direção visual mais próxima da arquit
 - direção visual dependente da câmera.
 
 A especificação completa está em `RO_RENDER_ARCHITECTURE.md`.
+
+
+### Mundo 2.5D data-driven
+
+- `assets/maps/judah/ro25d_world.json` — manifesto do recorte visual de Judá.
+- `src/ro-world-system.js` — altura, caminhos, luz, fog, cores e direção relativa à câmera.
+- `src/ro25d-renderer.js` — renderer experimental terreno/modelos/billboards.
+- `tools/validate-ro-world.mjs` — valida o manifesto de mundo.
+
+Validação:
+
+```
+node tools/validate-ro-world.mjs assets/maps/judah/ro25d_world.json
+```
