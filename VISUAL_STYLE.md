@@ -427,3 +427,24 @@ Os sprites 2D passam a escalar com o zoom da câmera e recebem atenuação de fo
 As texturas de faces também passam a acompanhar melhor a orientação da geometria projetada.
 
 Versão visual: **0.34**.
+
+
+## Aplicação — Fase 18 — desempenho
+
+A evolução visual passa a ter um orçamento explícito de frame.
+
+Principais mudanças:
+
+- pré-cálculo de terreno e meshes;
+- culling de objetos fora do viewport;
+- cache de texturas/patterns;
+- redução da área de preenchimento de faces;
+- DPR adaptativo;
+- presets de qualidade;
+- telemetria;
+- throttling de NPCs, animais e HUD no gameplay DOM;
+- modo automático que reduz efeitos visuais se o FPS cair.
+
+A arquitetura visual continua desacoplada do backend gráfico para permitir uma futura migração WebGL sem reescrever os manifests de mapa/modelos.
+
+Versão: **0.35**.
