@@ -705,6 +705,11 @@ function update(dt,now){
 function updateQualityUI(){
   const button=document.querySelector('#qualityButton');
   if(button) button.textContent='Qualidade: '+perf.label;
+  const shell=document.querySelector('.ro25d-shell');
+  if(shell){
+    shell.dataset.quality=perf.effective;
+    shell.dataset.qualityRequested=perf.requested;
+  }
 }
 
 function updatePerfUI(now){
