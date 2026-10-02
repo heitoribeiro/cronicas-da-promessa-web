@@ -178,3 +178,70 @@ Isso evita acoplar quests, colisão e save a uma tecnologia gráfica específica
 - preset de qualidade.
 
 Esses dados devem ser usados nas próximas validações.
+
+
+## 8. Fase 0.36 — fluidez de gameplay
+
+A otimização foi ampliada para os hot paths que ainda provocavam pausas perceptíveis.
+
+### DOM e sprites
+
+O personagem, NPCs e animais usam `CSS translate` individual quando disponível. Isso evita alterar `left/top` durante movimento contínuo e reduz invalidacões de layout.
+
+Os controladores SPR/ACT-like agora são dirty-driven:
+- não reescrevem width/height a cada RAF;
+- não reescrevem classes/datasets quando a direção não mudou;
+- só mudam o recorte do atlas quando o frame realmente avança.
+
+### Navegação
+
+O A* foi migrado de `Map/Set` para:
+- `Int32Array`;
+- `Float64Array`;
+- `Uint8Array`.
+
+A walkability é cacheada por consulta. Em Balanced/Performance a rota externa usa célula lógica de 16 px, reduzindo a malha pesquisada para aproximadamente 1/4 do número de células do modo High.
+
+### Resolução e frame pacing
+
+A análise do `AesirWorld/client` mostrou que o ROBrowser separa tamanho CSS e resolução interna do canvas conforme a qualidade. O mesmo princípio foi incorporado ao laboratório.
+
+Presets:
+- High: 60 Hz, scale 1.00;
+- Balanced: 50 Hz, scale 0.85;
+- Performance: 30 Hz, scale 0.70.
+
+A simulação continua sendo atualizada pelo RAF; apenas a apresentação gráfica cara é limitada pelo frame pacing.
+
+## 9. Backend GPU experimental
+
+Foi criado `ro-gpu-lab.html` com Three.js/WebGL.
+
+Ele consome os mesmos:
+- `ro25d_world.json`;
+- `model_library.json`;
+- `sprite_manifest.json`.
+
+Implementado:
+- terreno em BufferGeometry;
+- modelos estáticos agrupados por material;
+- UVs gerados para materiais pixelados;
+- iluminação ambiente/direcional/point lights;
+- frustum culling da GPU;
+- NPCs como sprites billboard;
+- personagem em layers billboard;
+- filtros nearest;
+- presets de pixel ratio;
+- telemetria de FPS/draw calls/triângulos.
+
+O laboratório GPU é propositalmente separado da gameplay. Ele só deve substituir o backend Canvas quando os testes reais demonstrarem vantagem consistente.
+
+## 10. Lições confirmadas no GitHub
+
+O estudo de `AesirWorld/client` confirmou práticas importantes:
+- resolução interna configurável;
+- buffers estáticos na GPU;
+- atlas de textura no terreno para reduzir draw calls;
+- Web Worker para processamento/carregamento pesado do mapa.
+
+Essas práticas orientam as próximas otimizações do Crônicas da Promessa sem incorporar código GPL do projeto de referência.
