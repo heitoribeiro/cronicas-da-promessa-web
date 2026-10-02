@@ -44,6 +44,7 @@ export function resolveCharacterLayerZ(layer, direction='s', options={}){
   if(topLeft){
     if(type==='shield') return 10;
     if(type==='body') return 15;
+    if(type==='outfit') return 17;
     if(type==='head') return headBeforeBody ? 14 : 20;
     if(type==='accessory') return 22 + slot;
     if(type==='weapon') return 28 + slot;
@@ -51,6 +52,7 @@ export function resolveCharacterLayerZ(layer, direction='s', options={}){
   }
 
   if(type==='body') return 10;
+  if(type==='outfit') return 12;
   if(type==='head') return headBeforeBody ? 9 : 15;
   if(type==='accessory') return 17 + slot;
   if(type==='weapon') return 23 + slot;
