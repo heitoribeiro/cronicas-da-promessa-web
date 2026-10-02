@@ -180,3 +180,22 @@ O BrowEdit3 é uma referência extremamente útil para a estrutura visual dos ma
 A documentação do projeto confirma ainda que o RSW armazena modelos, luzes, sons e efeitos com posição/rotação/escala, enquanto o lightmapping do terreno trabalha com pequenos mapas de luz por tile.
 
 Não foi localizado um arquivo de licença explícito durante esta análise. Portanto o projeto é usado somente como **referência de arquitetura e formatos**, sem cópia de código.
+
+
+## Fase 16 — conclusão arquitetural
+
+A convergência entre AesirWorld/client, BrowEdit3 e as demais referências estudadas mostrou o mesmo padrão estrutural:
+
+```
+Terrain/GND
+   ↓
+World/RSW
+   ↓
+Models/RSM
+   ↓
+Billboard Entities/SPR+ACT
+   ↓
+Effects/UI
+```
+
+O Crônicas da Promessa agora possui equivalentes próprios para cada uma dessas camadas experimentais, sem incorporar assets proprietários de Ragnarok.
