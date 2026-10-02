@@ -1300,16 +1300,25 @@ function game() {
     const dist = Math.hypot(dx,dy);
     if (dist < 3) {
       agent.target = (agent.target + 1) % agent.route.length;
-      agent.el.classList.remove('animal-walking');
+      if (agent.walking) {
+        agent.walking=false;
+        agent.el.classList.remove('animal-walking');
+      }
       return;
     }
     const step = Math.min(dist,agent.speed*dt);
     agent.x += dx/dist*step;
     agent.y += dy/dist*step;
     setActorPosition(agent.el,agent.x,agent.y);
-    agent.el.style.zIndex = String(100 + Math.round(690 + agent.y));
-    agent.el.classList.add('animal-walking');
-    agent.el.classList.toggle('face-left',dx < 0);
+    if (!agent.walking) {
+      agent.walking=true;
+      agent.el.classList.add('animal-walking');
+    }
+    const faceLeft=dx<0;
+    if (faceLeft !== agent.faceLeft) {
+      agent.faceLeft=faceLeft;
+      agent.el.classList.toggle('face-left',faceLeft);
+    }
   }
 
   // A base visual dos objetos define se passam à frente ou atrás dos personagens.
@@ -1327,6 +1336,9 @@ function game() {
   function updateDepth() {
     player.style.zIndex = ySortFromFeet(currentScene === 'outdoor' ? state.y : indoorPos.y);
     npcAgentList.forEach(agent => agent.el.style.zIndex = ySortFromFeet(agent.y));
+    animalAgents.forEach(agent => {
+      agent.el.style.zIndex = String(100 + Math.round(690 + agent.y));
+    });
   }
 
   const PLAYER_RADIUS = 20;
