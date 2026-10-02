@@ -1142,6 +1142,12 @@ function game() {
   // legacy até serem substituídos pelos novos conjuntos completos.
   const npcSpriteControllers = createNpcSpriteControllers(npcAgents, SPRITE_MANIFEST);
 
+  // Instância visual independente para o NPC dentro da oficina. Isso permite
+  // que Eliabe trabalhe no interior sem interferir na rota/estado do NPC externo.
+  const interiorSpriteControllers = createNpcSpriteControllers({
+    eliabe:{el:$('#eliabeInteriorNpc')}
+  }, SPRITE_MANIFEST);
+
   const npcSchedules = {
     elder:[
       {from:480,to:510,tag:'estandarte',route:[[890,292],[850,320],[930,322]]},
@@ -1994,13 +2000,19 @@ function game() {
     activeInteraction?.run?.();
   }
 
-  function updateInteriorNpcs() {
+  function updateInteriorNpcs(now = performance.now()) {
     const elderInside = $('#elderInteriorNpc');
     const eliabeInside = $('#eliabeInteriorNpc');
     const elder = npcAgents.elder;
     const eliabe = npcAgents.eliabe;
     elderInside.classList.toggle('hidden', elder.inside !== 'standard');
-    eliabeInside.classList.toggle('hidden', eliabe.inside !== 'workshop');
+    const eliabeVisible = eliabe.inside === 'workshop';
+    eliabeInside.classList.toggle('hidden', !eliabeVisible);
+    const controller = interiorSpriteControllers.eliabe;
+    if (controller) {
+      controller.setAction(eliabeVisible ? 'work' : 'idle', now);
+      controller.tick(now);
+    }
   }
 
   let lastLightingPhase = '';
@@ -2014,9 +2026,9 @@ function game() {
     document.querySelector('.game')?.setAttribute('data-phase',phase);
   }
 
-  function draw() {
+  function draw(now = performance.now()) {
     applyLighting();
-    updateInteriorNpcs();
+    updateInteriorNpcs(now);
 
     const destination = questDestination();
     worldQuest.classList.toggle('hidden', !destination || currentScene !== 'outdoor');
@@ -2287,7 +2299,7 @@ function game() {
       save();
       lastAutoSave = now;
     }
-    draw();
+    draw(now);
     requestAnimationFrame(tick);
   }
 
