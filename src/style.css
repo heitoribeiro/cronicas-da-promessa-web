@@ -1386,3 +1386,56 @@ img{user-select:none;-webkit-user-drag:none}
   .npc{width:var(--sprite-frame-w)!important;height:var(--sprite-frame-h)!important}
   .npc img{width:var(--sprite-frame-w)!important;height:var(--sprite-frame-h)!important}
 }
+
+
+/* === PIXEL RPG VISUAL PHASE 11 — ELIABE 8-WAY ATLAS === */
+
+.sprite-viewport{
+  position:absolute;
+  left:0;
+  top:0;
+  display:block;
+  overflow:hidden;
+  pointer-events:none;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+
+.npc[data-sprite-mode="atlas"]{
+  transform:translate(-50%,calc(-1 * var(--sprite-pivot-y)))!important;
+  width:var(--sprite-frame-w)!important;
+  height:var(--sprite-frame-h)!important;
+  overflow:visible!important;
+  filter:none!important;
+}
+.npc[data-sprite-mode="atlas"] .sprite-viewport{
+  width:var(--sprite-frame-w)!important;
+  height:var(--sprite-frame-h)!important;
+}
+.npc[data-sprite-mode="atlas"] img.sprite-sheet-image,
+.npc[data-sprite-mode="atlas"].face-left img.sprite-sheet-image,
+.npc[data-sprite-mode="atlas"].face-right img.sprite-sheet-image,
+.npc[data-sprite-mode="atlas"].face-up img.sprite-sheet-image,
+.npc[data-sprite-mode="atlas"].face-down img.sprite-sheet-image{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  width:var(--sprite-sheet-w)!important;
+  height:var(--sprite-sheet-h)!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:fill!important;
+  transform:translate(var(--atlas-x),var(--atlas-y))!important;
+  transform-origin:0 0!important;
+  filter:none!important;
+}
+.npc[data-sprite-mode="atlas"]:after{display:none!important}
+.npc[data-sprite-mode="atlas"] b{top:104px!important}
+.npc[data-sprite-mode="atlas"].npc-walking{animation:none!important}
+
+@media(max-width:700px){
+  .npc[data-sprite-mode="atlas"]{
+    width:var(--sprite-frame-w)!important;
+    height:var(--sprite-frame-h)!important;
+  }
+}
