@@ -1,0 +1,439 @@
+{
+  "schema": 1,
+  "id": "judah_ro25d_prototype",
+  "name": "Acampamento de Judá — recorte 2.5D",
+  "version": "0.32",
+  "coordinateSystem": "x-east, y-up, z-south",
+  "terrain": {
+    "cols": 28,
+    "rows": 20,
+    "cellSize": 1,
+    "baseColor": "#bd884a",
+    "pathColor": "#d8bf7c",
+    "edgeColor": "#6d4d25",
+    "heightScale": 1,
+    "heightFeatures": [
+      {
+        "type": "gaussian",
+        "x": 4.5,
+        "z": 3.5,
+        "rx": 5.5,
+        "rz": 3.6,
+        "height": 0.42
+      },
+      {
+        "type": "gaussian",
+        "x": 22.5,
+        "z": 15.5,
+        "rx": 5,
+        "rz": 4.2,
+        "height": 0.34
+      },
+      {
+        "type": "gaussian",
+        "x": 23,
+        "z": 3.2,
+        "rx": 4.2,
+        "rz": 3,
+        "height": 0.2
+      },
+      {
+        "type": "gaussian",
+        "x": 7,
+        "z": 15.5,
+        "rx": 4.8,
+        "rz": 3.8,
+        "height": 0.18
+      },
+      {
+        "type": "gaussian",
+        "x": 14,
+        "z": 10,
+        "rx": 8.8,
+        "rz": 6.2,
+        "height": -0.09
+      }
+    ],
+    "paths": [
+      {
+        "type": "strip",
+        "axis": "z",
+        "center": 14,
+        "width": 2.15
+      },
+      {
+        "type": "strip",
+        "axis": "x",
+        "center": 9.7,
+        "width": 1.8
+      },
+      {
+        "type": "segment",
+        "x1": 14,
+        "z1": 3.2,
+        "x2": 20.7,
+        "z2": 5.2,
+        "width": 1.15
+      },
+      {
+        "type": "segment",
+        "x1": 14,
+        "z1": 9.7,
+        "x2": 6.5,
+        "z2": 13.7,
+        "width": 1
+      }
+    ]
+  },
+  "camera": {
+    "pitchDeg": 57,
+    "yawDeg": 0,
+    "zoom": 46,
+    "minZoom": 28,
+    "maxZoom": 72,
+    "rotationStepDeg": 45,
+    "followLerp": 3.8
+  },
+  "lighting": {
+    "longitudeDeg": 320,
+    "latitudeDeg": 48,
+    "ambient": 0.52,
+    "diffuse": 0.48,
+    "shadowOpacity": 0.34,
+    "warmth": "#f0c985"
+  },
+  "fog": {
+    "enabled": true,
+    "near": 13,
+    "far": 26,
+    "color": "#d7b77b"
+  },
+  "water": {
+    "enabled": false,
+    "level": -0.08,
+    "color": "#5c8990",
+    "alpha": 0.58
+  },
+  "models": [
+    {
+      "id": "standard",
+      "type": "tent",
+      "x": 14,
+      "z": 3.2,
+      "w": 4.4,
+      "d": 3,
+      "h": 3.15,
+      "wall": "#efe1b7",
+      "roof": "#a52e33",
+      "accent": "#d2a83f"
+    },
+    {
+      "id": "family_w",
+      "type": "tent",
+      "x": 7,
+      "z": 4.3,
+      "w": 2.7,
+      "d": 2,
+      "h": 2.1,
+      "wall": "#eadbb1",
+      "roof": "#35664d"
+    },
+    {
+      "id": "family_e",
+      "type": "tent",
+      "x": 21.1,
+      "z": 4.6,
+      "w": 2.8,
+      "d": 2.1,
+      "h": 2.15,
+      "wall": "#eadbb1",
+      "roof": "#315a8c"
+    },
+    {
+      "id": "levite",
+      "type": "tent",
+      "x": 9.4,
+      "z": 14.6,
+      "w": 2.45,
+      "d": 1.9,
+      "h": 2,
+      "wall": "#ece0b8",
+      "roof": "#8d7637"
+    },
+    {
+      "id": "workshop",
+      "type": "workshop",
+      "x": 21,
+      "z": 13.2,
+      "w": 3.2,
+      "d": 2.35,
+      "h": 1.85,
+      "wall": "#e3cf9b",
+      "roof": "#6d4328"
+    },
+    {
+      "id": "gate",
+      "type": "gate",
+      "x": 14,
+      "z": 18,
+      "w": 4.2,
+      "d": 0.85,
+      "h": 2.65,
+      "wall": "#92592f",
+      "roof": "#684025"
+    },
+    {
+      "id": "tower_w",
+      "type": "tower",
+      "x": 3.1,
+      "z": 17.1,
+      "w": 1.5,
+      "d": 1.5,
+      "h": 3.7,
+      "wall": "#8f633a",
+      "roof": "#6a3d25"
+    },
+    {
+      "id": "tower_e",
+      "type": "tower",
+      "x": 24.8,
+      "z": 17,
+      "w": 1.5,
+      "d": 1.5,
+      "h": 3.7,
+      "wall": "#8f633a",
+      "roof": "#6a3d25"
+    },
+    {
+      "id": "well",
+      "type": "well",
+      "x": 14,
+      "z": 11.1,
+      "w": 1.7,
+      "d": 1.7,
+      "h": 1.35,
+      "wall": "#8d7758",
+      "roof": "#6f4a2b"
+    },
+    {
+      "id": "fire",
+      "type": "fire",
+      "x": 14,
+      "z": 8.2,
+      "w": 1,
+      "d": 1,
+      "h": 0.65,
+      "wall": "#705344",
+      "roof": "#ef8a35"
+    },
+    {
+      "id": "crate1",
+      "type": "crate",
+      "x": 7.3,
+      "z": 9.5,
+      "w": 0.85,
+      "d": 0.85,
+      "h": 0.75,
+      "wall": "#a36a39",
+      "roof": "#7b4d2c"
+    },
+    {
+      "id": "crate2",
+      "type": "crate",
+      "x": 8.2,
+      "z": 9.8,
+      "w": 0.7,
+      "d": 0.7,
+      "h": 0.62,
+      "wall": "#9a6035",
+      "roof": "#79492a"
+    },
+    {
+      "id": "crate3",
+      "type": "crate",
+      "x": 20,
+      "z": 10.2,
+      "w": 0.9,
+      "d": 0.8,
+      "h": 0.72,
+      "wall": "#9c6236",
+      "roof": "#7a4a2a"
+    },
+    {
+      "id": "banner_w",
+      "type": "banner",
+      "x": 11.9,
+      "z": 5.6,
+      "w": 0.2,
+      "d": 0.2,
+      "h": 2.2,
+      "wall": "#6c4529",
+      "roof": "#9f2e34",
+      "accent": "#d7ad43"
+    },
+    {
+      "id": "banner_e",
+      "type": "banner",
+      "x": 16.1,
+      "z": 5.6,
+      "w": 0.2,
+      "d": 0.2,
+      "h": 2.2,
+      "wall": "#6c4529",
+      "roof": "#9f2e34",
+      "accent": "#d7ad43"
+    },
+    {
+      "id": "tree1",
+      "type": "tree",
+      "x": 3.8,
+      "z": 7.7,
+      "w": 1.25,
+      "d": 1.25,
+      "h": 2.5,
+      "wall": "#6b4327",
+      "roof": "#607c3e"
+    },
+    {
+      "id": "tree2",
+      "type": "tree",
+      "x": 24,
+      "z": 7,
+      "w": 1.35,
+      "d": 1.35,
+      "h": 2.7,
+      "wall": "#6b4327",
+      "roof": "#667f43"
+    },
+    {
+      "id": "tree3",
+      "type": "tree",
+      "x": 23.7,
+      "z": 14.9,
+      "w": 1.15,
+      "d": 1.15,
+      "h": 2.35,
+      "wall": "#6b4327",
+      "roof": "#5d783c"
+    },
+    {
+      "id": "rock1",
+      "type": "rock",
+      "x": 6,
+      "z": 12,
+      "w": 1.2,
+      "d": 0.9,
+      "h": 0.65,
+      "wall": "#77706d",
+      "roof": "#9a9189"
+    },
+    {
+      "id": "rock2",
+      "type": "rock",
+      "x": 19,
+      "z": 7.2,
+      "w": 1,
+      "d": 0.8,
+      "h": 0.58,
+      "wall": "#77706d",
+      "roof": "#9b928a"
+    },
+    {
+      "id": "bench1",
+      "type": "bench",
+      "x": 11.7,
+      "z": 8.8,
+      "w": 1.8,
+      "d": 0.45,
+      "h": 0.5,
+      "wall": "#6d472c",
+      "roof": "#8c5c35"
+    },
+    {
+      "id": "bench2",
+      "type": "bench",
+      "x": 16.3,
+      "z": 8.8,
+      "w": 1.8,
+      "d": 0.45,
+      "h": 0.5,
+      "wall": "#6d472c",
+      "roof": "#8c5c35"
+    }
+  ],
+  "palisade": [
+    {
+      "x1": 2,
+      "z1": 1.5,
+      "x2": 26,
+      "z2": 1.5
+    },
+    {
+      "x1": 2,
+      "z1": 1.5,
+      "x2": 2,
+      "z2": 18.4
+    },
+    {
+      "x1": 26,
+      "z1": 1.5,
+      "x2": 26,
+      "z2": 18.4
+    },
+    {
+      "x1": 2,
+      "z1": 18.4,
+      "x2": 11.6,
+      "z2": 18.4
+    },
+    {
+      "x1": 16.4,
+      "z1": 18.4,
+      "x2": 26,
+      "z2": 18.4
+    }
+  ],
+  "actors": [
+    {
+      "id": "elder",
+      "x": 12.2,
+      "z": 4.8,
+      "dir": 4
+    },
+    {
+      "id": "eliabe",
+      "x": 20.5,
+      "z": 12,
+      "dir": 6
+    },
+    {
+      "id": "miria",
+      "x": 18,
+      "z": 6.7,
+      "dir": 1
+    },
+    {
+      "id": "hanan",
+      "x": 6.6,
+      "z": 11.5,
+      "dir": 7
+    },
+    {
+      "id": "guard",
+      "x": 14.9,
+      "z": 16.8,
+      "dir": 4
+    },
+    {
+      "id": "child",
+      "x": 5.2,
+      "z": 13.8,
+      "dir": 6
+    }
+  ],
+  "playerSpawn": {
+    "x": 14,
+    "z": 12.8,
+    "dir": 4
+  }
+}
