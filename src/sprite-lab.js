@@ -10,6 +10,7 @@ const DIRECTIONS=[
 ];
 
 const grid=document.querySelector('#directionGrid');
+const characterSelect=document.querySelector('#characterSelect');
 const actionSelect=document.querySelector('#actionSelect');
 const pauseButton=document.querySelector('#pauseButton');
 const gridButton=document.querySelector('#gridButton');
@@ -21,6 +22,7 @@ let paused=false;
 let frame=0;
 let frameStarted=performance.now();
 let currentAction=actionSelect.value;
+let currentCharacter='eliabe';
 
 function makeCard([dir,label],row){
   const card=document.createElement('article');
@@ -39,6 +41,33 @@ function makeCard([dir,label],row){
 
 DIRECTIONS.forEach(makeCard);
 
+function syncActions(){
+  const previous=currentAction;
+  actionSelect.innerHTML='';
+  for(const action of Object.keys(meta?.atlas?.actions || {})){
+    const option=document.createElement('option');
+    option.value=action;
+    option.textContent=({idle:'Parado / Idle',walk:'Caminhada / Walk',talk:'Fala / Talk',work:'Trabalho / Work',ready:'Prontidão / Ready'})[action] || action;
+    actionSelect.appendChild(option);
+  }
+  currentAction=meta?.atlas?.actions?.[previous] ? previous : Object.keys(meta?.atlas?.actions || {})[0];
+  actionSelect.value=currentAction;
+}
+
+function loadCharacter(id){
+  currentCharacter=id;
+  meta=manifest?.npcs?.[id] || null;
+  if(!meta?.atlas) return;
+  document.querySelector('#characterName').textContent=meta.name;
+  document.querySelector('#characterRole').textContent=({eliabe:'Artesão de Judá',elder:'Ancião de Judá',miria:'Moradora de Judá',hanan:'Trabalhador de Judá',guard:'Guarda de Judá'})[id] || 'NPC';
+  document.querySelector('#canvasInfo').textContent=`${meta.canvas.width}×${meta.canvas.height}`;
+  document.querySelector('#pivotInfo').textContent=`${meta.pivot.x},${meta.pivot.y}`;
+  syncActions();
+  frame=0;
+  frameStarted=performance.now();
+  render();
+}
+
 function render(){
   if(!meta) return;
   const cfg=meta.atlas.actions[currentAction];
@@ -51,6 +80,7 @@ function render(){
     const row=meta.atlas.directionOrder.indexOf(dir);
     const img=card.querySelector('.sprite-sheet');
     img.src=cfg.source;
+    img.alt=`${meta.name} olhando para ${card.querySelector('h3').textContent}`;
     img.style.width=sheetW+'px';
     img.style.height=sheetH+'px';
     img.style.transform=`translate(${-frame*fw}px,${-row*fh}px)`;
@@ -71,6 +101,8 @@ function tick(now){
   }
   requestAnimationFrame(tick);
 }
+
+characterSelect.addEventListener('change',()=>loadCharacter(characterSelect.value));
 
 actionSelect.addEventListener('change',()=>{
   currentAction=actionSelect.value;
@@ -93,13 +125,17 @@ gridButton.addEventListener('click',()=>{
 
 async function init(){
   try{
-    const response=await fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.27',{cache:'no-store'});
+    const response=await fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.28',{cache:'no-store'});
     manifest=await response.json();
-    meta=manifest.npcs.eliabe;
-    document.querySelector('#characterName').textContent=meta.name;
-    document.querySelector('#canvasInfo').textContent=`${meta.canvas.width}×${meta.canvas.height}`;
-    document.querySelector('#pivotInfo').textContent=`${meta.pivot.x},${meta.pivot.y}`;
-    render();
+    const available=Object.entries(manifest.npcs).filter(([,npc])=>npc.mode==='atlas' && npc.atlas);
+    for(const [id,npc] of available){
+      const option=document.createElement('option');
+      option.value=id;
+      option.textContent=npc.name;
+      characterSelect.appendChild(option);
+    }
+    characterSelect.value=available.some(([id])=>id==='eliabe')?'eliabe':available[0]?.[0];
+    loadCharacter(characterSelect.value);
     requestAnimationFrame(tick);
   }catch(error){
     status.textContent='Falha ao carregar o manifesto: '+error.message;
