@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Crônicas da Promessa",
-  "version": "0.27",
+  "version": "0.28",
   "architecture": "RO-inspired sprite/action metadata with original artwork",
   "directionOrder8": [
     "s",
@@ -144,20 +144,20 @@
     "elder": {
       "name": "Ancião",
       "archetype": "adult",
-      "mode": "static_legacy",
-      "source": "./assets/art/pixel/npcs/elder.png",
+      "mode": "atlas",
+      "source": "./assets/art/pixel/npcs/elder/idle_atlas.svg?v=0.28",
       "canvas": {
-        "width": 64,
-        "height": 88
+        "width": 96,
+        "height": 112
       },
       "pivot": {
-        "x": 32,
-        "y": 84
+        "x": 48,
+        "y": 108
       },
       "legacy": {
-        "scale": 0.96,
+        "scale": 1,
         "shiftX": 0,
-        "shiftY": 1
+        "shiftY": 0
       },
       "target": {
         "directions": 8,
@@ -165,7 +165,49 @@
           "idle",
           "walk",
           "talk"
-        ]
+        ],
+        "exportCanvas": {
+          "width": 96,
+          "height": 112,
+          "origin": {
+            "x": 48,
+            "y": 108
+          }
+        }
+      },
+      "spriteSpec": "./assets/art/pixel/npcs/elder/elder.sprite.json",
+      "atlas": {
+        "directionOrder": [
+          "s",
+          "sw",
+          "w",
+          "nw",
+          "n",
+          "ne",
+          "e",
+          "se"
+        ],
+        "frame": {
+          "width": 96,
+          "height": 112
+        },
+        "actions": {
+          "idle": {
+            "frames": 3,
+            "frameMs": 240,
+            "source": "./assets/art/pixel/npcs/elder/idle_atlas.svg?v=0.28"
+          },
+          "walk": {
+            "frames": 8,
+            "frameMs": 115,
+            "source": "./assets/art/pixel/npcs/elder/walk_atlas.svg?v=0.28"
+          },
+          "talk": {
+            "frames": 3,
+            "frameMs": 190,
+            "source": "./assets/art/pixel/npcs/elder/talk_atlas.svg?v=0.28"
+          }
+        }
       }
     },
     "eliabe": {
@@ -247,18 +289,18 @@
     "miria": {
       "name": "Miriã",
       "archetype": "adult",
-      "mode": "static_legacy",
-      "source": "./assets/art/pixel/npcs/miria.png",
+      "mode": "atlas",
+      "source": "./assets/art/pixel/npcs/miria/idle_atlas.svg?v=0.28",
       "canvas": {
-        "width": 64,
-        "height": 88
+        "width": 96,
+        "height": 112
       },
       "pivot": {
-        "x": 32,
-        "y": 84
+        "x": 48,
+        "y": 108
       },
       "legacy": {
-        "scale": 1.1,
+        "scale": 1,
         "shiftX": 0,
         "shiftY": 0
       },
@@ -268,21 +310,63 @@
           "idle",
           "walk",
           "talk"
-        ]
+        ],
+        "exportCanvas": {
+          "width": 96,
+          "height": 112,
+          "origin": {
+            "x": 48,
+            "y": 108
+          }
+        }
+      },
+      "spriteSpec": "./assets/art/pixel/npcs/miria/miria.sprite.json",
+      "atlas": {
+        "directionOrder": [
+          "s",
+          "sw",
+          "w",
+          "nw",
+          "n",
+          "ne",
+          "e",
+          "se"
+        ],
+        "frame": {
+          "width": 96,
+          "height": 112
+        },
+        "actions": {
+          "idle": {
+            "frames": 3,
+            "frameMs": 240,
+            "source": "./assets/art/pixel/npcs/miria/idle_atlas.svg?v=0.28"
+          },
+          "walk": {
+            "frames": 8,
+            "frameMs": 115,
+            "source": "./assets/art/pixel/npcs/miria/walk_atlas.svg?v=0.28"
+          },
+          "talk": {
+            "frames": 3,
+            "frameMs": 190,
+            "source": "./assets/art/pixel/npcs/miria/talk_atlas.svg?v=0.28"
+          }
+        }
       }
     },
     "hanan": {
       "name": "Hanan",
       "archetype": "adult",
-      "mode": "static_legacy",
-      "source": "./assets/art/pixel/npcs/hanan.png",
+      "mode": "atlas",
+      "source": "./assets/art/pixel/npcs/hanan/idle_atlas.svg?v=0.28",
       "canvas": {
-        "width": 64,
-        "height": 88
+        "width": 96,
+        "height": 112
       },
       "pivot": {
-        "x": 32,
-        "y": 84
+        "x": 48,
+        "y": 108
       },
       "legacy": {
         "scale": 1,
@@ -296,30 +380,77 @@
           "walk",
           "talk",
           "work"
-        ]
+        ],
+        "exportCanvas": {
+          "width": 96,
+          "height": 112,
+          "origin": {
+            "x": 48,
+            "y": 108
+          }
+        }
+      },
+      "spriteSpec": "./assets/art/pixel/npcs/hanan/hanan.sprite.json",
+      "atlas": {
+        "directionOrder": [
+          "s",
+          "sw",
+          "w",
+          "nw",
+          "n",
+          "ne",
+          "e",
+          "se"
+        ],
+        "frame": {
+          "width": 96,
+          "height": 112
+        },
+        "actions": {
+          "idle": {
+            "frames": 3,
+            "frameMs": 240,
+            "source": "./assets/art/pixel/npcs/hanan/idle_atlas.svg?v=0.28"
+          },
+          "walk": {
+            "frames": 8,
+            "frameMs": 115,
+            "source": "./assets/art/pixel/npcs/hanan/walk_atlas.svg?v=0.28"
+          },
+          "talk": {
+            "frames": 3,
+            "frameMs": 190,
+            "source": "./assets/art/pixel/npcs/hanan/talk_atlas.svg?v=0.28"
+          },
+          "work": {
+            "frames": 6,
+            "frameMs": 140,
+            "source": "./assets/art/pixel/npcs/hanan/work_atlas.svg?v=0.28"
+          }
+        }
       }
     },
     "guard": {
       "name": "Guarda de Judá",
       "archetype": "adult",
-      "mode": "static_legacy",
-      "source": "./assets/art/pixel/npcs/guard.png",
+      "mode": "atlas",
+      "source": "./assets/art/pixel/npcs/guard/idle_atlas.svg?v=0.28",
       "canvas": {
-        "width": 64,
-        "height": 88
+        "width": 96,
+        "height": 112
       },
       "pivot": {
-        "x": 32,
-        "y": 84
+        "x": 48,
+        "y": 108
       },
       "accessoryCanvasTarget": {
         "width": 96,
         "height": 112
       },
       "legacy": {
-        "scale": 0.88,
+        "scale": 1,
         "shiftX": 0,
-        "shiftY": 3
+        "shiftY": 0
       },
       "target": {
         "directions": 8,
@@ -328,7 +459,54 @@
           "walk",
           "talk",
           "ready"
-        ]
+        ],
+        "exportCanvas": {
+          "width": 96,
+          "height": 112,
+          "origin": {
+            "x": 48,
+            "y": 108
+          }
+        }
+      },
+      "spriteSpec": "./assets/art/pixel/npcs/guard/guard.sprite.json",
+      "atlas": {
+        "directionOrder": [
+          "s",
+          "sw",
+          "w",
+          "nw",
+          "n",
+          "ne",
+          "e",
+          "se"
+        ],
+        "frame": {
+          "width": 96,
+          "height": 112
+        },
+        "actions": {
+          "idle": {
+            "frames": 3,
+            "frameMs": 240,
+            "source": "./assets/art/pixel/npcs/guard/idle_atlas.svg?v=0.28"
+          },
+          "walk": {
+            "frames": 8,
+            "frameMs": 110,
+            "source": "./assets/art/pixel/npcs/guard/walk_atlas.svg?v=0.28"
+          },
+          "talk": {
+            "frames": 3,
+            "frameMs": 190,
+            "source": "./assets/art/pixel/npcs/guard/talk_atlas.svg?v=0.28"
+          },
+          "ready": {
+            "frames": 6,
+            "frameMs": 135,
+            "source": "./assets/art/pixel/npcs/guard/ready_atlas.svg?v=0.28"
+          }
+        }
       }
     },
     "child": {
