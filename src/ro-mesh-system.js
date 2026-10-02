@@ -1,6 +1,6 @@
-import { shadeColor, mixColor, fogFactor } from './ro-world-system.js?v=0.34';
+import { shadeColor, fogFactor, pointLightContribution } from './ro-world-system.js?v=0.35';
 
-export async function loadModelLibrary(url='./assets/art/ro25d/model_library.json?v=0.34'){
+export async function loadModelLibrary(url='./assets/art/ro25d/model_library.json?v=0.35'){
   const response=await fetch(url,{cache:'no-store'});
   if(!response.ok) throw new Error(`Falha ao carregar model library (${response.status})`);
   return response.json();
@@ -62,4 +62,56 @@ export function buildMeshFaces(library,model,heightAt,project,lightFactor,lighti
 
 export function modelShadowSize(model){
   return {w:Number(model.w||1),d:Number(model.d||1)};
+}
+
+
+export function prepareMeshInstance(library,model,heightAt,lightFactor,lighting,sun,lights=[]){
+  const mesh=library?.meshes?.[model.meshId];
+  if(!mesh) return null;
+
+  const worldVertices=mesh.vertices.map(v=>transformVertex(v,model,heightAt));
+  const faces=mesh.faces.map((face,index)=>{
+    const verts3=face.v.map(i=>worldVertices[i]);
+    const normal=faceNormal3D(verts3);
+    const material=resolveMaterial(library,model,face.m);
+    const baseLight=lightFactor(normal,lighting,sun);
+    const centroid=verts3.reduce((acc,v)=>({
+      x:acc.x+v.x/verts3.length,
+      y:acc.y+v.y/verts3.length,
+      z:acc.z+v.z/verts3.length
+    }),{x:0,y:0,z:0});
+    const localLight=pointLightContribution(centroid,lights);
+    return {index,indices:face.v,normal,material,baseLight,centroid,localLight};
+  });
+
+  const center={
+    x:Number(model.x||0),
+    y:heightAt(Number(model.x||0),Number(model.z||0))+Number(model.h||1)*.5,
+    z:Number(model.z||0)
+  };
+  const radius=Math.hypot(Number(model.w||1)*.5,Number(model.d||1)*.5,Number(model.h||1)*.6);
+
+  return {id:model.id,meshId:model.meshId,model,worldVertices,faces,center,radius};
+}
+
+export function projectPreparedMesh(prepared,project,fog,showLighting=true,showFog=true){
+  if(!prepared) return [];
+  const projected=prepared.worldVertices.map(v=>project(v.x,v.y,v.z));
+  return prepared.faces.map(face=>{
+    const points=face.indices.map(i=>projected[i]);
+    const depth=points.reduce((sum,p)=>sum+p.depth,0)/Math.max(1,points.length);
+    const light=showLighting?face.baseLight:1;
+    const ff=showFog?fogFactor(depth,fog):0;
+    return {
+      index:face.index,
+      points,
+      normal:face.normal,
+      depth,
+      material:face.material,
+      color:shadeColor(face.material.color,light),
+      light,
+      fog:ff,
+      localLight:face.localLight
+    };
+  });
 }
