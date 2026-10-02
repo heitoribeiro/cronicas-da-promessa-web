@@ -4,7 +4,7 @@
   "displayName": "Eliabe",
   "role": "artesão",
   "style": "pixel-rpg-biblical-desert",
-  "status": "asset-plan",
+  "status": "runtime-atlas-v1",
   "architecture": "8-direction sequence with stable feet origin",
   "bodyReference": {
     "logicalEnvelope": {
@@ -81,5 +81,25 @@
     "noAntialiasing": true,
     "noDropShadowBakedIntoArt": true,
     "background": "transparent"
+  },
+  "runtime": {
+    "mode": "atlas",
+    "directionOrder": [
+      "s",
+      "sw",
+      "w",
+      "nw",
+      "n",
+      "ne",
+      "e",
+      "se"
+    ],
+    "files": {
+      "idle": "./idle_atlas.svg",
+      "walk": "./walk_atlas.svg",
+      "talk": "./talk_atlas.svg",
+      "work": "./work_atlas.svg"
+    },
+    "atlasLayout": "rows=directions, columns=frames"
   }
 }
