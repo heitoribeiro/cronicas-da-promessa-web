@@ -362,3 +362,68 @@ Implementado:
 Essa fase aproxima o visual da lógica **3D world + 2D billboard characters** em vez de simplesmente imitar sprites ou assets do Ragnarok.
 
 Versão visual: **0.33**.
+
+
+## Aplicação — Fase 17
+
+O recorte de Judá recebe sua primeira camada de arquitetura **bíblico-desértica específica**, deixando de depender apenas de modelos genéricos.
+
+### Estruturas principais refinadas
+
+- **Tenda do Estandarte de Judá**
+  - cobertura listrada creme/vermelha;
+  - dossel frontal;
+  - cortinas de entrada;
+  - mastro central;
+  - estandartes laterais;
+  - cordas de sustentação;
+  - placa frontal com emblema dourado de Judá;
+  - postes estruturais próprios.
+
+- **Portão de Judá**
+  - pilares espessos;
+  - folhas duplas;
+  - travessas diagonais;
+  - coroamento triangular;
+  - placa com emblema;
+  - suportes metálicos para tochas;
+  - paliçada superior.
+
+- **Torres de vigia de Judá**
+  - quatro pilares;
+  - travamentos em X;
+  - plataforma elevada;
+  - guarda-corpo;
+  - cobertura;
+  - mastro e flâmula.
+
+### Props adicionais
+
+Foram adicionados modelos reutilizáveis de:
+
+- estandarte;
+- conjunto de ânforas;
+- tapete de Judá;
+- suporte de armas.
+
+O recorte experimental passa de 22 para **28 instâncias de cenário**.
+
+### Materiais
+
+A biblioteca passa a **16 meshes** e **21 materiais**, incluindo:
+
+- tecido listrado de Judá;
+- emblema dourado;
+- bronze;
+- couro;
+- cerâmica;
+- cerâmica escura;
+- tapete de Judá.
+
+### Integração billboard
+
+Os sprites 2D passam a escalar com o zoom da câmera e recebem atenuação de fog por profundidade. Assim, personagens e cenário deixam de parecer pertencentes a sistemas de escala distintos.
+
+As texturas de faces também passam a acompanhar melhor a orientação da geometria projetada.
+
+Versão visual: **0.34**.
