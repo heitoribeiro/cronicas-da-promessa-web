@@ -21,6 +21,16 @@ const PRESETS={
 
 const ORDER=['performance','balanced','high'];
 
+function detectAutoPreset(){
+  const cores=Number(navigator.hardwareConcurrency||0);
+  const memory=Number(navigator.deviceMemory||0);
+  const coarse=window.matchMedia?.('(pointer: coarse)')?.matches || navigator.maxTouchPoints>0;
+  const saveData=Boolean(navigator.connection?.saveData);
+  if(saveData) return 'performance';
+  if((cores>0&&cores<=4)||(memory>0&&memory<=4)) return coarse?'performance':'balanced';
+  return 'balanced';
+}
+
 export function createPerformanceController({storageKey='cronicas.ro25d.quality',onChange=()=>{}}={}){
   let requested='auto';
   try{
@@ -28,7 +38,7 @@ export function createPerformanceController({storageKey='cronicas.ro25d.quality'
     if(saved==='auto'||PRESETS[saved]) requested=saved;
   }catch{}
 
-  let effective=requested==='auto'?'balanced':requested;
+  let effective=requested==='auto'?detectAutoPreset():requested;
   let avgCost=0;
   let avgFps=60;
   let lastRenderAt=0;
@@ -56,7 +66,7 @@ export function createPerformanceController({storageKey='cronicas.ro25d.quality'
   function setRequested(mode,reason='manual'){
     if(mode!=='auto'&&!PRESETS[mode]) return;
     requested=mode;
-    effective=mode==='auto'?'balanced':mode;
+    effective=mode==='auto'?detectAutoPreset():mode;
     sampleCount=0;
     avgCost=0;
     avgFps=60;
