@@ -162,3 +162,21 @@ O repositório contém uma implementação independente de cliente com classes e
 Também possui o projeto `ROFormats`, reforçando a mesma separação entre formatos de mapa, modelos e sprites.
 
 Não foi encontrado arquivo de licença explícito no repositório durante a análise; portanto ele é usado apenas como referência conceitual/estrutural, sem incorporação de código.
+
+
+### Borf/BrowEdit3
+
+O BrowEdit3 é uma referência extremamente útil para a estrutura visual dos mapas de Ragnarok. A árvore do projeto separa explicitamente:
+
+- `Gnd` / `GndRenderer`;
+- `Gat` / `GatRenderer`;
+- `Rsw`;
+- `Rsm` / `RsmRenderer`;
+- `WaterRenderer`;
+- `BillboardRenderer`;
+- lightmapper;
+- edição de height, texture, wall, GAT, water e shadow.
+
+A documentação do projeto confirma ainda que o RSW armazena modelos, luzes, sons e efeitos com posição/rotação/escala, enquanto o lightmapping do terreno trabalha com pequenos mapas de luz por tile.
+
+Não foi localizado um arquivo de licença explícito durante esta análise. Portanto o projeto é usado somente como **referência de arquitetura e formatos**, sem cópia de código.
