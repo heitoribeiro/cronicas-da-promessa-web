@@ -55,8 +55,7 @@ export function buildMeshFaces(library,model,heightAt,project,lightFactor,lighti
     const material=resolveMaterial(library,model,face.m);
     const lf=showLighting?lightFactor(normal,lighting,sun):1;
     const ff=showFog?fogFactor(depth,fog):0;
-    const base=shadeColor(material.color,lf);
-    const color=showFog?mixColor(base,fog.color,ff*.72):base;
+    const color=shadeColor(material.color,lf);
     return {index,points,verts3,normal,depth,material,color,light:lf,fog:ff};
   });
 }
