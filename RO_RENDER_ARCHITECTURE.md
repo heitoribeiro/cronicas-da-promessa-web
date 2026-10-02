@@ -101,3 +101,56 @@ Ele não substitui a gameplay atual. Serve para validar a direção de renderer 
 7. Só depois migrar Judá completo.
 
 Essa ordem evita reescrever simultaneamente renderer, colisão, quests e gameplay.
+
+
+## 6. Mundo data-driven RSW-like
+
+O laboratório deixou de manter o cenário hardcoded no renderer. O arquivo:
+
+`assets/maps/judah/ro25d_world.json`
+
+passa a funcionar como uma descrição de mundo inspirada conceitualmente no papel do RSW.
+
+Ele contém:
+
+- configuração de câmera;
+- terreno e funções de altura;
+- estradas;
+- iluminação global;
+- fog;
+- água;
+- modelos do cenário;
+- palisadas;
+- atores;
+- spawn do jogador.
+
+O renderer consome esse arquivo através de `src/ro-world-system.js`.
+
+## 7. Lições incorporadas do BrowEdit3
+
+A análise do BrowEdit3 reforçou quatro decisões:
+
+1. **altura deve pertencer ao terreno**, e não ser simulada por z-index;
+2. o terreno precisa aceitar quatro vértices com alturas independentes, mesmo quando o protótipo atual usa uma função contínua;
+3. modelos de mundo precisam ter transformação própria e participar da profundidade;
+4. iluminação do chão deve ser tratada como dado próprio, separada da textura base.
+
+A Fase 15B já implementa uma aproximação dessas ideias:
+
+- normal de terreno calculada por gradiente;
+- iluminação direcional por latitude/longitude;
+- ambient + diffuse;
+- fog por profundidade;
+- espessura visual nas bordas do terreno;
+- props volumétricos;
+- personagens billboard;
+- fila única de profundidade para modelos + atores;
+- seletor de célula GAT-like.
+
+## 8. Próxima migração técnica
+
+O próximo passo é substituir progressivamente os sólidos paramétricos do laboratório por meshes low-poly/texturizados originais do projeto, preservando:
+
+`position + rotation + scale + material + collision`
+
+como dados independentes do gameplay.
