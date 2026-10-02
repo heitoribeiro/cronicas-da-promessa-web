@@ -1,7 +1,7 @@
 import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.30';
 import { findGridPath } from './pathfinding.js?v=0.30';
 import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.30';
-import { createLayeredPlayerController } from './player-sprite-system.js?v=0.30';
+import { createLayeredPlayerController, renderLayeredPlayerPortrait } from './player-sprite-system.js?v=0.30';
 
 const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.30');
 const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.30');
@@ -2178,6 +2178,7 @@ function game() {
   refreshHud();
   const playerSprite = player.querySelector('.player-sprite');
   const layeredPlayer = createLayeredPlayerController(playerSprite,playerSexSlug,SPRITE_MANIFEST);
+  renderLayeredPlayerPortrait(document.querySelector('.portrait-sprite'),playerSexSlug,SPRITE_MANIFEST);
   let playerDirection = 's';
   let playerFrame = 1;
   let lastPlayerFrame = 0;
