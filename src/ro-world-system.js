@@ -110,7 +110,7 @@ export function visibleDirectionIndex(worldDirection,yawRad){
   return ((Number(worldDirection||0)-cameraOctant(yawRad))%8+8)%8;
 }
 
-export async function loadRoWorld(url='./assets/maps/judah/ro25d_world.json?v=0.34'){
+export async function loadRoWorld(url='./assets/maps/judah/ro25d_world.json?v=0.36'){
   const response=await fetch(url,{cache:'no-store'});
   if(!response.ok) throw new Error(`Falha ao carregar mundo 2.5D (${response.status})`);
   return response.json();
