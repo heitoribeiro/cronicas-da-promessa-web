@@ -1,5 +1,5 @@
-import { loadModelLibrary, buildMeshFaces } from './ro-mesh-system.js?v=0.33';
-import { sunDirection } from './ro-world-system.js?v=0.33';
+import { loadModelLibrary, buildMeshFaces } from './ro-mesh-system.js?v=0.34';
+import { sunDirection } from './ro-world-system.js?v=0.34';
 
 const canvas=document.querySelector('#modelCanvas');
 const ctx=canvas.getContext('2d',{alpha:false});
@@ -38,7 +38,7 @@ function project(x,y,z){
 function begin(points){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath()}
 function materialOverrides(){
   const p=preset.value;
-  if(modelId==='tent'){
+  if(modelId==='tent'||modelId==='judah_standard_tent'){
     if(p==='green') return {wall:'cloth_cream',roof:'cloth_green',trim:'wood_dark'};
     if(p==='blue') return {wall:'cloth_cream',roof:'cloth_blue',trim:'wood_dark'};
     if(p==='ochre') return {wall:'cloth_cream',roof:'cloth_ochre',trim:'gold'};
@@ -53,7 +53,7 @@ function drawFace(face){
   ctx.save();ctx.clip();
   ctx.fillStyle=face.color;ctx.fillRect(0,0,canvas.width,canvas.height);
   if(textures&&face.material?.texture){
-    const img=getImage(face.material.texture+'?v=0.33');
+    const img=getImage(face.material.texture+'?v=0.34');
     if(img.complete&&img.naturalWidth){
       const pattern=ctx.createPattern(img,'repeat');
       if(pattern){ctx.globalAlpha=.9;ctx.fillStyle=pattern;ctx.fillRect(0,0,canvas.width,canvas.height)}
@@ -125,11 +125,11 @@ canvas.addEventListener('pointerup',()=>dragging=false);canvas.addEventListener(
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(65,Math.min(180,zoom+(e.deltaY<0?8:-8)));render()},{passive:false});
 
 async function init(){
-  library=await loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.33');
+  library=await loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.34');
   for(const id of Object.keys(library.meshes)){
     const option=document.createElement('option');option.value=id;option.textContent=id;select.appendChild(option);
   }
-  select.value='tent';changeModel();
+  select.value='judah_standard_tent';changeModel();
   setInterval(render,220);
 }
 init().catch(error=>status.textContent='Falha: '+error.message);
