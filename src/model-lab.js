@@ -38,14 +38,29 @@ function project(x,y,z){
 function begin(points){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath()}
 function materialOverrides(){
   const p=preset.value;
-  if(modelId==='tent'||modelId==='judah_standard_tent'){
+  if(modelId==='tent'){
     if(p==='green') return {wall:'cloth_cream',roof:'cloth_green',trim:'wood_dark'};
     if(p==='blue') return {wall:'cloth_cream',roof:'cloth_blue',trim:'wood_dark'};
     if(p==='ochre') return {wall:'cloth_cream',roof:'cloth_ochre',trim:'gold'};
     return {wall:'cloth_cream',roof:'cloth_red',trim:'gold'};
   }
+  if(modelId==='judah_standard_tent'){
+    return {
+      wall:'cloth_cream',
+      roof:'cloth_cream',
+      stripe:p==='green'?'cloth_green':p==='blue'?'cloth_blue':p==='ochre'?'cloth_ochre':'cloth_judah',
+      trim:'gold',curtain:'cloth_red',pole:'wood_dark',rope:'rope',
+      banner:'cloth_judah',emblem:'judah_emblem'
+    };
+  }
   if(modelId==='workshop') return {wall:'cloth_cream',roof:'wood_dark',trim:'wood'};
   if(modelId==='watchtower') return {wood:'wood',wood_dark:'wood_dark',roof:'cloth_ochre'};
+  if(modelId==='judah_watchtower') return {wood:'wood',wood_dark:'wood_dark',roof:'cloth_ochre',pole:'wood_dark',banner:'cloth_judah'};
+  if(modelId==='judah_gate') return {wood:'wood',wood_dark:'wood_dark',door:'wood_dark',cloth_red:'cloth_judah',emblem:'judah_emblem',bronze:'bronze'};
+  if(modelId==='judah_banner') return {pole:'wood_dark',banner:'cloth_judah',emblem:'judah_emblem'};
+  if(modelId==='amphora_cluster') return {pottery:'pottery',pottery_dark:'pottery_dark'};
+  if(modelId==='rug') return {rug:'rug_judah'};
+  if(modelId==='weapon_rack') return {wood:'wood',wood_dark:'wood_dark',pole:'wood_dark',bronze:'bronze'};
   return {};
 }
 function drawFace(face){
@@ -80,14 +95,19 @@ function render(){
   drawGround();
 
   const model={x:0,z:0,w:2.5,h:2.5,d:2.5,meshId:modelId,rotationY:modelYaw*180/Math.PI,materials:materialOverrides()};
-  if(modelId==='gate'){model.w=3.2;model.h=2.5;model.d=.9}
-  if(modelId==='watchtower'){model.w=2.0;model.h=3.0;model.d=2.0}
+  if(modelId==='gate'||modelId==='judah_gate'){model.w=3.2;model.h=2.5;model.d=.9}
+  if(modelId==='watchtower'||modelId==='judah_watchtower'){model.w=2.0;model.h=3.0;model.d=2.0}
   if(modelId==='well'){model.w=1.7;model.h=1.4;model.d=1.7}
   if(modelId==='crate'){model.w=1.3;model.h=1.2;model.d=1.3}
   if(modelId==='acacia'){model.w=2.3;model.h=3.0;model.d=2.0}
   if(modelId==='rock'){model.w=1.8;model.h=1.1;model.d=1.5}
   if(modelId==='bench'){model.w=2.4;model.h=.9;model.d=.8}
   if(modelId==='workshop'){model.w=3.0;model.h=2.0;model.d=2.2}
+  if(modelId==='judah_standard_tent'){model.w=4.4;model.h=3.15;model.d=3.0}
+  if(modelId==='judah_banner'){model.w=.9;model.h=2.2;model.d=.25}
+  if(modelId==='amphora_cluster'){model.w=1.2;model.h=1.1;model.d=1.2}
+  if(modelId==='rug'){model.w=3.0;model.h=.06;model.d=1.5}
+  if(modelId==='weapon_rack'){model.w=1.7;model.h=1.7;model.d=.6}
 
   const faces=buildMeshFaces(library,model,heightAt,project,(n,l,s)=>{
     const dot=Math.max(0,n.x*s.x+n.y*s.y+n.z*s.z);
@@ -107,7 +127,7 @@ function render(){
 function changeModel(){
   modelId=select.value;
   modelYaw=0;
-  preset.disabled=modelId!=='tent';
+  preset.disabled=!(modelId==='tent'||modelId==='judah_standard_tent');
   render();
 }
 
