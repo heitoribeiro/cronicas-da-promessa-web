@@ -199,3 +199,17 @@ Eliabe torna-se o primeiro NPC realmente migrado do modo estático para o novo r
 - o sprite pode exceder o envelope corporal sem alterar colisão ou Y-sort.
 
 Os atlas são arte original do projeto e não reutilizam sprites do Ragnarok Online. A arquitetura, não a arte, é a referência.
+
+
+## Aplicação — Fase 11B
+
+Foi criado um laboratório visual separado da gameplay para validar os novos sprites antes de replicá-los para outros NPCs:
+
+- `sprite-lab.html`;
+- comparação simultânea das 8 direções;
+- seleção entre `idle`, `walk`, `talk` e `work`;
+- grade de referência do canvas;
+- pausa da animação;
+- indicação de frame, pivô e dimensões.
+
+Eliabe também passa a usar a animação `work` quando aparece dentro da Oficina, mantendo uma instância visual independente do NPC externo.
