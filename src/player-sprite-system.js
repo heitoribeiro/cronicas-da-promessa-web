@@ -125,3 +125,45 @@ export function createLayeredPlayerController(root,sex,manifest){
   if(!root || !meta || meta.mode!=='layered_atlas') return null;
   return new LayeredPlayerController(root,{sex},meta);
 }
+
+
+export function renderLayeredPlayerPortrait(root,sex,manifest){
+  const meta=manifest?.players?.[sex];
+  if(!root || !meta || meta.mode!=='layered_atlas') return false;
+
+  root.innerHTML='';
+  root.classList.add('layered-player-portrait');
+  root.style.backgroundImage='none';
+
+  const direction='s';
+  const action='idle';
+  const cfg=meta.actions[action];
+  const frameW=meta.canvas.width;
+  const frameH=meta.canvas.height;
+  const row=Math.max(0,(meta.directionOrder||DIRS).indexOf(direction));
+  const sheetW=frameW*cfg.frames;
+  const sheetH=frameH*(meta.directionOrder||DIRS).length;
+
+  for(const layer of meta.layers||[]){
+    const src=layer.actions?.[action];
+    if(!src) continue;
+
+    const viewport=document.createElement('span');
+    viewport.className='portrait-layer-viewport';
+    viewport.dataset.layer=layer.id;
+    viewport.style.zIndex=String(resolveCharacterLayerZ(layer,direction));
+
+    const img=document.createElement('img');
+    img.className='portrait-layer-sheet';
+    img.alt='';
+    img.draggable=false;
+    img.src=src+(src.includes('?')?'':'?v=0.30');
+    img.style.width=sheetW+'px';
+    img.style.height=sheetH+'px';
+    img.style.transform=`translate(0px,${-row*frameH}px)`;
+
+    viewport.appendChild(img);
+    root.appendChild(viewport);
+  }
+  return true;
+}
