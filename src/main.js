@@ -1,9 +1,10 @@
-import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.29';
-import { findGridPath } from './pathfinding.js?v=0.29';
-import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.29';
+import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.30';
+import { findGridPath } from './pathfinding.js?v=0.30';
+import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.30';
+import { createLayeredPlayerController } from './player-sprite-system.js?v=0.30';
 
-const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.29');
-const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.29');
+const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.30');
+const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.30');
 
 const app = document.querySelector('#app');
 const SAVE = 'cronicas-promessa-save-v3';
@@ -145,7 +146,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.29</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.30</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -179,7 +180,7 @@ function menu() {
           <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle pixel-version">Web Alpha 0.29 • Direção visual Pixel RPG bíblico-desértico</p>
+        <p class="subtitle pixel-version">Web Alpha 0.30 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -361,7 +362,7 @@ function game() {
         <div class="zone-label corral-zone">Currais</div><div class="zone-label workshop-zone">Oficinas</div>
 
         <div class="move-target hidden" id="moveTarget" aria-hidden="true"><i></i></div>
-        <div class="player player-art" id="player"><span class="player-sprite" style="background-image:url(${playerSheet})" aria-label="Personagem"></span></div>
+        <div class="player player-art" id="player"><span class="player-sprite player-sprite-stack" style="background-image:url(${playerSheet})" aria-label="Personagem"></span></div>
       </div>
 
       <div class="interior-map hidden" id="standardInterior">
@@ -535,7 +536,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.29</div>
+      <div class="badge">Web Alpha 0.30</div>
     </main>`;
 
   const world = $('#world');
@@ -2176,31 +2177,34 @@ function game() {
 
   refreshHud();
   const playerSprite = player.querySelector('.player-sprite');
+  const layeredPlayer = createLayeredPlayerController(playerSprite,playerSexSlug,SPRITE_MANIFEST);
   let playerDirection = 's';
   let playerFrame = 1;
   let lastPlayerFrame = 0;
 
   function updatePlayerSprite(dx,dy,now) {
     const moving = Boolean(dx || dy);
-    if (moving) {
-      playerDirection = directionFromVector(dx,dy,true);
-      if (now - lastPlayerFrame > 165) {
-        playerFrame = playerFrame === 1 ? 2 : 1;
-        lastPlayerFrame = now;
-      }
-    } else {
-      playerFrame = 1;
-    }
+    if (moving) playerDirection = directionFromVector(dx,dy,true);
 
-    // O atlas atual ainda possui 4 direções. A direção lógica já é 8-way e
-    // será usada diretamente quando o novo atlas for substituído.
     const legacyFacing = ({
       s:'down',sw:'left',w:'left',nw:'up',
       n:'up',ne:'up',e:'right',se:'right'
     })[playerDirection] || 'down';
-    const row = ({down:0,left:1,right:2,up:3})[legacyFacing] ?? 0;
-    const col = playerFrame === 2 ? 1 : 0;
-    if (playerSprite) playerSprite.style.backgroundPosition = `${-col * 64}px ${-row * 88}px`;
+
+    if (layeredPlayer) {
+      layeredPlayer.setMotion(dx,dy,now);
+    } else {
+      if (moving && now - lastPlayerFrame > 165) {
+        playerFrame = playerFrame === 1 ? 2 : 1;
+        lastPlayerFrame = now;
+      } else if (!moving) {
+        playerFrame = 1;
+      }
+      const row = ({down:0,left:1,right:2,up:3})[legacyFacing] ?? 0;
+      const col = playerFrame === 2 ? 1 : 0;
+      if (playerSprite) playerSprite.style.backgroundPosition = `${-col * 64}px ${-row * 88}px`;
+    }
+
     player.dataset.direction = playerDirection;
     player.dataset.facing = legacyFacing;
     player.dataset.action = moving ? 'walk' : 'idle';
