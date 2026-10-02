@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "id": "child",
+  "displayName": "Criança do Rebanho",
+  "status": "runtime-atlas-v1",
+  "architecture": "8-direction child atlas with stable feet origin",
+  "bodyReference": {
+    "logicalEnvelope": {
+      "width": 48,
+      "height": 66
+    },
+    "adultHeightRatio": 0.78
+  },
+  "exportCanvas": {
+    "width": 80,
+    "height": 96,
+    "origin": {
+      "x": 40,
+      "y": 92
+    },
+    "transparent": true
+  },
+  "anchors": {
+    "feet": {
+      "x": 40,
+      "y": 92
+    },
+    "head": {
+      "x": 40,
+      "y": 35
+    }
+  },
+  "collision": {
+    "radius": 18,
+    "anchor": "feet",
+    "independentFromCanvas": true
+  },
+  "directions": [
+    "s",
+    "sw",
+    "w",
+    "nw",
+    "n",
+    "ne",
+    "e",
+    "se"
+  ],
+  "actions": {
+    "idle": {
+      "frames": 3,
+      "frameMs": 260,
+      "loop": true
+    },
+    "walk": {
+      "frames": 8,
+      "frameMs": 125,
+      "loop": true
+    },
+    "talk": {
+      "frames": 3,
+      "frameMs": 190,
+      "loop": true
+    }
+  },
+  "runtime": {
+    "mode": "atlas",
+    "directionOrder": [
+      "s",
+      "sw",
+      "w",
+      "nw",
+      "n",
+      "ne",
+      "e",
+      "se"
+    ],
+    "atlasLayout": "rows=directions, columns=frames",
+    "files": {
+      "idle": "./idle_atlas.svg",
+      "walk": "./walk_atlas.svg",
+      "talk": "./talk_atlas.svg"
+    }
+  }
+}
