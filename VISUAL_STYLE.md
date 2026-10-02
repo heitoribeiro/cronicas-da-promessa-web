@@ -259,3 +259,29 @@ A Criança do Rebanho deixa o modo `static_legacy` e completa a migração dos N
 Todos os NPCs atualmente presentes no mapa de Judá passam a usar a mesma arquitetura de direção/ação/pivô, com escala corporal adequada à idade.
 
 Versão visual: **Web Alpha 0.29**.
+
+
+## Aplicação — Fase 14
+
+Os personagens jogáveis masculino e feminino passam para a arquitetura visual em camadas inspirada no modelo clássico de MMORPGs como Ragnarok Online, mantendo toda a arte original do projeto.
+
+### Runtime do jogador
+
+- 8 direções: S, SW, W, NW, N, NE, E e SE;
+- `idle`: 3 frames;
+- `walk`: 8 frames;
+- canvas: **96×112 px**;
+- pivô dos pés: **(48,108)**;
+- layers independentes:
+  - `garment`;
+  - `body`;
+  - `outfit`;
+  - `hair/accessory`;
+- ordem de desenho resolvida conforme a direção;
+- o retrato do HUD usa as mesmas camadas do personagem no mundo.
+
+O personagem masculino mantém túnica desértica, cabelo castanho e garment vermelho. O personagem feminino mantém roupa laranja, cabelo escuro e véu azul, preservando a identidade visual previamente aprovada.
+
+Foi criado `character-lab.html` para validar cada layer separadamente e comparar as oito direções antes de adicionar armas, escudos, capas e headgears.
+
+Versão visual: **Web Alpha 0.30**.
