@@ -167,3 +167,17 @@ A arquitetura de mapas inspirada em GND/GAT/RSW passa a ser usada pelo runtime W
 - o protótipo continua em 1800×1200 para não quebrar a mecânica atual, enquanto 3072×1536 permanece como alvo dos mapas definitivos.
 
 Essa etapa aproxima a engenharia do jogo da separação clássica `terreno / navegação / mundo`, mantendo toda a arte original de Crônicas da Promessa.
+
+
+## Aplicação — Fase 10
+
+A camada visual passa a usar uma arquitetura de personagem modular inspirada na separação clássica de sprites de Ragnarok Online, mantendo arte 100% original.
+
+- definida ordem de camadas dependente da direção;
+- separados `shadow`, corpo, cabeça, cabelo, acessórios, garment, arma, escudo e efeitos;
+- estabelecido canvas de produção 96×112 com corpo lógico 64×88;
+- Eliabe passa a ser o primeiro NPC-modelo para 8 direções e ações `idle`, `walk`, `talk` e `work`;
+- criado validador automático de pacote de sprites;
+- referências GPL continuam apenas como estudo, sem incorporar código ao runtime principal.
+
+Esta fase é deliberadamente aditiva para não interferir nas mecânicas estabilizadas no outro fluxo de desenvolvimento.
