@@ -362,6 +362,9 @@ export class NpcSpriteController {
     this.frameStartedAt = 0;
     this.lastSrc = '';
     this.viewport = null;
+    this.lastRenderKey = '';
+    this.lastMotionKey = '';
+    this.lastAtlasLayoutKey = '';
     this.applyLayout();
   }
 
@@ -386,11 +389,14 @@ export class NpcSpriteController {
     return this.meta?.actions?.[action] || defaults[action] || null;
   }
 
-  renderCurrentFrame() {
+  renderCurrentFrame(force = false) {
     if (!this.image || !this.meta) return;
     const mode = this.meta.mode || 'static_legacy';
 
     if (mode === 'atlas') {
+      const renderKey = this.action + '|' + this.direction + '|' + this.frame;
+      if (!force && renderKey === this.lastRenderKey) return;
+      this.lastRenderKey = renderKey;
       const cfg = this.getActionConfig(this.action);
       const atlas = this.meta.atlas || {};
       if (!cfg?.source) return;
@@ -406,14 +412,21 @@ export class NpcSpriteController {
         this.lastSrc = cfg.source;
         this.image.src = cfg.source;
       }
-      this.element.style.setProperty('--sprite-sheet-w', sheetW + 'px');
-      this.element.style.setProperty('--sprite-sheet-h', sheetH + 'px');
+      const atlasLayoutKey = sheetW + 'x' + sheetH;
+      if (atlasLayoutKey !== this.lastAtlasLayoutKey) {
+        this.lastAtlasLayoutKey = atlasLayoutKey;
+        this.element.style.setProperty('--sprite-sheet-w', sheetW + 'px');
+        this.element.style.setProperty('--sprite-sheet-h', sheetH + 'px');
+      }
       this.element.style.setProperty('--atlas-x', (-this.frame * frameW) + 'px');
       this.element.style.setProperty('--atlas-y', (-row * frameH) + 'px');
       return;
     }
 
     if (mode === 'sequence' && this.meta.target?.pathPattern) {
+      const renderKey = this.action + '|' + this.direction + '|' + this.frame;
+      if (!force && renderKey === this.lastRenderKey) return;
+      this.lastRenderKey = renderKey;
       const src = framePath(this.meta.target.pathPattern, this.action, this.direction, this.frame);
       if (src !== this.lastSrc) {
         this.lastSrc = src;
@@ -431,12 +444,15 @@ export class NpcSpriteController {
     const frameMs = Math.max(40, Number(cfg.frameMs) || 120);
     const frameCount = Math.max(1, Number(cfg.frames) || 1);
     if (!this.frameStartedAt) this.frameStartedAt = now;
+    let changed = false;
     if (now - this.frameStartedAt >= frameMs) {
       const steps = Math.floor((now - this.frameStartedAt) / frameMs);
-      this.frame = (this.frame + steps) % frameCount;
+      const next = (this.frame + steps) % frameCount;
+      changed = next !== this.frame;
+      this.frame = next;
       this.frameStartedAt += steps * frameMs;
     }
-    this.renderCurrentFrame();
+    if (changed || !this.lastRenderKey) this.renderCurrentFrame();
   }
 
   setAction(action, now = performance.now()) {
@@ -444,8 +460,9 @@ export class NpcSpriteController {
     this.action = action;
     this.frame = 0;
     this.frameStartedAt = now;
+    this.lastRenderKey = '';
     this.element.dataset.action = action;
-    this.renderCurrentFrame();
+    this.renderCurrentFrame(true);
   }
 
   applyLayout() {
@@ -471,7 +488,7 @@ export class NpcSpriteController {
         viewport.style.width = canvas.width + 'px';
         viewport.style.height = canvas.height + 'px';
       }
-      this.renderCurrentFrame();
+      this.renderCurrentFrame(true);
     } else if (this.image && this.meta.source && !this.image.getAttribute('src')) {
       this.image.src = this.meta.source;
     }
@@ -480,21 +497,29 @@ export class NpcSpriteController {
   setMotion(dx, dy, now = performance.now(), moving = Boolean(dx || dy)) {
     if (!this.element || !this.meta) return;
     const targetDirections = this.meta.target?.directions || 4;
-    if (moving) this.direction = directionFromVector(dx, dy, targetDirections >= 8);
+    const nextDirection = moving ? directionFromVector(dx, dy, targetDirections >= 8) : this.direction;
     const nextAction = moving ? 'walk' : 'idle';
-    if (nextAction !== this.action) {
+    const directionChanged = nextDirection !== this.direction;
+    const actionChanged = nextAction !== this.action;
+    if (directionChanged) this.direction = nextDirection;
+    if (actionChanged) {
       this.action = nextAction;
       this.frame = 0;
       this.frameStartedAt = now;
     }
+    if (directionChanged || actionChanged) this.lastRenderKey = '';
 
-    this.element.dataset.direction = this.direction;
-    this.element.dataset.action = this.action;
-    this.element.classList.toggle('npc-walking', moving);
-    this.element.classList.toggle('face-left', this.direction === 'w' || this.direction === 'sw' || this.direction === 'nw');
-    this.element.classList.toggle('face-right', this.direction === 'e' || this.direction === 'se' || this.direction === 'ne');
-    this.element.classList.toggle('face-up', this.direction === 'n' || this.direction === 'ne' || this.direction === 'nw');
-    this.element.classList.toggle('face-down', this.direction === 's' || this.direction === 'se' || this.direction === 'sw');
+    const motionKey = this.action + '|' + this.direction + '|' + (moving ? 1 : 0);
+    if (motionKey !== this.lastMotionKey) {
+      this.lastMotionKey = motionKey;
+      this.element.dataset.direction = this.direction;
+      this.element.dataset.action = this.action;
+      this.element.classList.toggle('npc-walking', moving);
+      this.element.classList.toggle('face-left', this.direction === 'w' || this.direction === 'sw' || this.direction === 'nw');
+      this.element.classList.toggle('face-right', this.direction === 'e' || this.direction === 'se' || this.direction === 'ne');
+      this.element.classList.toggle('face-up', this.direction === 'n' || this.direction === 'ne' || this.direction === 'nw');
+      this.element.classList.toggle('face-down', this.direction === 's' || this.direction === 'se' || this.direction === 'sw');
+    }
 
     this.tick(now);
   }
