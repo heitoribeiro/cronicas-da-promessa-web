@@ -1149,6 +1149,8 @@ function game() {
     hanan: { el:$('.npc-hanan'), x:hananSpawn.x,y:hananSpawn.y,route:[[hananSpawn.x,hananSpawn.y]],target:0,speed:.30, scheduleTag:'' },
     guard: { el:$('.npc-guard'), x:guardSpawn.x,y:guardSpawn.y,route:[[guardSpawn.x,guardSpawn.y]],target:0,speed:.48, scheduleTag:'' }
   };
+  const npcAgentList = Object.values(npcAgents);
+  const npcAgentEntries = Object.entries(npcAgents);
 
   // Arquitetura inspirada em SPR/ACT: cada NPC passa a ter metadados de
   // canvas, pivô, direção, ação e frames. Os assets atuais continuam em modo
@@ -1303,7 +1305,7 @@ function game() {
 
   function updateDepth() {
     player.style.zIndex = ySortFromFeet(currentScene === 'outdoor' ? state.y : indoorPos.y);
-    Object.values(npcAgents).forEach(agent => agent.el.style.zIndex = ySortFromFeet(agent.y));
+    npcAgentList.forEach(agent => agent.el.style.zIndex = ySortFromFeet(agent.y));
   }
 
   const PLAYER_RADIUS = 20;
@@ -1362,7 +1364,7 @@ function game() {
       ? Math.hypot(px-o.x,py-o.y) < PLAYER_RADIUS + o.r
       : circleHitsRect(px,py,PLAYER_RADIUS,o));
     if (hitsWorld) return false;
-    return !Object.values(npcAgents).some(npc => !npc.inside && Math.hypot(px-npc.x,py-npc.y) < PLAYER_RADIUS + 24);
+    return !npcAgentList.some(npc => !npc.inside && Math.hypot(px-npc.x,py-npc.y) < PLAYER_RADIUS + 24);
   }
 
   function currentPosition() {
@@ -1473,7 +1475,7 @@ function game() {
     if(currentScene==='outdoor'){
       const npcEl=event.target.closest?.('.npc');
       if(npcEl){
-        const match=Object.values(npcAgents).find(agent=>agent.el===npcEl);
+        const match=npcAgentList.find(agent=>agent.el===npcEl);
         if(match && !match.inside){
           const vx=state.x-match.x, vy=state.y-match.y;
           const len=Math.hypot(vx,vy)||1;
@@ -2416,7 +2418,7 @@ function game() {
         const npcDt = npcAccumDt;
         npcAccumDt = 0;
         lastNpcUpdate = now;
-        Object.entries(npcAgents).forEach(([key,agent]) => moveNpc(key,agent,npcDt,now));
+        npcAgentEntries.forEach(([key,agent]) => moveNpc(key,agent,npcDt,now));
         if (currentScene === 'outdoor') animalAgents.forEach(agent => moveAnimal(agent,npcDt));
       }
       const gameMinutes = .018 * dt;
