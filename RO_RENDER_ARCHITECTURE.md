@@ -1,0 +1,103 @@
+# Arquitetura visual 2.5D — direção Ragnarok-like
+
+A análise do protótipo atual mostrou que o maior afastamento visual em relação a Ragnarok Online **não está apenas nos sprites**. O principal fator é o renderer.
+
+## 1. Diferença estrutural
+
+O protótipo Web atual usa essencialmente:
+
+- mundo 2D em DOM/CSS;
+- coordenadas X/Y de tela;
+- props desenhados como imagens frontais;
+- câmera top-down;
+- profundidade simulada por z-index.
+
+A arquitetura clássica de Ragnarok usa:
+
+- **terreno 3D** derivado do GND, inclusive alturas por canto de célula;
+- **modelos 3D** do mundo (RSM/objetos RSW);
+- **personagens 2D billboard** sempre orientados ao plano da câmera;
+- câmera inclinada com yaw/zoom;
+- direção visual do sprite calculada em função da direção do personagem **e da câmera**;
+- luz, shadow map, água, fog e efeitos separados do sprite.
+
+Por isso apenas converter os NPCs para 8 direções não torna a cena parecida com Ragnarok.
+
+## 2. Renderer-alvo de Crônicas da Promessa
+
+A nova arquitetura visual será dividida em cinco estágios:
+
+### Stage A — Terrain
+Equivalente conceitual ao GND:
+- grid de terreno;
+- altura por vértice;
+- textura/atlas;
+- lightmap;
+- faces laterais quando houver diferença de altura.
+
+### Stage B — World models
+Equivalente conceitual ao RSW/RSM:
+- tendas;
+- portões;
+- torres;
+- bancadas;
+- poços;
+- cercas;
+- pedras grandes;
+- árvores e estruturas.
+
+Objetos podem ser low-poly/pixel-textured em vez de sprites frontais.
+
+### Stage C — Billboard entities
+Jogadores, NPCs, animais, itens e efeitos permanecem 2D, mas são projetados no mundo 3D pelo ponto dos pés.
+
+### Stage D — Effects
+- sombras no solo;
+- fog;
+- iluminação ambiente/direcional;
+- água;
+- partículas;
+- efeitos de missão.
+
+### Stage E — UI
+HUD permanece em screen space e não sofre projeção da câmera.
+
+## 3. Regra de direção
+
+O frame mostrado depende de:
+
+```
+direção_visual = direção_do_personagem - octante_da_câmera
+```
+
+normalizado para 0..7.
+
+Assim, ao girar a câmera 45°, o personagem pode permanecer parado no mundo e mudar automaticamente para a linha correta do atlas.
+
+## 4. Protótipo
+
+`ro-visual-lab.html` implementa uma prova de conceito isolada:
+
+- terreno com altura;
+- projeção 2.5D;
+- câmera giratória em incrementos de 45°;
+- zoom;
+- modelos volumétricos simples;
+- personagens/NPCs billboards;
+- atlas de 8 direções;
+- composição de layers do jogador;
+- sombra ancorada ao solo.
+
+Ele não substitui a gameplay atual. Serve para validar a direção de renderer antes da migração.
+
+## 5. Migração segura
+
+1. Validar aparência no laboratório.
+2. Extrair camera/projection em módulo estável.
+3. Migrar um mapa pequeno de teste.
+4. Migrar props principais para modelos/meshes simples.
+5. Conectar a grade GAT-like de 8 px ao terreno projetado.
+6. Conectar movimento do jogador.
+7. Só depois migrar Judá completo.
+
+Essa ordem evita reescrever simultaneamente renderer, colisão, quests e gameplay.
