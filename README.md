@@ -152,3 +152,18 @@ Abra `sprite-lab.html` no GitHub Pages para validar NPCs sem entrar na gameplay.
 ### Laboratório do personagem
 
 Abra `character-lab.html` para comparar os personagens jogáveis masculino e feminino nas oito direções. É possível ocultar/mostrar individualmente `garment`, `body`, `outfit` e `hair`, permitindo verificar alinhamento e ordem de profundidade antes de adicionar equipamentos.
+
+
+### Protótipo de renderer 2.5D
+
+Abra `ro-visual-lab.html` para testar a direção visual mais próxima da arquitetura de Ragnarok Online:
+
+- terreno com altura;
+- câmera inclinada;
+- rotação em 45°;
+- zoom;
+- modelos volumétricos simples;
+- NPCs e jogador como billboards 2D;
+- direção visual dependente da câmera.
+
+A especificação completa está em `RO_RENDER_ARCHITECTURE.md`.
