@@ -203,3 +203,24 @@ Arquivos principais:
 - `src/ro-mesh-system.js`;
 - `RO_MODEL_STANDARD.md`;
 - `tools/validate-model-library.mjs`.
+
+
+### Fase visual 0.34
+
+O laboratório 2.5D agora possui arquitetura própria de Judá:
+
+- Tenda do Estandarte detalhada;
+- portão tribal;
+- torres com travamento estrutural;
+- estandartes com emblema;
+- tapetes, ânforas e suporte de armas;
+- sprites billboard sincronizados com zoom e fog.
+
+Biblioteca atual: **16 meshes / 21 materiais / 28 instâncias no recorte de Judá**.
+
+Testes visuais:
+
+- `ro-visual-lab.html?v=0.34` — mapa 2.5D;
+- `model-lab.html?v=0.34` — inspeção de modelos;
+- `character-lab.html?v=0.34` — personagem em layers;
+- `sprite-lab.html?v=0.34` — NPCs.
