@@ -1,7 +1,7 @@
 import { resolveCharacterLayerZ } from './character-layers.js?v=0.33';
 import {
   clamp, degToRad, createHeightSampler, isPathAt, sunDirection,
-  terrainNormal, lightFactor, shadeColor, mixColor, fogFactor,
+  terrainNormal, lightFactor, shadeColor, mixColor, fogFactor, pointLightContribution,
   visibleDirectionIndex, loadRoWorld
 } from './ro-world-system.js?v=0.33';
 import { loadModelLibrary, buildMeshFaces, modelShadowSize } from './ro-mesh-system.js?v=0.33';
@@ -110,6 +110,13 @@ function beginFacePath(points){
   ctx.closePath();
 }
 
+function faceCentroid3D(vertices){
+  const n=Math.max(1,vertices?.length||0);
+  return (vertices||[]).reduce((acc,v)=>({
+    x:acc.x+v.x/n,y:acc.y+v.y/n,z:acc.z+v.z/n
+  }),{x:0,y:0,z:0});
+}
+
 function drawTexturedMeshFace(face){
   beginFacePath(face.points);
   ctx.save();
@@ -139,6 +146,14 @@ function drawTexturedMeshFace(face){
     }else if(face.light>1){
       ctx.fillStyle='rgba(255,231,177,'+Math.min(.22,(face.light-1)*.35)+')';
       ctx.fillRect(0,0,innerWidth,innerHeight);
+    }
+
+    const local=pointLightContribution(faceCentroid3D(face.verts3),world.lights);
+    if(local.intensity>0){
+      ctx.fillStyle=local.color;
+      ctx.globalAlpha=Math.min(.34,local.intensity*.28);
+      ctx.fillRect(0,0,innerWidth,innerHeight);
+      ctx.globalAlpha=1;
     }
   }
   if(showFog && face.fog>0){
@@ -196,6 +211,19 @@ function drawGroundCell(cell){
     }
   }
 
+  if(showLighting){
+    const local=pointLightContribution({x:cell.x+.5,y:heightAt(cell.x+.5,cell.z+.5),z:cell.z+.5},world.lights);
+    if(local.intensity>0){
+      ctx.save();
+      beginFacePath(cell.p);
+      ctx.clip();
+      ctx.fillStyle=local.color;
+      ctx.globalAlpha=Math.min(.30,local.intensity*.24);
+      ctx.fillRect(0,0,innerWidth,innerHeight);
+      ctx.restore();
+    }
+  }
+
   beginFacePath(cell.p);
   ctx.strokeStyle=showGrid?'#5c431c66':'#6d4d251c';
   ctx.lineWidth=showGrid?1:.5;
@@ -246,14 +274,21 @@ function drawGround(){
 }
 
 function drawGroundShadow(x,z,w=1,d=1,opacity=null){
-  const p=project(x,heightAt(x,z)+.01,z);
+  const y=heightAt(x,z)+.012;
+  const p=project(x,y,z);
+  const reach=.42+Math.max(w,d)*.38;
+  const q=project(x-sun.x*reach,y,z-sun.z*reach);
+  const vx=q.x-p.x,vy=q.y-p.y;
+  const angle=Math.atan2(vy,vx);
   const o=opacity??world.lighting.shadowOpacity??.3;
+  const major=Math.max(7,(w+d)*camera.zoom*.17+Math.hypot(vx,vy)*.35);
+  const minor=Math.max(4,Math.min(w,d)*camera.zoom*.16);
   ctx.save();
-  ctx.translate(p.x+8,p.y+5);
-  ctx.rotate(-camera.yaw*.22);
-  ctx.scale(1,.36);
+  ctx.translate(p.x+vx*.34,p.y+vy*.34+2);
+  ctx.rotate(angle);
+  ctx.scale(1,.58);
   ctx.beginPath();
-  ctx.ellipse(0,0,Math.max(7,w*camera.zoom*.32),Math.max(4,d*camera.zoom*.24),0,0,Math.PI*2);
+  ctx.ellipse(0,0,major,minor,0,0,Math.PI*2);
   ctx.fillStyle='rgba(42,28,16,'+o+')';
   ctx.fill();
   ctx.restore();
