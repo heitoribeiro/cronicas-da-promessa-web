@@ -303,3 +303,29 @@ A arquitetura visual-alvo passa a ser formalmente:
 e está documentada em `RO_RENDER_ARCHITECTURE.md`.
 
 Versão visual: **Web Alpha 0.31**.
+
+
+## Aplicação — Fase 15B
+
+O laboratório 2.5D passa a ser orientado por dados e recebe um recorte mais completo do Acampamento de Judá.
+
+Implementado:
+
+- `ro25d_world.json` como manifesto de mundo RSW-like;
+- terreno 28×20 com elevação contínua;
+- caminhos projetados sobre a malha;
+- iluminação direcional configurável por latitude/longitude;
+- ambient + diffuse;
+- fog por profundidade;
+- bordas do terreno com espessura;
+- Tenda do Estandarte, tendas familiares, oficina, portão, torres, poço, fogueira, caixas, bandeiras, árvores, pedras e bancos volumétricos;
+- palisada em 3D simplificado;
+- NPCs e jogador na mesma fila de profundidade dos modelos;
+- direção dos sprites dependente do octante da câmera;
+- seletor de célula GAT-like;
+- câmera com yaw, pitch e zoom;
+- controles para fog, iluminação e grid.
+
+O objetivo desta fase não é reproduzir assets de Ragnarok, mas reproduzir a **relação visual 3D-terreno / 3D-cenário / 2D-personagem** que caracteriza sua apresentação.
+
+Versão visual: **0.32**.
