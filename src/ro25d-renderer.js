@@ -1,10 +1,10 @@
-import { resolveCharacterLayerZ } from './character-layers.js?v=0.33';
+import { resolveCharacterLayerZ } from './character-layers.js?v=0.34';
 import {
   clamp, degToRad, createHeightSampler, isPathAt, sunDirection,
   terrainNormal, lightFactor, shadeColor, mixColor, fogFactor, pointLightContribution,
   visibleDirectionIndex, loadRoWorld
-} from './ro-world-system.js?v=0.33';
-import { loadModelLibrary, buildMeshFaces, modelShadowSize } from './ro-mesh-system.js?v=0.33';
+} from './ro-world-system.js?v=0.34';
+import { loadModelLibrary, buildMeshFaces, modelShadowSize } from './ro-mesh-system.js?v=0.34';
 
 const canvas=document.querySelector('#scene');
 const ctx=canvas.getContext('2d',{alpha:false});
@@ -110,6 +110,21 @@ function beginFacePath(points){
   ctx.closePath();
 }
 
+function facePattern(face,img){
+  const pattern=ctx.createPattern(img,'repeat');
+  if(!pattern) return null;
+  if(typeof pattern.setTransform==='function' && typeof DOMMatrix!=='undefined' && face.points?.length>=2){
+    const a=face.points[0],b=face.points[1];
+    const cx=face.points.reduce((s,p)=>s+p.x,0)/face.points.length;
+    const cy=face.points.reduce((s,p)=>s+p.y,0)/face.points.length;
+    const angle=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+    const edge=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
+    const scale=Math.max(.55,Math.min(2.2,edge/96));
+    pattern.setTransform(new DOMMatrix().translate(cx,cy).rotate(angle).scale(scale,scale).translate(-cx,-cy));
+  }
+  return pattern;
+}
+
 function faceCentroid3D(vertices){
   const n=Math.max(1,vertices?.length||0);
   return (vertices||[]).reduce((acc,v)=>({
@@ -127,9 +142,9 @@ function drawTexturedMeshFace(face){
 
   const texSrc=face.material?.texture;
   if(texSrc){
-    const img=getImage(texSrc+'?v=0.33');
+    const img=getImage(texSrc+'?v=0.34');
     if(img?.complete && img.naturalWidth){
-      const pattern=ctx.createPattern(img,'repeat');
+      const pattern=facePattern(face,img);
       if(pattern){
         ctx.globalAlpha=.88;
         ctx.fillStyle=pattern;
@@ -195,7 +210,7 @@ function drawGroundCell(cell){
 
   const textureSrc=cell.path?world.terrain.pathTexture:world.terrain.texture;
   if(textureSrc){
-    const img=getImage(textureSrc+'?v=0.33');
+    const img=getImage(textureSrc+'?v=0.34');
     if(img?.complete && img.naturalWidth){
       ctx.save();
       beginFacePath(cell.p);
@@ -538,13 +553,19 @@ function drawAtlasSprite(meta,x,z,worldDir,frame=0,scale=.72){
   const dirIndex=visibleDirectionIndex(worldDir,camera.yaw);
   const direction=(meta.atlas.directionOrder||DIRS)[dirIndex];
   const row=(meta.atlas.directionOrder||DIRS).indexOf(direction);
-  const img=getImage(cfg.source.replace(/v=0\.\d+/,'v=0.33'));
+  const img=getImage(cfg.source.replace(/v=0\.\d+/,'v=0.34'));
   if(!img?.complete) return;
   const fw=meta.atlas.frame.width,fh=meta.atlas.frame.height;
   const p=project(x,heightAt(x,z),z);
   drawGroundShadow(x,z,.72,.45,.22);
-  const dw=fw*scale,dh=fh*scale;
+  const zoomScale=camera.zoom/Math.max(1,Number(world.camera.zoom||46));
+  const worldScale=scale*zoomScale;
+  const dw=fw*worldScale,dh=fh*worldScale;
+  const fogAlpha=1-(showFog?fogFactor(p.depth,world.fog)*.38:0);
+  ctx.save();
+  ctx.globalAlpha=Math.max(.58,fogAlpha);
   ctx.drawImage(img,(frame%cfg.frames)*fw,row*fh,fw,fh,p.x-dw/2,p.y-dh+3,dw,dh);
+  ctx.restore();
 }
 
 function drawLayeredPlayer(now){
@@ -560,14 +581,19 @@ function drawLayeredPlayer(now){
   const direction=meta.directionOrder[dirIndex];
   const p=project(player.x,heightAt(player.x,player.z),player.z);
   drawGroundShadow(player.x,player.z,.78,.46,.24);
-  const scale=.80,fw=meta.canvas.width,fh=meta.canvas.height,dw=fw*scale,dh=fh*scale;
+  const zoomScale=camera.zoom/Math.max(1,Number(world.camera.zoom||46));
+  const scale=.80*zoomScale,fw=meta.canvas.width,fh=meta.canvas.height,dw=fw*scale,dh=fh*scale;
   const layers=[...meta.layers].sort((a,b)=>resolveCharacterLayerZ(a,direction)-resolveCharacterLayerZ(b,direction));
   for(const layer of layers){
     const src=layer.actions?.[player.action]||layer.actions?.idle;
-    const img=getImage((src||'')+'?v=0.33');
+    const img=getImage((src||'')+'?v=0.34');
     if(!img?.complete) continue;
     const row=meta.directionOrder.indexOf(direction);
+    const fogAlpha=1-(showFog?fogFactor(p.depth,world.fog)*.38:0);
+    ctx.save();
+    ctx.globalAlpha=Math.max(.58,fogAlpha);
     ctx.drawImage(img,player.frame*fw,row*fh,fw,fh,p.x-dw/2,p.y-dh+3,dw,dh);
+    ctx.restore();
   }
 }
 
@@ -758,12 +784,12 @@ canvas.addEventListener('contextmenu',event=>event.preventDefault());
 
 async function init(){
   [world,sprites,modelLibrary]=await Promise.all([
-    loadRoWorld('./assets/maps/judah/ro25d_world.json?v=0.33'),
-    fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.33',{cache:'no-store'}).then(r=>{
+    loadRoWorld('./assets/maps/judah/ro25d_world.json?v=0.34'),
+    fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.34',{cache:'no-store'}).then(r=>{
       if(!r.ok) throw new Error('Falha ao carregar sprite_manifest');
       return r.json();
     }),
-    loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.33')
+    loadModelLibrary('./assets/art/ro25d/model_library.json?v=0.34')
   ]);
 
   heightAt=createHeightSampler(world.terrain);
