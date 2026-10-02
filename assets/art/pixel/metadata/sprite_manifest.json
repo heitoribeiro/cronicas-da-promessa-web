@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Crônicas da Promessa",
-  "version": "0.26",
+  "version": "0.27",
   "architecture": "RO-inspired sprite/action metadata with original artwork",
   "directionOrder8": [
     "s",
@@ -171,15 +171,15 @@
     "eliabe": {
       "name": "Eliabe",
       "archetype": "adult",
-      "mode": "static_legacy",
-      "source": "./assets/art/pixel/npcs/eliabe.png",
+      "mode": "atlas",
+      "source": "./assets/art/pixel/npcs/eliabe/idle_atlas.svg?v=0.27",
       "canvas": {
-        "width": 64,
-        "height": 88
+        "width": 96,
+        "height": 112
       },
       "pivot": {
-        "x": 32,
-        "y": 84
+        "x": 48,
+        "y": 108
       },
       "legacy": {
         "scale": 1,
@@ -204,7 +204,45 @@
           }
         }
       },
-      "spriteSpec": "./assets/art/pixel/npcs/eliabe/eliabe.sprite.json"
+      "spriteSpec": "./assets/art/pixel/npcs/eliabe/eliabe.sprite.json",
+      "atlas": {
+        "directionOrder": [
+          "s",
+          "sw",
+          "w",
+          "nw",
+          "n",
+          "ne",
+          "e",
+          "se"
+        ],
+        "frame": {
+          "width": 96,
+          "height": 112
+        },
+        "actions": {
+          "idle": {
+            "frames": 3,
+            "frameMs": 240,
+            "source": "./assets/art/pixel/npcs/eliabe/idle_atlas.svg?v=0.27"
+          },
+          "walk": {
+            "frames": 8,
+            "frameMs": 115,
+            "source": "./assets/art/pixel/npcs/eliabe/walk_atlas.svg?v=0.27"
+          },
+          "talk": {
+            "frames": 3,
+            "frameMs": 190,
+            "source": "./assets/art/pixel/npcs/eliabe/talk_atlas.svg?v=0.27"
+          },
+          "work": {
+            "frames": 6,
+            "frameMs": 130,
+            "source": "./assets/art/pixel/npcs/eliabe/work_atlas.svg?v=0.27"
+          }
+        }
+      }
     },
     "miria": {
       "name": "Miriã",
