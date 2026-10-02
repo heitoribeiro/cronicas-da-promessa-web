@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Crônicas da Promessa",
-  "version": "0.31",
+  "version": "0.32",
   "architecture": "RO-inspired sprite/action metadata with original artwork",
   "directionOrder8": [
     "s",
@@ -279,7 +279,7 @@
       "name": "Ancião",
       "archetype": "adult",
       "mode": "atlas",
-      "source": "./assets/art/pixel/npcs/elder/idle_atlas.svg?v=0.31",
+      "source": "./assets/art/pixel/npcs/elder/idle_atlas.svg?v=0.32",
       "canvas": {
         "width": 96,
         "height": 112
@@ -329,17 +329,17 @@
           "idle": {
             "frames": 3,
             "frameMs": 240,
-            "source": "./assets/art/pixel/npcs/elder/idle_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/elder/idle_atlas.svg?v=0.32"
           },
           "walk": {
             "frames": 8,
             "frameMs": 115,
-            "source": "./assets/art/pixel/npcs/elder/walk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/elder/walk_atlas.svg?v=0.32"
           },
           "talk": {
             "frames": 3,
             "frameMs": 190,
-            "source": "./assets/art/pixel/npcs/elder/talk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/elder/talk_atlas.svg?v=0.32"
           }
         }
       }
@@ -348,7 +348,7 @@
       "name": "Eliabe",
       "archetype": "adult",
       "mode": "atlas",
-      "source": "./assets/art/pixel/npcs/eliabe/idle_atlas.svg?v=0.31",
+      "source": "./assets/art/pixel/npcs/eliabe/idle_atlas.svg?v=0.32",
       "canvas": {
         "width": 96,
         "height": 112
@@ -400,22 +400,22 @@
           "idle": {
             "frames": 3,
             "frameMs": 240,
-            "source": "./assets/art/pixel/npcs/eliabe/idle_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/eliabe/idle_atlas.svg?v=0.32"
           },
           "walk": {
             "frames": 8,
             "frameMs": 115,
-            "source": "./assets/art/pixel/npcs/eliabe/walk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/eliabe/walk_atlas.svg?v=0.32"
           },
           "talk": {
             "frames": 3,
             "frameMs": 190,
-            "source": "./assets/art/pixel/npcs/eliabe/talk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/eliabe/talk_atlas.svg?v=0.32"
           },
           "work": {
             "frames": 6,
             "frameMs": 130,
-            "source": "./assets/art/pixel/npcs/eliabe/work_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/eliabe/work_atlas.svg?v=0.32"
           }
         }
       }
@@ -424,7 +424,7 @@
       "name": "Miriã",
       "archetype": "adult",
       "mode": "atlas",
-      "source": "./assets/art/pixel/npcs/miria/idle_atlas.svg?v=0.31",
+      "source": "./assets/art/pixel/npcs/miria/idle_atlas.svg?v=0.32",
       "canvas": {
         "width": 96,
         "height": 112
@@ -474,17 +474,17 @@
           "idle": {
             "frames": 3,
             "frameMs": 240,
-            "source": "./assets/art/pixel/npcs/miria/idle_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/miria/idle_atlas.svg?v=0.32"
           },
           "walk": {
             "frames": 8,
             "frameMs": 115,
-            "source": "./assets/art/pixel/npcs/miria/walk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/miria/walk_atlas.svg?v=0.32"
           },
           "talk": {
             "frames": 3,
             "frameMs": 190,
-            "source": "./assets/art/pixel/npcs/miria/talk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/miria/talk_atlas.svg?v=0.32"
           }
         }
       }
@@ -493,7 +493,7 @@
       "name": "Hanan",
       "archetype": "adult",
       "mode": "atlas",
-      "source": "./assets/art/pixel/npcs/hanan/idle_atlas.svg?v=0.31",
+      "source": "./assets/art/pixel/npcs/hanan/idle_atlas.svg?v=0.32",
       "canvas": {
         "width": 96,
         "height": 112
@@ -544,22 +544,22 @@
           "idle": {
             "frames": 3,
             "frameMs": 240,
-            "source": "./assets/art/pixel/npcs/hanan/idle_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/hanan/idle_atlas.svg?v=0.32"
           },
           "walk": {
             "frames": 8,
             "frameMs": 115,
-            "source": "./assets/art/pixel/npcs/hanan/walk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/hanan/walk_atlas.svg?v=0.32"
           },
           "talk": {
             "frames": 3,
             "frameMs": 190,
-            "source": "./assets/art/pixel/npcs/hanan/talk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/hanan/talk_atlas.svg?v=0.32"
           },
           "work": {
             "frames": 6,
             "frameMs": 140,
-            "source": "./assets/art/pixel/npcs/hanan/work_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/hanan/work_atlas.svg?v=0.32"
           }
         }
       }
@@ -568,7 +568,7 @@
       "name": "Guarda de Judá",
       "archetype": "adult",
       "mode": "atlas",
-      "source": "./assets/art/pixel/npcs/guard/idle_atlas.svg?v=0.31",
+      "source": "./assets/art/pixel/npcs/guard/idle_atlas.svg?v=0.32",
       "canvas": {
         "width": 96,
         "height": 112
@@ -623,22 +623,22 @@
           "idle": {
             "frames": 3,
             "frameMs": 240,
-            "source": "./assets/art/pixel/npcs/guard/idle_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/guard/idle_atlas.svg?v=0.32"
           },
           "walk": {
             "frames": 8,
             "frameMs": 110,
-            "source": "./assets/art/pixel/npcs/guard/walk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/guard/walk_atlas.svg?v=0.32"
           },
           "talk": {
             "frames": 3,
             "frameMs": 190,
-            "source": "./assets/art/pixel/npcs/guard/talk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/guard/talk_atlas.svg?v=0.32"
           },
           "ready": {
             "frames": 6,
             "frameMs": 135,
-            "source": "./assets/art/pixel/npcs/guard/ready_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/guard/ready_atlas.svg?v=0.32"
           }
         }
       }
@@ -647,7 +647,7 @@
       "name": "Criança do Rebanho",
       "archetype": "child",
       "mode": "atlas",
-      "source": "./assets/art/pixel/npcs/child/idle_atlas.svg?v=0.31",
+      "source": "./assets/art/pixel/npcs/child/idle_atlas.svg?v=0.32",
       "canvas": {
         "width": 80,
         "height": 96
@@ -697,17 +697,17 @@
           "idle": {
             "frames": 3,
             "frameMs": 260,
-            "source": "./assets/art/pixel/npcs/child/idle_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/child/idle_atlas.svg?v=0.32"
           },
           "walk": {
             "frames": 8,
             "frameMs": 125,
-            "source": "./assets/art/pixel/npcs/child/walk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/child/walk_atlas.svg?v=0.32"
           },
           "talk": {
             "frames": 3,
             "frameMs": 190,
-            "source": "./assets/art/pixel/npcs/child/talk_atlas.svg?v=0.31"
+            "source": "./assets/art/pixel/npcs/child/talk_atlas.svg?v=0.32"
           }
         }
       }
