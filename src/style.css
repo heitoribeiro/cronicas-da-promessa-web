@@ -1562,3 +1562,48 @@ img{user-select:none;-webkit-user-drag:none}
     transform:none!important;
   }
 }
+
+
+/* === PIXEL RPG VISUAL PHASE 14B — LAYERED PLAYER PORTRAIT === */
+
+.portrait-sprite.layered-player-portrait{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  width:100%!important;
+  height:100%!important;
+  transform:none!important;
+  background:none!important;
+  overflow:hidden!important;
+  filter:none!important;
+}
+.portrait-layer-viewport{
+  position:absolute;
+  left:50%;
+  top:-8px;
+  width:96px;
+  height:112px;
+  overflow:hidden;
+  transform:translateX(-50%) scale(.72);
+  transform-origin:50% 0;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+.portrait-layer-sheet{
+  position:absolute;
+  left:0;
+  top:0;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:fill!important;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+  filter:none!important;
+  transform-origin:0 0!important;
+}
+@media(max-width:700px){
+  .portrait-layer-viewport{
+    top:-6px;
+    transform:translateX(-50%) scale(.55);
+  }
+}
