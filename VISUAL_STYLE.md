@@ -240,3 +240,22 @@ O Ancião também passa a usar seu atlas quando aparece no interior da Tenda do 
 O laboratório `sprite-lab.html` agora permite selecionar qualquer NPC já migrado e comparar suas oito direções e ações disponíveis.
 
 Versão visual: **Web Alpha 0.28**.
+
+
+## Aplicação — Fase 13
+
+A Criança do Rebanho deixa o modo `static_legacy` e completa a migração dos NPCs atuais para a arquitetura de atlas.
+
+- canvas infantil: **80×96 px**;
+- envelope corporal: aproximadamente **48×66 px**;
+- pivô dos pés: **(40,92)**;
+- proporção visual aproximada: 78% da altura adulta;
+- 8 direções;
+- `idle`: 3 frames;
+- `walk`: 8 frames;
+- `talk`: 3 frames;
+- cajado de pastoreio ocupa a margem do canvas sem aumentar o corpo.
+
+Todos os NPCs atualmente presentes no mapa de Judá passam a usar a mesma arquitetura de direção/ação/pivô, com escala corporal adequada à idade.
+
+Versão visual: **Web Alpha 0.29**.
