@@ -125,7 +125,7 @@ gridButton.addEventListener('click',()=>{
 
 async function init(){
   try{
-    const response=await fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.35',{cache:'no-store'});
+    const response=await fetch('./assets/art/pixel/metadata/sprite_manifest.json?v=0.36',{cache:'no-store'});
     manifest=await response.json();
     const available=Object.entries(manifest.npcs).filter(([,npc])=>npc.mode==='atlas' && npc.atlas);
     for(const [id,npc] of available){
