@@ -34,6 +34,7 @@ export class LayeredPlayerController {
     if(!this.root || !this.meta) return;
     this.root.innerHTML='';
     this.root.classList.add('layered-player');
+    this.root.parentElement?.classList.add('player-layered-host');
     this.root.dataset.spriteMode='layered-atlas';
     const canvas=this.meta.canvas || {width:96,height:112};
     const pivot=this.meta.pivot || {x:48,y:108};
