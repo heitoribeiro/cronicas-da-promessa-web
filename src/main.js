@@ -1,10 +1,10 @@
-import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.35';
-import { findGridPath } from './pathfinding.js?v=0.35';
-import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.35';
-import { createLayeredPlayerController, renderLayeredPlayerPortrait } from './player-sprite-system.js?v=0.35';
+import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.36';
+import { findGridPath } from './pathfinding.js?v=0.36';
+import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.36';
+import { createLayeredPlayerController, renderLayeredPlayerPortrait } from './player-sprite-system.js?v=0.36';
 
-const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.35');
-const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.35');
+const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.36');
+const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.36');
 
 const app = document.querySelector('#app');
 const SAVE = 'cronicas-promessa-save-v3';
@@ -147,7 +147,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.35</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.36</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -181,7 +181,7 @@ function menu() {
           <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle pixel-version">Web Alpha 0.35 • Direção visual Pixel RPG bíblico-desértico</p>
+        <p class="subtitle pixel-version">Web Alpha 0.36 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -239,12 +239,12 @@ function dialogue(title, text, button='Continuar') {
   if (!modal) return;
   const speaker = String(title || '').toLowerCase();
   let portrait = '';
-  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png?v=0.35';
-  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png?v=0.35';
-  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png?v=0.35';
-  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png?v=0.35';
-  else if (speaker.includes('rebanho') || speaker.includes('criança')) portrait = './assets/art/npcs/herd_child.svg?v=0.35';
-  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png?v=0.35';
+  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png?v=0.36';
+  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png?v=0.36';
+  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png?v=0.36';
+  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png?v=0.36';
+  else if (speaker.includes('rebanho') || speaker.includes('criança')) portrait = './assets/art/npcs/herd_child.svg?v=0.36';
+  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png?v=0.36';
 
   modal.innerHTML = `
     <div class="dialogue-card pixel-dialogue-card">
@@ -263,7 +263,7 @@ function game() {
   if (!state.profile) return createCharacter();
   normalizeState();
   const playerSexSlug = state.profile.sex === 'Feminino' ? 'female' : 'male';
-  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png?v=0.35`;
+  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png?v=0.36`;
 
   app.innerHTML = `
     <main class="game">
@@ -293,9 +293,9 @@ function game() {
         <img class="scenic-asset warehouse-asset warehouse-small" style="left:445px;top:480px" src="./assets/art/judah/warehouse.svg" alt="Armazém">
         <img class="scenic-asset workshop-asset" style="left:1190px;top:650px" src="./assets/art/judah/workshop.svg" alt="Oficina">
         <div class="corral" style="left:245px;top:690px">
-          <img class="animal-sprite sheep-one" src="./assets/art/animals/sheep.svg?v=0.35" alt="Ovelha">
-          <img class="animal-sprite sheep-two" src="./assets/art/animals/sheep.svg?v=0.35" alt="Ovelha">
-          <img class="animal-sprite goat-one" src="./assets/art/animals/goat.svg?v=0.35" alt="Cabra">
+          <img class="animal-sprite sheep-one" src="./assets/art/animals/sheep.svg?v=0.36" alt="Ovelha">
+          <img class="animal-sprite sheep-two" src="./assets/art/animals/sheep.svg?v=0.36" alt="Ovelha">
+          <img class="animal-sprite goat-one" src="./assets/art/animals/goat.svg?v=0.36" alt="Cabra">
           <i class="trough"></i>
         </div>
         <div class="corral-front" style="left:245px;top:948px"></div>
@@ -351,12 +351,12 @@ function game() {
         <div class="work-site gatherer-site" data-job="Coletor" style="left:1490px;top:905px"><b>COLETA</b></div>
         <div class="work-site levite-site" data-job="Levita" style="left:815px;top:390px"><b>SERVIÇO</b></div>
 
-        <div class="npc npc-elder" data-sprite-id="elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png?v=0.35" alt="Ancião"><b>Ancião</b></div>
-        <div class="npc npc-eliabe" data-sprite-id="eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.35" alt="Eliabe"><b>Eliabe</b></div>
-        <div class="npc npc-child" data-sprite-id="child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg?v=0.35" alt="Criança do Rebanho"><b>Rebanho</b></div>
-        <div class="npc npc-miria" data-sprite-id="miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png?v=0.35" alt="Miriã"><b>Miriã</b></div>
-        <div class="npc npc-hanan" data-sprite-id="hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png?v=0.35" alt="Hanan"><b>Hanan</b></div>
-        <div class="npc npc-guard" data-sprite-id="guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png?v=0.35" alt="Guarda"><b>Guarda</b></div>
+        <div class="npc npc-elder" data-sprite-id="elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png?v=0.36" alt="Ancião"><b>Ancião</b></div>
+        <div class="npc npc-eliabe" data-sprite-id="eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.36" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="npc npc-child" data-sprite-id="child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg?v=0.36" alt="Criança do Rebanho"><b>Rebanho</b></div>
+        <div class="npc npc-miria" data-sprite-id="miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png?v=0.36" alt="Miriã"><b>Miriã</b></div>
+        <div class="npc npc-hanan" data-sprite-id="hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png?v=0.36" alt="Hanan"><b>Hanan</b></div>
+        <div class="npc npc-guard" data-sprite-id="guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png?v=0.36" alt="Guarda"><b>Guarda</b></div>
 
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
@@ -367,19 +367,19 @@ function game() {
       </div>
 
       <div class="interior-map hidden" id="standardInterior">
-        <img class="interior-bg" src="./assets/art/interiors/judah_standard_interior.svg?v=0.35" alt="Interior da Tenda do Estandarte">
-        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png?v=0.35" alt="Ancião"><b>Ancião</b></div>
+        <img class="interior-bg" src="./assets/art/interiors/judah_standard_interior.svg?v=0.36" alt="Interior da Tenda do Estandarte">
+        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png?v=0.36" alt="Ancião"><b>Ancião</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
       <div class="interior-map hidden" id="workshopInterior">
-        <img class="interior-bg" src="./assets/art/interiors/workshop_interior.svg?v=0.35" alt="Interior da Oficina">
-        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.35" alt="Eliabe"><b>Eliabe</b></div>
+        <img class="interior-bg" src="./assets/art/interiors/workshop_interior.svg?v=0.36" alt="Interior da Oficina">
+        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.36" alt="Eliabe"><b>Eliabe</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
       <div class="interior-map hidden" id="playerInterior">
-        <img class="interior-bg" src="./assets/art/interiors/player_tent_interior.svg?v=0.35" alt="Interior da sua tenda">
+        <img class="interior-bg" src="./assets/art/interiors/player_tent_interior.svg?v=0.36" alt="Interior da sua tenda">
         <div class="interior-marker bed-marker">CAMA</div>
         <div class="interior-marker chest-marker">BAÚ</div>
         <div class="interior-marker exit-marker">SAÍDA</div>
@@ -546,7 +546,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.35</div>
+      <div class="badge">Web Alpha 0.36</div>
     </main>`;
 
   const world = $('#world');
@@ -1403,7 +1403,11 @@ function game() {
   }
 
   function buildClickPath(targetX,targetY) {
-    const b=sceneBounds();
+    const baseBounds=sceneBounds();
+    const pathStep = currentScene === 'outdoor' && runtimeQuality() !== 'high'
+      ? Math.max(16,baseBounds.step)
+      : baseBounds.step;
+    const b={...baseBounds,step:pathStep};
     const start=currentPosition();
     const target=nearestWalkable(targetX,targetY);
     if (!target) return [];
@@ -2015,23 +2019,29 @@ function game() {
   }
 
   function updateInteriorNpcs(now = performance.now()) {
-    const elderInside = $('#elderInteriorNpc');
-    const eliabeInside = $('#eliabeInteriorNpc');
-    const elder = npcAgents.elder;
-    const eliabe = npcAgents.eliabe;
-    const elderVisible = elder.inside === 'standard';
-    elderInside.classList.toggle('hidden', !elderVisible);
-    const elderController = interiorSpriteControllers.elder;
-    if (elderController) {
-      elderController.setAction('idle', now);
-      elderController.tick(now);
+    if (currentScene === 'standard') {
+      const elderInside = $('#elderInteriorNpc');
+      const elder = npcAgents.elder;
+      const elderVisible = elder.inside === 'standard';
+      elderInside.classList.toggle('hidden', !elderVisible);
+      const elderController = interiorSpriteControllers.elder;
+      if (elderController && elderVisible) {
+        elderController.setAction('idle', now);
+        elderController.tick(now);
+      }
+      return;
     }
-    const eliabeVisible = eliabe.inside === 'workshop';
-    eliabeInside.classList.toggle('hidden', !eliabeVisible);
-    const controller = interiorSpriteControllers.eliabe;
-    if (controller) {
-      controller.setAction(eliabeVisible ? 'work' : 'idle', now);
-      controller.tick(now);
+
+    if (currentScene === 'workshop') {
+      const eliabeInside = $('#eliabeInteriorNpc');
+      const eliabe = npcAgents.eliabe;
+      const eliabeVisible = eliabe.inside === 'workshop';
+      eliabeInside.classList.toggle('hidden', !eliabeVisible);
+      const controller = interiorSpriteControllers.eliabe;
+      if (controller && eliabeVisible) {
+        controller.setAction('work', now);
+        controller.tick(now);
+      }
     }
   }
 
@@ -2050,7 +2060,7 @@ function game() {
     applyLighting();
     updateInteriorNpcs(now);
 
-    if (now - lastAmbientUiUpdate >= 100) {
+    if (now - lastAmbientUiUpdate >= cadence(100,130,180)) {
       const destination = questDestination();
       worldQuest.classList.toggle('hidden', !destination || currentScene !== 'outdoor');
       if (destination) {
@@ -2075,26 +2085,46 @@ function game() {
     }
 
     if (currentScene === 'outdoor') {
-      player.style.left = state.x + 'px';
-      player.style.top = state.y + 'px';
+      if (state.x !== lastPlayerStyleX) {
+        lastPlayerStyleX = state.x;
+        player.style.left = state.x + 'px';
+      }
+      if (state.y !== lastPlayerStyleY) {
+        lastPlayerStyleY = state.y;
+        player.style.top = state.y + 'px';
+      }
       const baseZoom = isTouch() ? (innerWidth > innerHeight ? 0.78 : 0.62) : 0.9;
       const zoom = Math.min(1.15, Math.max(baseZoom, innerWidth / 1800, innerHeight / 1200));
       const viewW = innerWidth / zoom;
       const viewH = innerHeight / zoom;
       const cameraX = viewW >= 1800 ? 900 : Math.max(viewW / 2, Math.min(1800 - viewW / 2, state.x));
       const cameraY = viewH >= 1200 ? 600 : Math.max(viewH / 2, Math.min(1200 - viewH / 2, state.y));
-      world.style.transform = `translate3d(${innerWidth / 2}px,${innerHeight / 2}px,0) scale(${zoom}) translate3d(${-cameraX}px,${-cameraY}px,0)`;
-      if (now - lastInteractionUpdate >= 80) {
+      const nextWorldTransform = `translate3d(${innerWidth / 2}px,${innerHeight / 2}px,0) scale(${zoom}) translate3d(${-cameraX}px,${-cameraY}px,0)`;
+      if (nextWorldTransform !== lastWorldTransform) {
+        lastWorldTransform = nextWorldTransform;
+        world.style.transform = nextWorldTransform;
+      }
+      if (now - lastInteractionUpdate >= cadence(80,105,140)) {
         activeInteraction = getActiveInteraction();
         lastInteractionUpdate = now;
       }
     } else {
-      player.style.left = indoorPos.x + 'px';
-      player.style.top = indoorPos.y + 'px';
+      if (indoorPos.x !== lastPlayerStyleX) {
+        lastPlayerStyleX = indoorPos.x;
+        player.style.left = indoorPos.x + 'px';
+      }
+      if (indoorPos.y !== lastPlayerStyleY) {
+        lastPlayerStyleY = indoorPos.y;
+        player.style.top = indoorPos.y + 'px';
+      }
       const activeInterior = currentScene === 'standard' ? standardInterior : currentScene === 'workshop' ? workshopInterior : playerInterior;
       const scale = Math.min(innerWidth / 1000, innerHeight / 700);
-      activeInterior.style.transform = `translate(${innerWidth/2}px,${innerHeight/2}px) scale(${scale}) translate(-500px,-350px)`;
-      if (now - lastInteractionUpdate >= 80) {
+      const nextInteriorTransform = `translate(${innerWidth/2}px,${innerHeight/2}px) scale(${scale}) translate(-500px,-350px)`;
+      if (nextInteriorTransform !== lastInteriorTransform) {
+        lastInteriorTransform = nextInteriorTransform;
+        activeInterior.style.transform = nextInteriorTransform;
+      }
+      if (now - lastInteractionUpdate >= cadence(80,105,140)) {
         activeInteraction = getInteriorInteraction();
         lastInteractionUpdate = now;
       }
@@ -2264,11 +2294,24 @@ function game() {
   let qualityEffective = state.settings.quality === 'auto' ? 'balanced' : state.settings.quality;
   let lowFpsSamples = 0;
   let highFpsSamples = 0;
+  let lastPlayerStyleX = NaN;
+  let lastPlayerStyleY = NaN;
+  let lastWorldTransform = '';
+  let lastInteriorTransform = '';
+
+  function runtimeQuality() {
+    return state.settings.quality === 'auto' ? qualityEffective : state.settings.quality;
+  }
+
+  function cadence(highMs,balancedMs,performanceMs) {
+    const quality = runtimeQuality();
+    return quality === 'performance' ? performanceMs : quality === 'balanced' ? balancedMs : highMs;
+  }
 
   function applyGameplayQuality() {
     const gameRoot = document.querySelector('.game');
     if (!gameRoot) return;
-    const effective = state.settings.quality === 'auto' ? qualityEffective : state.settings.quality;
+    const effective = runtimeQuality();
     gameRoot.classList.toggle('quality-balanced', effective === 'balanced');
     gameRoot.classList.toggle('quality-performance', effective === 'performance');
     gameRoot.dataset.quality = effective;
@@ -2285,6 +2328,11 @@ function game() {
       removeEventListener('resize', sortScenery);
       removeEventListener('pagehide',persistOnLeave);
       document.removeEventListener('visibilitychange',persistOnLeave);
+      return;
+    }
+    if (document.hidden) {
+      last = now;
+      requestAnimationFrame(tick);
       return;
     }
     const rawFrameMs = Math.max(0.01,now-last);
@@ -2355,7 +2403,8 @@ function game() {
     updatePlayerSprite(dx,dy,now);
     if (!dialogOpen) {
       npcAccumDt += dt;
-      if (now - lastNpcUpdate >= 33) {
+      const npcInterval = cadence(33,40,55);
+      if (now - lastNpcUpdate >= npcInterval) {
         const npcDt = npcAccumDt;
         npcAccumDt = 0;
         lastNpcUpdate = now;
@@ -2379,7 +2428,8 @@ function game() {
         save();
       }
     }
-    if (now - lastDepthUpdate >= 50) {
+    const depthInterval = cadence(50,66,100);
+    if (now - lastDepthUpdate >= depthInterval) {
       updateDepth();
       lastDepthUpdate = now;
     }
