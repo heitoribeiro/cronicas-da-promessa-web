@@ -1485,3 +1485,80 @@ img{user-select:none;-webkit-user-drag:none}
   height:var(--sprite-frame-h)!important;
 }
 .npc.npc-child[data-sprite-mode="atlas"] b{top:88px!important}
+
+
+/* === PIXEL RPG VISUAL PHASE 14 — LAYERED PLAYER 8-WAY === */
+
+.player-art.player-layered-host{
+  width:96px!important;
+  height:112px!important;
+  transform:translate(-50%,-108px)!important;
+  transform-origin:50% 100%!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+.player-art.player-layered-host:after{
+  left:30px!important;
+  bottom:2px!important;
+  width:38px!important;
+  height:9px!important;
+  transform:none!important;
+  background:#25170f42!important;
+  border-radius:50%!important;
+}
+.player-sprite-stack.layered-player{
+  position:absolute!important;
+  inset:0!important;
+  width:96px!important;
+  height:112px!important;
+  display:block!important;
+  background:none!important;
+  background-image:none!important;
+  transform:none!important;
+  animation:none!important;
+  overflow:visible!important;
+  filter:none!important;
+}
+.player-art.walking .player-sprite-stack.layered-player{
+  animation:none!important;
+  transform:none!important;
+}
+.player-layer-viewport{
+  position:absolute;
+  inset:0;
+  width:96px;
+  height:112px;
+  overflow:hidden;
+  pointer-events:none;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+.player-layer-sheet{
+  position:absolute;
+  left:0;
+  top:0;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:fill!important;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+  transform-origin:0 0!important;
+  filter:none!important;
+}
+.player-layer-viewport[data-layer="garment"]{pointer-events:none}
+
+@media(max-width:700px){
+  .player-art.player-layered-host{
+    width:96px!important;
+    height:112px!important;
+    transform:translate(-50%,-108px)!important;
+  }
+  .player-sprite-stack.layered-player{
+    width:96px!important;
+    height:112px!important;
+    transform:none!important;
+  }
+}
