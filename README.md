@@ -142,3 +142,8 @@ A direção visual Pixel RPG bíblico-desértico agora possui documentação e r
 - `src/character-layers.js` — resolução de profundidade por direção.
 - `assets/art/pixel/npcs/eliabe/eliabe.sprite.json` — primeiro pacote-modelo de NPC.
 - `tools/validate-sprite-pack.mjs` — valida quantidade, nomes, PNG, transparência e canvas.
+
+
+### Laboratório visual
+
+Abra `sprite-lab.html` no GitHub Pages para validar NPCs sem entrar na gameplay. O laboratório permite alternar `idle`, `walk`, `talk` e `work`, pausar a animação, ligar/desligar a grade e comparar as oito direções. Eliabe é o primeiro personagem integrado ao laboratório.
