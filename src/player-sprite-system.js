@@ -1,5 +1,5 @@
-import { directionFromVector } from './sprite-system.js?v=0.35';
-import { resolveCharacterLayerZ } from './character-layers.js?v=0.35';
+import { directionFromVector } from './sprite-system.js?v=0.36';
+import { resolveCharacterLayerZ } from './character-layers.js?v=0.36';
 
 const DIRS=['s','sw','w','nw','n','ne','e','se'];
 
@@ -27,6 +27,7 @@ export class LayeredPlayerController {
     this.frame=0;
     this.frameStartedAt=0;
     this.layers=new Map();
+    this.lastRenderKey='';
     this.build();
   }
 
@@ -46,9 +47,9 @@ export class LayeredPlayerController {
     for(const layer of this.meta.layers || []){
       const node=makeLayerNode(layer);
       this.root.appendChild(node.viewport);
-      this.layers.set(layer.id,{...node,layer,lastSrc:''});
+      this.layers.set(layer.id,{...node,layer,lastSrc:'',lastLayoutKey:''});
     }
-    this.render();
+    this.render(true);
   }
 
   getActionConfig(action=this.action){
@@ -61,11 +62,15 @@ export class LayeredPlayerController {
       this.action=action;
       this.frame=0;
       this.frameStartedAt=now;
+      this.lastRenderKey='';
     }
   }
 
   setDirection(direction){
-    if(DIRS.includes(direction)) this.direction=direction;
+    if(!DIRS.includes(direction) || direction===this.direction) return false;
+    this.direction=direction;
+    this.lastRenderKey='';
+    return true;
   }
 
   setMotion(dx,dy,now=performance.now()){
@@ -81,15 +86,18 @@ export class LayeredPlayerController {
     const frameMs=Math.max(40,Number(cfg.frameMs)||120);
     const frames=Math.max(1,Number(cfg.frames)||1);
     if(!this.frameStartedAt) this.frameStartedAt=now;
+    let changed=false;
     if(now-this.frameStartedAt>=frameMs){
       const steps=Math.floor((now-this.frameStartedAt)/frameMs);
-      this.frame=(this.frame+steps)%frames;
+      const next=(this.frame+steps)%frames;
+      changed=next!==this.frame;
+      this.frame=next;
       this.frameStartedAt+=steps*frameMs;
     }
-    this.render();
+    if(changed || !this.lastRenderKey) this.render();
   }
 
-  render(){
+  render(force=false){
     const cfg=this.getActionConfig();
     if(!cfg) return;
     const canvas=this.meta.canvas;
@@ -98,6 +106,9 @@ export class LayeredPlayerController {
     const row=Math.max(0,(this.meta.directionOrder || DIRS).indexOf(this.direction));
     const sheetW=frameW*cfg.frames;
     const sheetH=frameH*(this.meta.directionOrder || DIRS).length;
+    const renderKey=this.action+'|'+this.direction+'|'+this.frame;
+    if(!force && renderKey===this.lastRenderKey) return;
+    this.lastRenderKey=renderKey;
 
     this.root.dataset.direction=this.direction;
     this.root.dataset.action=this.action;
@@ -105,7 +116,7 @@ export class LayeredPlayerController {
     for(const entry of this.layers.values()){
       const src=entry.layer.actions?.[this.action];
       if(!src) continue;
-      const url=src.includes('?') ? src : src+'?v=0.35';
+      const url=src.includes('?') ? src : src+'?v=0.36';
       if(entry.lastSrc!==url){
         entry.lastSrc=url;
         entry.img.src=url;
@@ -113,9 +124,13 @@ export class LayeredPlayerController {
       entry.viewport.style.zIndex=String(resolveCharacterLayerZ(entry.layer,this.direction,{
         topGarment:entry.layer.id==='garment' && this.direction==='n'
       }));
-      entry.img.style.width=sheetW+'px';
-      entry.img.style.height=sheetH+'px';
-      entry.img.style.transform=`translate(${-this.frame*frameW}px,${-row*frameH}px)`;
+      const layoutKey=sheetW+'x'+sheetH;
+      if(entry.lastLayoutKey!==layoutKey){
+        entry.lastLayoutKey=layoutKey;
+        entry.img.style.width=sheetW+'px';
+        entry.img.style.height=sheetH+'px';
+      }
+      entry.img.style.transform=`translate3d(${-this.frame*frameW}px,${-row*frameH}px,0)`;
     }
   }
 }
@@ -157,7 +172,7 @@ export function renderLayeredPlayerPortrait(root,sex,manifest){
     img.className='portrait-layer-sheet';
     img.alt='';
     img.draggable=false;
-    img.src=src+(src.includes('?')?'':'?v=0.35');
+    img.src=src+(src.includes('?')?'':'?v=0.36');
     img.style.width=sheetW+'px';
     img.style.height=sheetH+'px';
     img.style.transform=`translate(0px,${-row*frameH}px)`;
