@@ -1,10 +1,10 @@
-import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.33';
-import { findGridPath } from './pathfinding.js?v=0.33';
-import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.33';
-import { createLayeredPlayerController, renderLayeredPlayerPortrait } from './player-sprite-system.js?v=0.33';
+import { loadSpriteManifest, createNpcSpriteControllers, directionFromVector } from './sprite-system.js?v=0.34';
+import { findGridPath } from './pathfinding.js?v=0.34';
+import { loadMapManifest, prototypeBounds, ySortFromFeet } from './map-system.js?v=0.34';
+import { createLayeredPlayerController, renderLayeredPlayerPortrait } from './player-sprite-system.js?v=0.34';
 
-const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.33');
-const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.33');
+const SPRITE_MANIFEST = await loadSpriteManifest('./assets/art/pixel/metadata/sprite_manifest.json?v=0.34');
+const MAP_MANIFEST = await loadMapManifest('./assets/maps/judah/map_manifest.json?v=0.34');
 
 const app = document.querySelector('#app');
 const SAVE = 'cronicas-promessa-save-v3';
@@ -146,7 +146,7 @@ function renderFatal(error) {
       <h1 class="title" style="font-size:36px">CRÔNICAS DA PROMESSA</h1>
       <p class="subtitle">O jogo encontrou um erro de inicialização.</p>
       <div class="menu"><button class="btn" id="reloadGame">RECARREGAR</button></div>
-      <p class="subtitle" style="font-size:13px">Web Alpha 0.33</p>
+      <p class="subtitle" style="font-size:13px">Web Alpha 0.34</p>
     </section></main>`;
   $('#reloadGame')?.addEventListener('click', () => location.reload());
 }
@@ -180,7 +180,7 @@ function menu() {
           <button class="btn pixel-primary" id="newGame"><span>⚔</span>NOVO JOGO</button>
           <button class="btn secondary" id="continueGame" ${state.profile ? '' : 'disabled'}><span>📖</span>CONTINUAR</button>
         </div>
-        <p class="subtitle pixel-version">Web Alpha 0.33 • Direção visual Pixel RPG bíblico-desértico</p>
+        <p class="subtitle pixel-version">Web Alpha 0.34 • Direção visual Pixel RPG bíblico-desértico</p>
       </section>
     </main>`;
 
@@ -238,12 +238,12 @@ function dialogue(title, text, button='Continuar') {
   if (!modal) return;
   const speaker = String(title || '').toLowerCase();
   let portrait = '';
-  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png?v=0.33';
-  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png?v=0.33';
-  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png?v=0.33';
-  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png?v=0.33';
-  else if (speaker.includes('rebanho') || speaker.includes('criança')) portrait = './assets/art/npcs/herd_child.svg?v=0.33';
-  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png?v=0.33';
+  if (speaker.includes('ancião')) portrait = './assets/art/pixel/npcs/elder.png?v=0.34';
+  else if (speaker.includes('eliabe')) portrait = './assets/art/pixel/npcs/eliabe.png?v=0.34';
+  else if (speaker.includes('miri')) portrait = './assets/art/pixel/npcs/miria.png?v=0.34';
+  else if (speaker.includes('hanan')) portrait = './assets/art/pixel/npcs/hanan.png?v=0.34';
+  else if (speaker.includes('rebanho') || speaker.includes('criança')) portrait = './assets/art/npcs/herd_child.svg?v=0.34';
+  else if (speaker.includes('guarda')) portrait = './assets/art/pixel/npcs/guard.png?v=0.34';
 
   modal.innerHTML = `
     <div class="dialogue-card pixel-dialogue-card">
@@ -262,7 +262,7 @@ function game() {
   if (!state.profile) return createCharacter();
   normalizeState();
   const playerSexSlug = state.profile.sex === 'Feminino' ? 'female' : 'male';
-  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png?v=0.33`;
+  const playerSheet = `./assets/art/pixel/characters/${playerSexSlug}_sheet.png?v=0.34`;
 
   app.innerHTML = `
     <main class="game">
@@ -292,9 +292,9 @@ function game() {
         <img class="scenic-asset warehouse-asset warehouse-small" style="left:445px;top:480px" src="./assets/art/judah/warehouse.svg" alt="Armazém">
         <img class="scenic-asset workshop-asset" style="left:1190px;top:650px" src="./assets/art/judah/workshop.svg" alt="Oficina">
         <div class="corral" style="left:245px;top:690px">
-          <img class="animal-sprite sheep-one" src="./assets/art/animals/sheep.svg?v=0.33" alt="Ovelha">
-          <img class="animal-sprite sheep-two" src="./assets/art/animals/sheep.svg?v=0.33" alt="Ovelha">
-          <img class="animal-sprite goat-one" src="./assets/art/animals/goat.svg?v=0.33" alt="Cabra">
+          <img class="animal-sprite sheep-one" src="./assets/art/animals/sheep.svg?v=0.34" alt="Ovelha">
+          <img class="animal-sprite sheep-two" src="./assets/art/animals/sheep.svg?v=0.34" alt="Ovelha">
+          <img class="animal-sprite goat-one" src="./assets/art/animals/goat.svg?v=0.34" alt="Cabra">
           <i class="trough"></i>
         </div>
         <div class="corral-front" style="left:245px;top:948px"></div>
@@ -350,12 +350,12 @@ function game() {
         <div class="work-site gatherer-site" data-job="Coletor" style="left:1490px;top:905px"><b>COLETA</b></div>
         <div class="work-site levite-site" data-job="Levita" style="left:815px;top:390px"><b>SERVIÇO</b></div>
 
-        <div class="npc npc-elder" data-sprite-id="elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png?v=0.33" alt="Ancião"><b>Ancião</b></div>
-        <div class="npc npc-eliabe" data-sprite-id="eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.33" alt="Eliabe"><b>Eliabe</b></div>
-        <div class="npc npc-child" data-sprite-id="child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg?v=0.33" alt="Criança do Rebanho"><b>Rebanho</b></div>
-        <div class="npc npc-miria" data-sprite-id="miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png?v=0.33" alt="Miriã"><b>Miriã</b></div>
-        <div class="npc npc-hanan" data-sprite-id="hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png?v=0.33" alt="Hanan"><b>Hanan</b></div>
-        <div class="npc npc-guard" data-sprite-id="guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png?v=0.33" alt="Guarda"><b>Guarda</b></div>
+        <div class="npc npc-elder" data-sprite-id="elder" style="left:890px;top:292px"><img src="./assets/art/pixel/npcs/elder.png?v=0.34" alt="Ancião"><b>Ancião</b></div>
+        <div class="npc npc-eliabe" data-sprite-id="eliabe" style="left:1325px;top:890px"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.34" alt="Eliabe"><b>Eliabe</b></div>
+        <div class="npc npc-child" data-sprite-id="child" style="left:445px;top:780px"><img src="./assets/art/npcs/herd_child.svg?v=0.34" alt="Criança do Rebanho"><b>Rebanho</b></div>
+        <div class="npc npc-miria" data-sprite-id="miria" style="left:1245px;top:420px"><img src="./assets/art/pixel/npcs/miria.png?v=0.34" alt="Miriã"><b>Miriã</b></div>
+        <div class="npc npc-hanan" data-sprite-id="hanan" style="left:520px;top:715px"><img src="./assets/art/pixel/npcs/hanan.png?v=0.34" alt="Hanan"><b>Hanan</b></div>
+        <div class="npc npc-guard" data-sprite-id="guard" style="left:820px;top:1015px"><img src="./assets/art/pixel/npcs/guard.png?v=0.34" alt="Guarda"><b>Guarda</b></div>
 
         <div class="zone-label standard-zone">Tenda do Estandarte</div>
         <div class="zone-label council-zone">Conselho</div><div class="zone-label family-zone">Tendas familiares</div>
@@ -366,19 +366,19 @@ function game() {
       </div>
 
       <div class="interior-map hidden" id="standardInterior">
-        <img class="interior-bg" src="./assets/art/interiors/judah_standard_interior.svg?v=0.33" alt="Interior da Tenda do Estandarte">
-        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png?v=0.33" alt="Ancião"><b>Ancião</b></div>
+        <img class="interior-bg" src="./assets/art/interiors/judah_standard_interior.svg?v=0.34" alt="Interior da Tenda do Estandarte">
+        <div class="interior-npc elder-interior hidden" id="elderInteriorNpc"><img src="./assets/art/pixel/npcs/elder.png?v=0.34" alt="Ancião"><b>Ancião</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
       <div class="interior-map hidden" id="workshopInterior">
-        <img class="interior-bg" src="./assets/art/interiors/workshop_interior.svg?v=0.33" alt="Interior da Oficina">
-        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.33" alt="Eliabe"><b>Eliabe</b></div>
+        <img class="interior-bg" src="./assets/art/interiors/workshop_interior.svg?v=0.34" alt="Interior da Oficina">
+        <div class="interior-npc eliabe-interior hidden" id="eliabeInteriorNpc"><img src="./assets/art/pixel/npcs/eliabe.png?v=0.34" alt="Eliabe"><b>Eliabe</b></div>
         <div class="interior-marker exit-marker">SAÍDA</div>
       </div>
 
       <div class="interior-map hidden" id="playerInterior">
-        <img class="interior-bg" src="./assets/art/interiors/player_tent_interior.svg?v=0.33" alt="Interior da sua tenda">
+        <img class="interior-bg" src="./assets/art/interiors/player_tent_interior.svg?v=0.34" alt="Interior da sua tenda">
         <div class="interior-marker bed-marker">CAMA</div>
         <div class="interior-marker chest-marker">BAÚ</div>
         <div class="interior-marker exit-marker">SAÍDA</div>
@@ -536,7 +536,7 @@ function game() {
       <button class="action hidden" id="actionButton">AÇÃO</button>
       <div class="dialogue hidden" id="dialogue"></div>
       <div class="fps-counter hidden" id="fpsCounter" aria-live="off">FPS <b id="fpsValue">--</b><small id="frameTime">-- ms</small></div>
-      <div class="badge">Web Alpha 0.33</div>
+      <div class="badge">Web Alpha 0.34</div>
     </main>`;
 
   const world = $('#world');
