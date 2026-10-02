@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "judah_ro25d_prototype",
   "name": "Acampamento de Judá — recorte 2.5D",
-  "version": "0.33",
+  "version": "0.34",
   "coordinateSystem": "x-east, y-up, z-south",
   "terrain": {
     "cols": 28,
@@ -129,11 +129,17 @@
       "wall": "#efe1b7",
       "roof": "#a52e33",
       "accent": "#d2a83f",
-      "meshId": "tent",
+      "meshId": "judah_standard_tent",
       "materials": {
         "wall": "cloth_cream",
-        "roof": "cloth_red",
-        "trim": "gold"
+        "roof": "cloth_cream",
+        "stripe": "cloth_judah",
+        "trim": "gold",
+        "curtain": "cloth_red",
+        "pole": "wood_dark",
+        "rope": "rope",
+        "banner": "cloth_judah",
+        "emblem": "judah_emblem"
       },
       "rotationY": 0,
       "renderMode": "mesh"
@@ -224,11 +230,14 @@
       "h": 2.65,
       "wall": "#92592f",
       "roof": "#684025",
-      "meshId": "gate",
+      "meshId": "judah_gate",
       "materials": {
         "wood": "wood",
         "wood_dark": "wood_dark",
-        "door": "wood_dark"
+        "door": "wood_dark",
+        "cloth_red": "cloth_judah",
+        "emblem": "judah_emblem",
+        "bronze": "bronze"
       },
       "rotationY": 0,
       "renderMode": "mesh"
@@ -243,11 +252,13 @@
       "h": 3.7,
       "wall": "#8f633a",
       "roof": "#6a3d25",
-      "meshId": "watchtower",
+      "meshId": "judah_watchtower",
       "materials": {
         "wood": "wood",
         "wood_dark": "wood_dark",
-        "roof": "cloth_ochre"
+        "roof": "cloth_ochre",
+        "pole": "wood_dark",
+        "banner": "cloth_judah"
       },
       "rotationY": 0,
       "renderMode": "mesh"
@@ -262,11 +273,13 @@
       "h": 3.7,
       "wall": "#8f633a",
       "roof": "#6a3d25",
-      "meshId": "watchtower",
+      "meshId": "judah_watchtower",
       "materials": {
         "wood": "wood",
         "wood_dark": "wood_dark",
-        "roof": "cloth_ochre"
+        "roof": "cloth_ochre",
+        "pole": "wood_dark",
+        "banner": "cloth_judah"
       },
       "rotationY": 0,
       "renderMode": "mesh"
@@ -362,24 +375,38 @@
       "type": "banner",
       "x": 11.9,
       "z": 5.6,
-      "w": 0.2,
-      "d": 0.2,
-      "h": 2.2,
+      "w": 0.9,
+      "d": 0.25,
+      "h": 2.25,
       "wall": "#6c4529",
       "roof": "#9f2e34",
-      "accent": "#d7ad43"
+      "accent": "#d7ad43",
+      "meshId": "judah_banner",
+      "materials": {
+        "pole": "wood_dark",
+        "banner": "cloth_judah",
+        "emblem": "judah_emblem"
+      },
+      "renderMode": "mesh"
     },
     {
       "id": "banner_e",
       "type": "banner",
       "x": 16.1,
       "z": 5.6,
-      "w": 0.2,
-      "d": 0.2,
-      "h": 2.2,
+      "w": 0.9,
+      "d": 0.25,
+      "h": 2.25,
       "wall": "#6c4529",
       "roof": "#9f2e34",
-      "accent": "#d7ad43"
+      "accent": "#d7ad43",
+      "meshId": "judah_banner",
+      "materials": {
+        "pole": "wood_dark",
+        "banner": "cloth_judah",
+        "emblem": "judah_emblem"
+      },
+      "renderMode": "mesh"
     },
     {
       "id": "tree1",
@@ -509,6 +536,105 @@
       },
       "rotationY": -5,
       "renderMode": "mesh"
+    },
+    {
+      "id": "standard_rug",
+      "type": "rug",
+      "x": 14,
+      "z": 5.15,
+      "w": 2.8,
+      "d": 1.4,
+      "h": 0.05,
+      "rotationY": 0,
+      "meshId": "rug",
+      "renderMode": "mesh",
+      "materials": {
+        "rug": "rug_judah"
+      }
+    },
+    {
+      "id": "standard_amphora",
+      "type": "amphora",
+      "x": 12.55,
+      "z": 5.15,
+      "w": 1.05,
+      "d": 1.05,
+      "h": 1.05,
+      "rotationY": 12,
+      "meshId": "amphora_cluster",
+      "renderMode": "mesh",
+      "materials": {
+        "pottery": "pottery",
+        "pottery_dark": "pottery_dark"
+      }
+    },
+    {
+      "id": "workshop_amphora",
+      "type": "amphora",
+      "x": 22.15,
+      "z": 13.9,
+      "w": 0.85,
+      "d": 0.85,
+      "h": 0.85,
+      "rotationY": -18,
+      "meshId": "amphora_cluster",
+      "renderMode": "mesh",
+      "materials": {
+        "pottery": "pottery",
+        "pottery_dark": "pottery_dark"
+      }
+    },
+    {
+      "id": "workshop_rack",
+      "type": "weapon_rack",
+      "x": 19.55,
+      "z": 13.9,
+      "w": 1.5,
+      "d": 0.55,
+      "h": 1.55,
+      "rotationY": -8,
+      "meshId": "weapon_rack",
+      "renderMode": "mesh",
+      "materials": {
+        "wood": "wood",
+        "wood_dark": "wood_dark",
+        "pole": "wood_dark",
+        "bronze": "bronze"
+      }
+    },
+    {
+      "id": "gate_banner_w",
+      "type": "banner",
+      "x": 12.1,
+      "z": 16.9,
+      "w": 0.75,
+      "d": 0.25,
+      "h": 2,
+      "rotationY": 0,
+      "meshId": "judah_banner",
+      "renderMode": "mesh",
+      "materials": {
+        "pole": "wood_dark",
+        "banner": "cloth_judah",
+        "emblem": "judah_emblem"
+      }
+    },
+    {
+      "id": "gate_banner_e",
+      "type": "banner",
+      "x": 15.9,
+      "z": 16.9,
+      "w": 0.75,
+      "d": 0.25,
+      "h": 2,
+      "rotationY": 0,
+      "meshId": "judah_banner",
+      "renderMode": "mesh",
+      "materials": {
+        "pole": "wood_dark",
+        "banner": "cloth_judah",
+        "emblem": "judah_emblem"
+      }
     }
   ],
   "palisade": [
