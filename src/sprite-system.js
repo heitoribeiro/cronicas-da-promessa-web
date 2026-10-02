@@ -422,6 +422,23 @@ export class NpcSpriteController {
     }
   }
 
+  tick(now = performance.now()) {
+    if (!this.meta || !this.image) return;
+    const animatedMode = this.meta.mode === 'sequence' || this.meta.mode === 'atlas';
+    if (!animatedMode) return;
+    const cfg = this.getActionConfig(this.action);
+    if (!cfg) return;
+    const frameMs = Math.max(40, Number(cfg.frameMs) || 120);
+    const frameCount = Math.max(1, Number(cfg.frames) || 1);
+    if (!this.frameStartedAt) this.frameStartedAt = now;
+    if (now - this.frameStartedAt >= frameMs) {
+      const steps = Math.floor((now - this.frameStartedAt) / frameMs);
+      this.frame = (this.frame + steps) % frameCount;
+      this.frameStartedAt += steps * frameMs;
+    }
+    this.renderCurrentFrame();
+  }
+
   setAction(action, now = performance.now()) {
     if (!action || action === this.action) return;
     this.action = action;
@@ -479,20 +496,7 @@ export class NpcSpriteController {
     this.element.classList.toggle('face-up', this.direction === 'n' || this.direction === 'ne' || this.direction === 'nw');
     this.element.classList.toggle('face-down', this.direction === 's' || this.direction === 'se' || this.direction === 'sw');
 
-    const animatedMode = this.meta.mode === 'sequence' || this.meta.mode === 'atlas';
-    if (!animatedMode || !this.image) return;
-
-    const cfg = this.getActionConfig(this.action);
-    if (!cfg) return;
-    const frameMs = Math.max(40, Number(cfg.frameMs) || 120);
-    const frameCount = Math.max(1, Number(cfg.frames) || 1);
-    if (!this.frameStartedAt) this.frameStartedAt = now;
-    if (now - this.frameStartedAt >= frameMs) {
-      const steps = Math.floor((now - this.frameStartedAt) / frameMs);
-      this.frame = (this.frame + steps) % frameCount;
-      this.frameStartedAt += steps * frameMs;
-    }
-    this.renderCurrentFrame();
+    this.tick(now);
   }
 }
 
